@@ -1,1 +1,5 @@
-cd build && cmake .. && make
+: [ build ] ; cd build && cmake .. && make && ./cacheSimulator -h
+: [ clock ] ; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral
+: [ clock with dram ] ; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
+: [ offline-clock ] ; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral
+: [ offline-clock with dram ] ; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
