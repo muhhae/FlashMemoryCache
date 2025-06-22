@@ -5,7 +5,7 @@
 
 static void MyClockEvict(cache_t* cache, const request_t* req) {
 	Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
-	auto c_params = (common::CustomClockParams*)params;
+	auto c_params = (common::CustomParams*)params;
 
 	cache_obj_t* obj_to_evict = params->q_tail;
 	while (obj_to_evict->clock.freq >= 1) {
@@ -35,8 +35,8 @@ cache_t* myclock::MyClockInit(
 	cache->cache_init = MyClockInit;
 	cache->evict = MyClockEvict;
 
-	common::CustomClockParams* params =
-		new common::CustomClockParams(*(Clock_params_t*)cache->eviction_params);
+	common::CustomParams* params =
+		new common::CustomParams(*(Clock_params_t*)cache->eviction_params);
 	free(cache->eviction_params);
 	cache->eviction_params = params;
 	return cache;

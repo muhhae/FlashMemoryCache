@@ -16,7 +16,7 @@
 namespace mlclock {
 template <typename T>
 cache_t* MLClockInit(const common_cache_params_t ccache_params, const char* cache_specific_params);
-class MLClockParam : public common::CustomClockParams {
+class MLClockParam : public common::CustomParams {
    public:
 	MLClockParam() : env(ORT_LOGGING_LEVEL_WARNING, "ml_clock") {
 		session_options.SetIntraOpNumThreads(8);

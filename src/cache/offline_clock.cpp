@@ -5,9 +5,9 @@
 #include <iostream>
 #include "common.hpp"
 
-static void OfflineClockEvict(cache_t* cache, const request_t* req) {
+void cclock::OfflineClockEvict(cache_t* cache, const request_t* req) {
 	Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
-	common::CustomClockParams* custom_params = (common::CustomClockParams*)cache->eviction_params;
+	common::CustomParams* custom_params = (common::CustomParams*)cache->eviction_params;
 
 	cache_obj_t* obj_to_evict = params->q_tail;
 	while (obj_to_evict->clock.freq >= 1) {
@@ -51,8 +51,8 @@ cache_t* cclock::OfflineClockInit(
 	custom_clock->cache_init = OfflineClockInit;
 	custom_clock->evict = OfflineClockEvict;
 
-	common::CustomClockParams* params =
-		new common::CustomClockParams(*(Clock_params_t*)custom_clock->eviction_params);
+	common::CustomParams* params =
+		new common::CustomParams(*(Clock_params_t*)custom_clock->eviction_params);
 	free(custom_clock->eviction_params);
 
 	custom_clock->eviction_params = params;

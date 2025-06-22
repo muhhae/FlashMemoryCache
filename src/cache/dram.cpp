@@ -17,7 +17,7 @@ static cache_obj_t* LRUFind(cache_t* cache, const request_t* req, const bool upd
 	cache_obj_t* cache_obj = cache_find_base(cache, req, update_cache);
 	if (cache_obj && likely(update_cache)) {
 		move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
-		((common::CustomClockParams*)params)->n_promoted++;
+		((common::CustomParams*)params)->n_promoted++;
 	}
 	return cache_obj;
 }

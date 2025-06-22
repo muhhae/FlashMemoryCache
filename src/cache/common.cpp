@@ -4,11 +4,10 @@
 #include <libCacheSim/request.h>
 #include <sys/types.h>
 #include <cmath>
-#include <iostream>
 #include <unordered_map>
 
 std::unordered_map<std::string, float> common::CandidateMetadata(
-	const common::ObjMetadata& data, common::CustomClockParams* params, const cache_t* cache,
+	const common::ObjMetadata& data, common::CustomParams* params, const cache_t* cache,
 	const request_t* current_req, const cache_obj_t* obj_to_evict
 ) {
 	float rtime_since = current_req->clock_time - data.rtime;
@@ -82,7 +81,7 @@ void common::ObjMetadata::Reset() {
 }
 
 void common::OnAccessTracking(
-	ObjMetadata& data, CustomClockParams* custom_params, const request_t* req
+	ObjMetadata& data, CustomParams* custom_params, const request_t* req
 ) {
 	uint64_t rtime_since = req->clock_time - data.rtime;
 	uint64_t vtime_since = custom_params->vtime - data.vtime;
@@ -113,7 +112,7 @@ void common::OnAccessTracking(
 }
 
 void common::BeforeEvaluationTracking(
-	const cache_obj_t* obj, CustomClockParams* custom_params, const request_t* req
+	const cache_obj_t* obj, CustomParams* custom_params, const request_t* req
 ) {
 	auto& data = custom_params->objs_metadata[obj->obj_id];
 
@@ -127,7 +126,7 @@ void common::BeforeEvaluationTracking(
 }
 
 void common::BeforeEvictionTracking(
-	const cache_obj_t* obj, CustomClockParams* custom_params, const request_t* req
+	const cache_obj_t* obj, CustomParams* custom_params, const request_t* req
 ) {
 	auto& data = custom_params->objs_metadata[obj->obj_id];
 
@@ -137,7 +136,7 @@ void common::BeforeEvictionTracking(
 }
 
 void common::OnPromotionTracking(
-	const cache_obj_t* obj, CustomClockParams* custom_params, const request_t* req
+	const cache_obj_t* obj, CustomParams* custom_params, const request_t* req
 ) {
 	auto& data = custom_params->objs_metadata[obj->obj_id];
 	// data.Reset();
@@ -161,7 +160,7 @@ float common::RunningMeanNormalize(const float X, RunningMeanData& d) {
 	return norm;
 }
 
-void common::CustomClockParams::GlobalTracking(const common::ObjMetadata& data) {
+void common::CustomParams::GlobalTracking(const common::ObjMetadata& data) {
 	if (data.lifetime_freq > max_lifetime_freq) {
 		max_lifetime_freq = data.lifetime_freq;
 	}

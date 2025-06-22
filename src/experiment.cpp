@@ -46,7 +46,7 @@ AlgoSelector(const options& o) {
 		return base::LRUInit;
 	}
 	if (o.algorithm == "clock") {
-		return base::BaseClockInit;
+		return base::ClockInit;
 	}
 	if (o.algorithm == "my") {
 		return myclock::MyClockInit;
@@ -182,7 +182,7 @@ void Simulate(
 	uint64_t first_promoted = 0;
 	common_cache_params_t* params = (common_cache_params_t*)cache->eviction_params;
 
-	common::CustomClockParams* custom_params = (common::CustomClockParams*)cache->eviction_params;
+	common::CustomParams* custom_params = (common::CustomParams*)cache->eviction_params;
 
 	if (o.generate_datasets) {
 		custom_params->datasets = std::ofstream(dataset_path);
@@ -198,7 +198,7 @@ void Simulate(
 
 	for (size_t i = 0; i < o.max_iteration; ++i) {
 		auto tmp = clone_cache(cache);
-		auto tmp_custom_params = (common::CustomClockParams*)tmp->eviction_params;
+		auto tmp_custom_params = (common::CustomParams*)tmp->eviction_params;
 		std::swap(tmp_custom_params->objs_metadata, custom_params->objs_metadata);
 		std::swap(tmp_custom_params->datasets, custom_params->datasets);
 		if (o.algorithm == "ML") {
@@ -222,7 +222,7 @@ void Simulate(
 
 		uint64_t dram_cache_size = tmp->cache_size / 100;
 		cache_t* dram_cache = dram::LRUInit({.cache_size = dram_cache_size}, NULL);
-		auto dram_param = (dram::DramParam*)dram_cache->eviction_params;
+		auto dram_param = (dram::DRAMParam*)dram_cache->eviction_params;
 		dram_param->main_cache = tmp;
 
 		while (read_one_req(reader, req) == 0) {

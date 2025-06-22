@@ -5,7 +5,7 @@
 
 void DecayedClockEvict(cache_t* cache, const request_t* req) {
 	Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
-	common::CustomClockParams* custom_params = (common::CustomClockParams*)cache->eviction_params;
+	common::CustomParams* custom_params = (common::CustomParams*)cache->eviction_params;
 	cache_obj_t* obj_to_evict = params->q_tail;
 	while (obj_to_evict->clock.freq >= 1) {
 		auto& data = custom_params->objs_metadata[obj_to_evict->obj_id];
@@ -35,8 +35,8 @@ cache_t* decayed::DecayedClockInit(
 	cache->cache_init = DecayedClockInit;
 	cache->evict = DecayedClockEvict;
 
-	common::CustomClockParams* params =
-		new common::CustomClockParams(*(Clock_params_t*)cache->eviction_params);
+	common::CustomParams* params =
+		new common::CustomParams(*(Clock_params_t*)cache->eviction_params);
 	free(cache->eviction_params);
 
 	cache->eviction_params = params;

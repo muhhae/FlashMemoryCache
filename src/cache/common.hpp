@@ -72,10 +72,10 @@ struct RunningMeanData {
 	uint64_t n = 0;
 };
 
-class CustomClockParams : public Clock_params_t {
+class CustomParams : public Clock_params_t {
    public:
-	CustomClockParams() = default;
-	CustomClockParams(const Clock_params_t& base) {
+	CustomParams() = default;
+	CustomParams(const Clock_params_t& base) {
 		*(Clock_params_t*)this = base;
 	}
 	void GlobalTracking(const ObjMetadata& data);
@@ -114,22 +114,20 @@ class CustomClockParams : public Clock_params_t {
 	bool generate_datasets;
 };
 
-void OnAccessTracking(ObjMetadata& data, CustomClockParams* custom_params, const request_t* req);
+void OnAccessTracking(ObjMetadata& data, CustomParams* custom_params, const request_t* req);
 
 void BeforeEvaluationTracking(
-	const cache_obj_t* obj, CustomClockParams* custom_params, const request_t* req
+	const cache_obj_t* obj, CustomParams* custom_params, const request_t* req
 );
 
 void BeforeEvictionTracking(
-	const cache_obj_t* obj, CustomClockParams* custom_params, const request_t* req
+	const cache_obj_t* obj, CustomParams* custom_params, const request_t* req
 );
 
-void OnPromotionTracking(
-	const cache_obj_t* obj, CustomClockParams* custom_params, const request_t* req
-);
+void OnPromotionTracking(const cache_obj_t* obj, CustomParams* custom_params, const request_t* req);
 
 std::unordered_map<std::string, float> CandidateMetadata(
-	const common::ObjMetadata& data, common::CustomClockParams* params, const cache_t* cache,
+	const common::ObjMetadata& data, common::CustomParams* params, const cache_t* cache,
 	const request_t* current_req, const cache_obj_t* obj_to_evict
 );
 

@@ -7,9 +7,9 @@
 
 namespace dram {
 cache_t* LRUInit(const common_cache_params_t ccache_params, const char* cache_specific_params);
-class DramParam : public common::CustomClockParams {
+class DRAMParam : public common::CustomParams {
    public:
-	DramParam(const Clock_params_t& base) {
+	DRAMParam(const Clock_params_t& base) {
 		*(Clock_params_t*)this = base;
 	}
 	void InsertToMain(obj_id_t obj_id);
