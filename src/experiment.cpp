@@ -72,6 +72,8 @@ AlgoSelector(const options& o) {
 void RunExperiment(options o) {
 	std::vector<std::future<void>> tasks;
 	auto CacheInit = AlgoSelector(o);
+	if (o.algorithm == "offline-clock" && o.max_iteration < 2)
+		o.max_iteration = 2;
 	std::filesystem::create_directories(o.output_directory / "log");
 	if (o.generate_datasets)
 		std::filesystem::create_directories(o.output_directory / "datasets");
