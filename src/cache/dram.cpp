@@ -1,7 +1,9 @@
 #include "dram.hpp"
+
 #include <config.h>
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
+
 #include "common.hpp"
 
 void dram::DRAMParam::InsertToMain(obj_id_t obj_id) {

@@ -1,6 +1,8 @@
 #include "cache/decayed_clock.hpp"
+
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
+
 #include "common.hpp"
 
 void DecayedClockEvict(cache_t* cache, const request_t* req) {

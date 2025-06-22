@@ -1,10 +1,13 @@
 #include "ml_clock.hpp"
+
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
 #include <onnxruntime/onnxruntime_c_api.h>
 #include <onnxruntime/onnxruntime_cxx_api.h>
+
 #include <algorithm>
 #include <vector>
+
 #include "common.hpp"
 
 template <typename T>

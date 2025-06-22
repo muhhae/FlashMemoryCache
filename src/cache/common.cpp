@@ -1,14 +1,19 @@
 #include "common.hpp"
+
 #include <libCacheSim/cacheObj.h>
 #include <libCacheSim/reader.h>
 #include <libCacheSim/request.h>
 #include <sys/types.h>
+
 #include <cmath>
 #include <unordered_map>
 
 std::unordered_map<std::string, float> common::CandidateMetadata(
-    const common::ObjMetadata& data, common::CustomParams* params, const cache_t* cache,
-    const request_t* current_req, const cache_obj_t* obj_to_evict
+    const common::ObjMetadata& data,
+    common::CustomParams* params,
+    const cache_t* cache,
+    const request_t* current_req,
+    const cache_obj_t* obj_to_evict
 ) {
     float rtime_since = current_req->clock_time - data.rtime;
     float vtime_since = params->vtime - data.vtime;

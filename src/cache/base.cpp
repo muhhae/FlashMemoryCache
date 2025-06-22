@@ -1,6 +1,8 @@
 #include "base.hpp"
+
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
+
 #include "common.hpp"
 
 void base::ClockEvict(cache_t* cache, const request_t* req) {

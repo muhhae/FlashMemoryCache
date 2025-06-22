@@ -1,8 +1,11 @@
 #include "offline_clock.hpp"
+
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
+
 #include <cstdlib>
 #include <iostream>
+
 #include "common.hpp"
 
 void cclock::OfflineClockEvict(cache_t* cache, const request_t* req) {

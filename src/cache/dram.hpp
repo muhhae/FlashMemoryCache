@@ -2,7 +2,9 @@
 #include <config.h>
 #include <libCacheSim/cache.h>
 #include <libCacheSim/request.h>
+
 #include <unordered_map>
+
 #include "cache/common.hpp"
 
 namespace dram {

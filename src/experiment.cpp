@@ -1,7 +1,9 @@
 #include "experiment.hpp"
+
 #include <libCacheSim/cache.h>
 #include <libCacheSim/enum.h>
 #include <libCacheSim/evictionAlgo.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -14,6 +16,8 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+
+#include "cache.hpp"
 #include "cache/base.hpp"
 #include "cache/common.hpp"
 #include "cache/decayed_clock.hpp"
@@ -146,8 +150,41 @@ void RunExperiment(options o) {
 }
 
 void Simulate(
-    cache_t* cache, const std::filesystem::path trace_path, const options o, const std::string desc
+    CustomCache::ChainedCache* cache,
+    const std::filesystem::path trace_path,
+    const options o,
+    const std::string desc
 ) {
+    std::string base_path = std::filesystem::path(trace_path).filename();
+    size_t pos = base_path.find(".oracleGeneral");
+    if (o.trace_type == "csv") {
+        pos = base_path.find(".csv");
+    }
+    if (pos != std::string::npos) {
+        base_path = base_path.substr(0, pos);
+    }
+    std::filesystem::path log_path = o.output_directory / "log" / (base_path + desc + ".csv");
+    std::filesystem::path dataset_path =
+        o.output_directory / "datasets" / (base_path + desc + ".csv");
+
+    std::ofstream csv_file(log_path);
+    csv_file << csv_header;
+
+    common_cache_params_t* params = (common_cache_params_t*)cache->eviction_params;
+    common::CustomParams* custom_params = (common::CustomParams*)cache->eviction_params;
+
+    if (o.generate_datasets) {
+        custom_params->datasets = std::ofstream(dataset_path);
+        for (size_t i = 0; i < common::datasets_columns.size(); i++) {
+            custom_params->datasets << common::datasets_columns[i]
+                                    << (i == common::datasets_columns.size() - 1 ? '\n' : ',');
+        }
+    }
+    if (o.algorithm == "ML") {
+        ((mlclock::MLClockParam*)custom_params)->LoadModel(o.ml_model);
+        ((mlclock::MLClockParam*)custom_params)->features_name = o.features_name;
+    }
+
     reader_init_param_t reader_init_param = {
         .ignore_obj_size = o.ignore_obj_size,
         .obj_id_is_num = o.id_num,
@@ -165,38 +202,6 @@ void Simulate(
 
     reader_t* reader = open_trace(trace_path.c_str(), trace_type, &reader_init_param);
     request_t* req = new_request();
-
-    std::string base_path = std::filesystem::path(reader->trace_path).filename();
-    size_t pos = base_path.find(".oracleGeneral");
-    if (o.trace_type == "csv") {
-        pos = base_path.find(".csv");
-    }
-    if (pos != std::string::npos) {
-        base_path = base_path.substr(0, pos);
-    }
-    std::filesystem::path log_path = o.output_directory / "log" / (base_path + desc + ".csv");
-    std::filesystem::path dataset_path =
-        o.output_directory / "datasets" / (base_path + desc + ".csv");
-
-    std::ofstream csv_file(log_path);
-    csv_file << csv_header;
-
-    uint64_t first_promoted = 0;
-    common_cache_params_t* params = (common_cache_params_t*)cache->eviction_params;
-
-    common::CustomParams* custom_params = (common::CustomParams*)cache->eviction_params;
-
-    if (o.generate_datasets) {
-        custom_params->datasets = std::ofstream(dataset_path);
-        for (size_t i = 0; i < common::datasets_columns.size(); i++) {
-            custom_params->datasets << common::datasets_columns[i]
-                                    << (i == common::datasets_columns.size() - 1 ? '\n' : ',');
-        }
-    }
-    if (o.algorithm == "ML") {
-        ((mlclock::MLClockParam*)custom_params)->LoadModel(o.ml_model);
-        ((mlclock::MLClockParam*)custom_params)->features_name = o.features_name;
-    }
 
     for (size_t i = 0; i < o.max_iteration; ++i) {
         auto tmp = clone_cache(cache);
@@ -270,8 +275,6 @@ void Simulate(
         csv_file << s.str();
 
         reset_reader(reader);
-        if (i == 0)
-            first_promoted = tmp_custom_params->n_promoted;
         for (auto& e : tmp_custom_params->objs_metadata) {
             e.second.Reset();
             e.second.lifetime_freq = 0;

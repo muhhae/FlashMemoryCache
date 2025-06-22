@@ -4,6 +4,7 @@
 #include <libCacheSim/evictionAlgo.h>
 #include <onnxruntime/onnxruntime_c_api.h>
 #include <onnxruntime/onnxruntime_cxx_api.h>
+
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -11,6 +12,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
 #include "cache/common.hpp"
 
 namespace mlclock {

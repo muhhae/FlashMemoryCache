@@ -4,6 +4,7 @@
 #include <libCacheSim/evictionAlgo.h>
 #include <libCacheSim/request.h>
 #include <sys/types.h>
+
 #include <cstdint>
 #include <fstream>
 #include <limits>
@@ -127,8 +128,11 @@ void BeforeEvictionTracking(
 void OnPromotionTracking(const cache_obj_t* obj, CustomParams* custom_params, const request_t* req);
 
 std::unordered_map<std::string, float> CandidateMetadata(
-    const common::ObjMetadata& data, common::CustomParams* params, const cache_t* cache,
-    const request_t* current_req, const cache_obj_t* obj_to_evict
+    const common::ObjMetadata& data,
+    common::CustomParams* params,
+    const cache_t* cache,
+    const request_t* current_req,
+    const cache_obj_t* obj_to_evict
 );
 
 void TrackRunningMean(const float X, RunningMeanData& d);

@@ -1,6 +1,8 @@
 #include "my_clock.hpp"
+
 #include <libCacheSim/cache.h>
 #include <libCacheSim/cacheObj.h>
+
 #include "common.hpp"
 
 static void MyClockEvict(cache_t* cache, const request_t* req) {

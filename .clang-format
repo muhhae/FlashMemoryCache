@@ -7,6 +7,7 @@ UseTab: Never
 ColumnLimit: 100
 
 BreakBeforeBraces: Attach
+
 AllowShortFunctionsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
@@ -14,16 +15,14 @@ AllowShortLoopsOnASingleLine: false
 
 AlwaysBreakBeforeMultilineStrings: true
 AlignAfterOpenBracket: BlockIndent
-BreakStringLiterals: false
+BreakStringLiterals: true
+
 BinPackArguments: false
+BinPackParameters: false
 
 DerivePointerAlignment: false
 PointerAlignment: Left
 
 SortIncludes: true
-IncludeBlocks: Merge
 
 SpaceBeforeParens: ControlStatements
-
-AlwaysBreakTemplateDeclarations: Yes
-SpacesInAngles: false

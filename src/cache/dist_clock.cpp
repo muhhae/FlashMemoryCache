@@ -1,7 +1,9 @@
 #include "dist_clock.hpp"
+
 #include <libCacheSim/admissionAlgo.h>
 #include <libCacheSim/cache.h>
 #include <libCacheSim/cacheObj.h>
+
 #include "common.hpp"
 
 static void DistClockEvict(cache_t* cache, const request_t* req) {
