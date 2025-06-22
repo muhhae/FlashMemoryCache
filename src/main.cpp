@@ -36,32 +36,36 @@ int main(int argc, char** argv) {
 		->required();
 	app.add_option("-m,--model", o.ml_model, "ML model to use, required when algo = ML");
 	app.add_option(
-		   "-I, --input", o.input_type, "Input data type to use for Model Inference [I32, I64, F32]"
+		   "-I, --input",
+		   o.input_type,
+		   "Input features datatype for Model Inference [I32, I64, F32]"
 	)
 		->default_val("I64");
 	app.add_option(
 		   "-F, --features",
 		   o.features_name,
-		   "Features to use for Model Inference (The Sequence should "
-		   "exactly the same as model input or data it trained with)"
+		   "Input features for Model Inference (The Sequence should "
+		   "exactly the same as model input)"
 	)
 		->default_val(
 			std::vector<std::string>{
 				"rtime_between", "clock_freq", "lifetime_freq", "obj_size_relative"
 			}
 		);
-	app.add_option("-T, --trace-type", o.trace_type, "Traces Type [oracleGeneral, csv]")
+	app.add_option("-T, --trace-type", o.trace_type, "Traces type [oracleGeneral, csv]")
 		->default_val("oracleGeneral");
-	app.add_option("-H, --treshold", o.treshold, "Decision treshold")->default_val(0.5);
+	app.add_option("-H, --treshold", o.treshold, "ML Model decision treshold")->default_val(0.5);
 	app.add_option(
-		   "-p, --decay-power", o.decay_power, "Decaying rate of clock and lifetime frequency"
+		   "-s, --flash-admission-treshold",
+		   o.flash_admission_treshold,
+		   "Min. freq an object has before admitted into Flash"
 	)
+		->default_val(1);
+	app.add_option("-p, --decay-power", o.decay_power, "Decaying rate of clock and lifetime freq")
 		->default_val(0.001);
-	app.add_flag("--ignore-obj-size", o.ignore_obj_size, "Would ignore object sizes from trace");
-	app.add_flag(
-		"--generate-datasets", o.generate_datasets, "Would generate datasets from simulation"
-	);
-	app.add_flag("--id-num", o.id_num, "Id is already numeric so we can skip the hashing process");
+	app.add_flag("--ignore-obj-size", o.ignore_obj_size, "Ignore object sizes from trace");
+	app.add_flag("--generate-datasets", o.generate_datasets, "Generate datasets from simulation");
+	app.add_flag("--id-num", o.id_num, "Skip the Hashing process of ObjectID");
 	app.add_flag("--dram", o.dram_enabled, "Enable Dram Cache (1\% of the cache)");
 
 	CLI11_PARSE(app, argc, argv);
