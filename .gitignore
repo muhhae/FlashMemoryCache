@@ -1,0 +1,51 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+build
+
+trace/**.oracleGeneral*
+python/.venv
+.cache/clangd/index
+.nvim
+result/datasets
+python/ML/__pycache__
+datasets
+python/__pycache__
+python/ML/model.input
+python/ML/model.onnx
+python/ML/model.pkl
+python/.pyre
+python/ML/.pyre
+.pyre
+python/Tools/__pycache__
+python/Tools/.cache

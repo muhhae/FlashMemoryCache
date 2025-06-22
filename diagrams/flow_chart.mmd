@@ -1,0 +1,43 @@
+---
+config:
+  theme: redux-dark
+  displayMode: compact
+---
+flowchart TD
+    ReadTrace(Read trace) --> ReqValid{Request is Valid}
+
+    ReqValid -- NO --> END
+    ReqValid -- YES --> ExistInDram{Exist in DRAM}
+
+    ExistInDram -- YES --> HitNotTracked(Hit Not Tracked)
+    ExistInDram -- YES --> PromotedInDram(Promoted)
+
+    ExistInDram -- NO --> ExistInFlash{Exist in Flash}
+    ExistInDram -- NO --> InsertingToDram(Inserting To DRAM)
+    ExistInDram -- NO --> MissNotTracked(Miss Not Tracked)
+
+    ExistInFlash -- YES --> HitTracked(Hit Tracked)
+    ExistInFlash -- NO --> MissTracked(Miss Tracked)
+
+    InsertingToDram --> DramHasSpace{DRAM Has Enough Space}
+    DramHasSpace -- YES --> InsertToDram(Insert To DRAM)
+    DramHasSpace -- NO --> EvictFromDram(Evict From DRAM)
+
+    EvictFromDram --> EvictedObjFreqMtN{Evicted Object Freq > N}
+
+    EvictedObjFreqMtN -- YES --> InsertingToFlash(Inserting To Flash)
+    EvictedObjFreqMtN -- NO --> DramHasSpace
+
+    InsertToFlash --> FlashWriteTracked(Flash Write Tracked)
+
+    InsertingToFlash --> FlashHasSpace{Flash Has Enough Space}
+    FlashHasSpace -- YES --> InsertToFlash(Insert To Flash)
+    FlashHasSpace -- NO --> EvictFromFlash(Evicting From Flash)
+
+    EvictFromFlash --> IsPromoted{Is Reinserted?}
+
+    IsPromoted -- YES --> FlashWriteTracked
+    IsPromoted -- YES --> EvictFromFlash
+    IsPromoted -- NO --> FlashHasSpace
+
+    FlashWriteTracked --> DramHasSpace
