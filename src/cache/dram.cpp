@@ -2,10 +2,9 @@
 #include <config.h>
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
-#include <iostream>
 #include "common.hpp"
 
-void dram::DramParam::InsertToMain(obj_id_t obj_id) {
+void dram::DRAMParam::InsertToMain(obj_id_t obj_id) {
 	if (main_cache) {
 		auto req = req_map[obj_id];
 		main_cache->get(main_cache, req);
@@ -36,7 +35,7 @@ static void LRUEvict(cache_t* cache, const request_t* req) {
 		params->q_head = NULL;
 	}
 
-	auto dram_params = (dram::DramParam*)params;
+	auto dram_params = (dram::DRAMParam*)params;
 	dram_params->InsertToMain(obj_to_evict->obj_id);
 
 	cache_evict_base(cache, obj_to_evict, true);
@@ -51,7 +50,7 @@ cache_t* dram::LRUInit(
 	cache->find = LRUFind;
 	cache->evict = LRUEvict;
 
-	DramParam* params = new DramParam(*(Clock_params_t*)cache->eviction_params);
+	DRAMParam* params = new DRAMParam(*(Clock_params_t*)cache->eviction_params);
 	free(cache->eviction_params);
 
 	cache->eviction_params = params;
