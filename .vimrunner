@@ -1,17 +1,17 @@
 : [ BUILD ]; cd build && cmake .. && make && ./cacheSimulator -h
 : ---
-: [ CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
-: [ CLOCK without DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral
-: [ CLOCK with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
+: [ CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=clock" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
+: [ CLOCK without DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=clock"
+: [ CLOCK with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
 : ---
-: [ OFFLINE-CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
-: [ OFFLINE-CLOCK without DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral
-: [ OFFLINE-CLOCK with DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
+: [ OFFLINE-CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=offline-clock" && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=offline-clock" "dram=lru"
+: [ OFFLINE-CLOCK without DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=offline-clock"
+: [ OFFLINE-CLOCK with DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=offline-clock" "dram=lru"
 : ---
-: [ FIFO without and with DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
-: [ FIFO without DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral
-: [ FIFO with DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
+: [ FIFO without and with DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=fifo" && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=fifo" "dram=lru"
+: [ FIFO without DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=fifo"
+: [ FIFO with DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=fifo" "dram=lru"
 : ---
-: [ LRU without and with DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
-: [ LRU without DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral
-: [ LRU with DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
+: [ LRU without and with DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=lru" "dram=lru" && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=lru" "dram=lru"
+: [ LRU without DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=lru"
+: [ LRU with DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=lru" "dram=lru"
