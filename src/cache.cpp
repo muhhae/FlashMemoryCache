@@ -9,8 +9,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
-#include <iostream>
-#include <sstream>
 
 #include "cache/base.hpp"
 #include "cache/common.hpp"
@@ -95,6 +93,8 @@ void ChainedCache::EndIteration(const options& o) {
 
     req.push_back(tmp_params->n_req);
     hit.push_back(tmp_params->n_hit);
+    inserted.push_back(tmp_params->n_inserted);
+    reinserted.push_back(tmp_params->n_promoted);
 
     for (auto& e : tmp_params->req_map) {
         free(e.second);
@@ -141,6 +141,7 @@ void ChainedCache::SetupIteration(const options& o, bool last_iteration) {
     tmp_params->n_hit = 0;
     tmp_params->n_req = 0;
     tmp_params->n_promoted = 0;
+    tmp_params->n_inserted = 0;
 
     if (last_iteration) {
         tmp_params->generate_datasets = o.generate_datasets;
@@ -153,7 +154,9 @@ void ChainedCache::SetupIteration(const options& o, bool last_iteration) {
 }
 void ChainedCache::Admit(const request_t* req, uint64_t freq) {
     if (freq >= admission_treshold) {
-        tmp->get(tmp, req);
+        auto hit = tmp->get(tmp, req);
+        if (!hit)
+            ((common::CustomParams*)tmp->eviction_params)->n_inserted++;
     }
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
@@ -163,6 +166,8 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
         j["algorithm"] = algorithm;
         j["hit"] = hit[i];
         j["req"] = req[i];
+        j["inserted"] = inserted[i];
+        j["reinserted"] = reinserted[i];
         j["miss_ratio"] = 1 - (double)hit[i] / req[i];
         output_json[i]["metrics"].push_back(j);
         output_json[i]["iteration"] = i;
@@ -192,6 +197,7 @@ bool ChainedCache::Get(const request_t* req) {
     common::OnAccessTracking(data, params, req);
     params->n_req++;
     if (!tmp->get(tmp, req)) {
+        params->n_inserted++;
         if (next)
             return next->Find(req);
         return false;

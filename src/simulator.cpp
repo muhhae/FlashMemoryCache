@@ -146,9 +146,9 @@ void Simulate(
             overall_hit += (uint64_t)metrics[j]["hit"];
         }
         double overall_miss_ratio = 1 - (double)overall_hit / overall_req;
-        output_json["results"][i]["overall_hit"] = overall_hit;
-        output_json["results"][i]["overall_req"] = overall_req;
-        output_json["results"][i]["overall_miss_ratio"] = overall_miss_ratio;
+        output_json["results"][i]["hit"] = overall_hit;
+        output_json["results"][i]["req"] = overall_req;
+        output_json["results"][i]["miss_ratio"] = overall_miss_ratio;
     }
 
     std::cout << output_json.dump(2) << "\n";

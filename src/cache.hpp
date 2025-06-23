@@ -37,7 +37,8 @@ class ChainedCache {
 
     std::vector<uint64_t> req;
     std::vector<uint64_t> hit;
-    std::vector<uint64_t> write;
+    std::vector<uint64_t> inserted;
+    std::vector<uint64_t> reinserted;
 
     uint64_t admission_treshold = 1;
     bool isML = false;
