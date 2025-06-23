@@ -58,28 +58,40 @@ OPTIONS:
 1. Offline Clock Without DRAM (1 Layer Cache)
 ```
 cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral
-[INFO]  06-23-2025 16:50:38 cache_size.h:26   (tid=139963417235584): calculating working set size...
-[INFO]  06-23-2025 16:50:38 cache_size.h:54   (tid=139963417235584): working set size: 1000 object 1000 byte
+[INFO]  06-23-2025 19:25:21 cache_size.h:26   (tid=139817414889600): calculating working set size...
+[INFO]  06-23-2025 19:25:21 cache_size.h:54   (tid=139817414889600): working set size: 1000 object 1000 byte
 {
   "cache_size": 100,
   "results": [
     {
-      "algorithm": "offline-clock",
-      "layer": 0,
+      "iteration": 0,
       "metrics": [
         {
+          "algorithm": "offline-clock",
           "hit": 589962,
-          "iteration": 0,
+          "layer": 0,
           "miss_ratio": 0.410038,
           "req": 1000000
-        },
+        }
+      ],
+      "overall_hit": 589962,
+      "overall_miss_ratio": 0.410038,
+      "overall_req": 1000000
+    },
+    {
+      "iteration": 1,
+      "metrics": [
         {
+          "algorithm": "offline-clock",
           "hit": 597566,
-          "iteration": 1,
+          "layer": 0,
           "miss_ratio": 0.40243399999999996,
           "req": 1000000
         }
-      ]
+      ],
+      "overall_hit": 597566,
+      "overall_miss_ratio": 0.40243399999999996,
+      "overall_req": 1000000
     }
   ],
   "trace": "small_zipf.oracleGeneral"
@@ -88,46 +100,54 @@ cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/
 2. Offline Clock With DRAM (2 Layer Cache), DRAM has size equal to 1% of Flash Cache
 ```
 cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram
-[INFO]  06-23-2025 16:52:22 cache_size.h:26   (tid=140689779695744): calculating working set size...
-[INFO]  06-23-2025 16:52:22 cache_size.h:54   (tid=140689779695744): working set size: 1000 object 1000 byte
+[INFO]  06-23-2025 19:22:12 cache_size.h:26   (tid=140079037268096): calculating working set size...
+[INFO]  06-23-2025 19:22:13 cache_size.h:54   (tid=140079037268096): working set size: 1000 object 1000 byte
 {
   "cache_size": 100,
   "results": [
     {
-      "algorithm": "lru",
-      "layer": 0,
+      "iteration": 0,
       "metrics": [
         {
+          "algorithm": "lru",
           "hit": 29200,
-          "iteration": 0,
+          "layer": 0,
           "miss_ratio": 0.9708,
           "req": 1000000
         },
         {
-          "hit": 29200,
-          "iteration": 1,
-          "miss_ratio": 0.9708,
-          "req": 1000000
-        }
-      ]
-    },
-    {
-      "algorithm": "offline-clock",
-      "layer": 1,
-      "metrics": [
-        {
+          "algorithm": "offline-clock",
           "hit": 560704,
-          "iteration": 0,
+          "layer": 1,
           "miss_ratio": 0.4224309847548414,
           "req": 970800
+        }
+      ],
+      "overall_hit": 589904,
+      "overall_miss_ratio": 0.410096,
+      "overall_req": 1000000
+    },
+    {
+      "iteration": 1,
+      "metrics": [
+        {
+          "algorithm": "lru",
+          "hit": 29200,
+          "layer": 0,
+          "miss_ratio": 0.9708,
+          "req": 1000000
         },
         {
+          "algorithm": "offline-clock",
           "hit": 568290,
-          "iteration": 1,
+          "layer": 1,
           "miss_ratio": 0.4146168108776267,
           "req": 970800
         }
-      ]
+      ],
+      "overall_hit": 597490,
+      "overall_miss_ratio": 0.40251000000000003,
+      "overall_req": 1000000
     }
   ],
   "trace": "small_zipf.oracleGeneral"

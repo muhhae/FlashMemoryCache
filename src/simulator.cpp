@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <future>
 #include <iostream>
+#include <ostream>
 #include <string>
 
 #include "cache.hpp"
@@ -132,13 +133,23 @@ void Simulate(
     }
 
     nlohmann::json output_json;
-    nlohmann::json results;
-
-    Cache->Print(results, 0);
 
     output_json["trace"] = std::filesystem::path(trace_path).filename();
     output_json["cache_size"] = cache_size;
-    output_json["results"] = results;
+
+    Cache->Print(output_json["results"], 0);
+    for (size_t i = 0; i < output_json["results"].size(); ++i) {
+        auto& metrics = output_json["results"][i]["metrics"];
+        uint64_t overall_hit = 0;
+        uint64_t overall_req = metrics[0]["req"];
+        for (size_t j = 0; j < metrics.size(); ++j) {
+            overall_hit += (uint64_t)metrics[j]["hit"];
+        }
+        double overall_miss_ratio = 1 - (double)overall_hit / overall_req;
+        output_json["results"][i]["overall_hit"] = overall_hit;
+        output_json["results"][i]["overall_req"] = overall_req;
+        output_json["results"][i]["overall_miss_ratio"] = overall_miss_ratio;
+    }
 
     std::cout << output_json.dump(2) << "\n";
     free_request(req);
