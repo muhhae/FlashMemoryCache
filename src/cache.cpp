@@ -157,16 +157,20 @@ void ChainedCache::Admit(const request_t* req, uint64_t freq) {
     }
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
+    nlohmann::json cache_json;
+    cache_json["layer"] = depth;
+    cache_json["algorithm"] = algorithm;
+    nlohmann::json iter_json;
     for (size_t i = 0; i < hit.size(); ++i) {
         nlohmann::json j;
-        j["layer"] = depth;
-        j["algorithm"] = algorithm;
         j["iteration"] = i;
         j["hit"] = hit[i];
         j["req"] = req[i];
         j["miss_ratio"] = 1 - (double)hit[i] / req[i];
-        output_json.push_back(j);
+        iter_json.push_back(j);
     }
+    cache_json["metrics"] = iter_json;
+    output_json.push_back(cache_json);
     if (next)
         next->Print(output_json, ++depth);
 }

@@ -130,9 +130,17 @@ void Simulate(
         Cache->EndIteration(o);
         reset_reader(reader);
     }
+
     nlohmann::json output_json;
-    Cache->Print(output_json, 0);
-    std::cout << output_json.dump(4) << "\n";
+    nlohmann::json results;
+
+    Cache->Print(results, 0);
+
+    output_json["trace"] = std::filesystem::path(trace_path).filename();
+    output_json["cache_size"] = cache_size;
+    output_json["results"] = results;
+
+    std::cout << output_json.dump(2) << "\n";
     free_request(req);
     close_reader(reader);
 }
