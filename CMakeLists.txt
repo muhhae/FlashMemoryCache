@@ -34,7 +34,8 @@ include_directories(onnxruntimeInclude)
 
 add_executable(cacheSimulator
   src/main.cpp
-  src/experiment.cpp
+  src/simulator.cpp
+  src/cache.cpp
   src/cache/common.cpp
   src/cache/offline_clock.cpp
   src/cache/base.cpp
@@ -42,7 +43,6 @@ add_executable(cacheSimulator
   src/cache/decayed_clock.cpp
   src/cache/my_clock.cpp
   src/cache/dist_clock.cpp
-  src/cache/dram.cpp
 )
 target_include_directories(cacheSimulator PRIVATE src .)
 

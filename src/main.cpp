@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "experiment.hpp"
 #include "lib/CLI11.hpp"
+#include "simulator.hpp"
 
 int main(int argc, char** argv) {
     options o;

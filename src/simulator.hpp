@@ -38,6 +38,9 @@ struct options {
 };
 
 void Simulate(
-    cache_t* cache, const std::filesystem::path trace_path, const options o, const std::string desc
+    uint64_t cache_size,
+    const std::filesystem::path trace_path,
+    const options o,
+    const std::string desc
 );
 void RunExperiment(options o);

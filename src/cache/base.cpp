@@ -39,6 +39,37 @@ cache_t* base::ClockInit(
     return cache;
 }
 
+void base::LRUEvict(cache_t* cache, const request_t* req) {
+    LRU_params_t* params = (LRU_params_t*)cache->eviction_params;
+    cache_obj_t* obj_to_evict = params->q_tail;
+    DEBUG_ASSERT(params->q_tail != NULL);
+
+    // we can simply call remove_obj_from_list here, but for the best performance,
+    // we chose to do it manually
+    // remove_obj_from_list(&params->q_head, &params->q_tail, obj)
+
+    params->q_tail = params->q_tail->queue.prev;
+    if (likely(params->q_tail != NULL)) {
+        params->q_tail->queue.next = NULL;
+    } else {
+        /* cache->n_obj has not been updated */
+        DEBUG_ASSERT(cache->n_obj == 1);
+        params->q_head = NULL;
+    }
+
+#if defined(TRACK_DEMOTION)
+    if (cache->track_demotion)
+        printf(
+            "%ld demote %ld %ld\n",
+            cache->n_req,
+            obj_to_evict->create_time,
+            obj_to_evict->misc.next_access_vtime
+        );
+#endif
+    ((common::CustomParams*)cache->eviction_params)->InsertNext(obj_to_evict->obj_id);
+    cache_evict_base(cache, obj_to_evict, true);
+}
+
 cache_obj_t* base::LRUFind(cache_t* cache, const request_t* req, const bool update_cache) {
     LRU_params_t* params = (LRU_params_t*)cache->eviction_params;
     cache_obj_t* cache_obj = cache_find_base(cache, req, update_cache);
@@ -55,6 +86,7 @@ cache_t* base::LRUInit(
     auto cache = LRU_init(ccache_params, cache_specific_params);
 
     cache->cache_init = LRUInit;
+    cache->evict = LRUEvict;
     cache->find = LRUFind;
 
     common::CustomParams* params =

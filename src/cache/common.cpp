@@ -6,6 +6,8 @@
 #include <sys/types.h>
 
 #include <cmath>
+#include <cstdint>
+#include <iostream>
 #include <unordered_map>
 
 std::unordered_map<std::string, float> common::CandidateMetadata(
@@ -163,6 +165,12 @@ float common::RunningMeanNormalize(const float X, RunningMeanData& d) {
     }
     float norm = (X - d.mean) / std;
     return norm;
+}
+
+void common::CustomParams::InsertNext(obj_id_t obj_id) {
+    if (next) {
+        next->Admit(req_map[obj_id], objs_metadata[obj_id].clock_freq);
+    }
 }
 
 void common::CustomParams::GlobalTracking(const common::ObjMetadata& data) {
