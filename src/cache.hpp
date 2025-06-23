@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <vector>
 
+#include "lib/json.hpp"
 #include "simulator.hpp"
 
 namespace CustomCache {
@@ -24,7 +25,7 @@ class ChainedCache {
     void SetupIteration(const options& o, bool last_iteration);
     void EndIteration(const options& o);
     void Admit(const request_t* req, uint64_t freq);
-    void Print(std::ostringstream& s, uint64_t depth);
+    void Print(nlohmann::json& output_json, uint64_t depth);
     void CleanUp(const options& o);
 
    public:

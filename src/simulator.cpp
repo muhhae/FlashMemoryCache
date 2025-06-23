@@ -13,12 +13,14 @@
 #include <filesystem>
 #include <fstream>
 #include <future>
+#include <iostream>
 #include <sstream>
 #include <string>
 
 #include "cache.hpp"
 #include "cache/base.hpp"
 #include "lib/cache_size.h"
+#include "lib/json.hpp"
 
 const std::string csv_header =
     "trace_path,ignore_obj_size,cache_size,miss_ratio,n_req,n_promoted,n_miss,n_hit\n";
@@ -138,9 +140,9 @@ void Simulate(
         Cache->EndIteration(o);
         reset_reader(reader);
     }
-    std::ostringstream s;
-    Cache->Print(s, 0);
-
+    nlohmann::json output_json;
+    Cache->Print(output_json, 0);
+    std::cout << output_json.dump(4) << "\n";
     free_request(req);
     close_reader(reader);
 }

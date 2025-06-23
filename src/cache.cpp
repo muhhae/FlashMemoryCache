@@ -19,6 +19,7 @@
 #include "cache/ml_clock.hpp"
 #include "cache/my_clock.hpp"
 #include "cache/offline_clock.hpp"
+#include "lib/json.hpp"
 #include "simulator.hpp"
 
 std::function<
@@ -155,18 +156,19 @@ void ChainedCache::Admit(const request_t* req, uint64_t freq) {
         tmp->get(tmp, req);
     }
 }
-void ChainedCache::Print(std::ostringstream& s, uint64_t depth) {
-    std::cout << "Layer: " << depth << "\n";
-    std::cout << "Cache: " << algorithm << "\n";
+void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     for (size_t i = 0; i < hit.size(); ++i) {
-        std::cout << "Iteration: " << i << "\n";
-        std::cout << "Hit: " << hit[i] << '\n';
-        std::cout << "Req: " << req[i] << '\n';
-        std::cout << "MR: " << 1 - (double)hit[i] / req[i] << "\n\n";
+        nlohmann::json j;
+        j["layer"] = depth;
+        j["algorithm"] = algorithm;
+        j["iteration"] = i;
+        j["hit"] = hit[i];
+        j["req"] = req[i];
+        j["miss_ratio"] = 1 - (double)hit[i] / req[i];
+        output_json.push_back(j);
     }
-    std::cout << "\n";
     if (next)
-        next->Print(s, ++depth);
+        next->Print(output_json, ++depth);
 }
 void ChainedCache::CleanUp(const options& o) {
     auto params = (common::CustomParams*)self->eviction_params;
