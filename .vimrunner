@@ -1,4 +1,5 @@
 : [ BUILD ]; cd build && cmake .. && make && ./cacheSimulator -h
+: [ CLEAN BUILD ]; rm -rf build && mkdir build && cd build && cmake .. && make && ./cacheSimulator -h
 : ---
 : [ CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=clock" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
 : [ CLOCK without DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=clock"
