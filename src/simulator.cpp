@@ -11,19 +11,13 @@
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
-#include <fstream>
 #include <future>
 #include <iostream>
-#include <sstream>
 #include <string>
 
 #include "cache.hpp"
-#include "cache/base.hpp"
 #include "lib/cache_size.h"
 #include "lib/json.hpp"
-
-const std::string csv_header =
-    "trace_path,ignore_obj_size,cache_size,miss_ratio,n_req,n_promoted,n_miss,n_hit\n";
 
 void RunExperiment(options o) {
     if (o.algorithm == "offline-clock" && o.max_iteration < 2)
@@ -116,12 +110,8 @@ void Simulate(
         base_path = base_path.substr(0, pos);
     }
 
-    std::filesystem::path log_path = o.output_directory / "log" / (base_path + desc + ".csv");
     std::filesystem::path dataset_path =
         o.output_directory / "datasets" / (base_path + desc + ".csv");
-
-    std::ofstream csv_file(log_path);
-    csv_file << csv_header;
 
     reader_t* reader = SetupReader(o, trace_path);
     request_t* req = new_request();
