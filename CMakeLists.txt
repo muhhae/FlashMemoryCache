@@ -7,19 +7,6 @@ message(
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library(cachesim_libs INTERFACE)
-target_include_directories(cachesim_libs INTERFACE "/usr/local/include")
-target_link_libraries(cachesim_libs INTERFACE
-    "/usr/local/lib/libcache_lib_c.a"
-    "/usr/local/lib/libcache_lib_cpp.a"
-    "/usr/local/lib/libdataStructure_lib.a"
-    "/usr/local/lib/libmrcProfiler_lib.a"
-    "/usr/local/lib/libprofiler_lib.a"
-    "/usr/local/lib/libtraceAnalyzer_lib.a"
-    "/usr/local/lib/libtraceReader_lib.a"
-    "/usr/local/lib/libutils_lib.a"
-)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 find_package(GLib "2.40" REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
@@ -39,6 +26,22 @@ find_library(ONNXRUNTIME_LIB onnxruntime)
 find_path(onnxruntimeInclude onnxruntime)
 message(STATUS "ONNX runtime found? ${onnxruntime} ${libCacheSimInclude}")
 include_directories(onnxruntimeInclude)
+
+add_library(cachesim_libs INTERFACE)
+target_include_directories(cachesim_libs INTERFACE "/usr/local/include")
+target_link_libraries(cachesim_libs INTERFACE
+    "/usr/local/lib/libcache_lib_c.a"
+    "/usr/local/lib/libcache_lib_cpp.a"
+    "/usr/local/lib/libdataStructure_lib.a"
+    "/usr/local/lib/libmrcProfiler_lib.a"
+    "/usr/local/lib/libprofiler_lib.a"
+    "/usr/local/lib/libtraceAnalyzer_lib.a"
+    "/usr/local/lib/libtraceReader_lib.a"
+    "/usr/local/lib/libutils_lib.a"
+
+    ${ZSTD_LIBRARIES}
+)
+
 
 add_executable(cacheSimulator
   src/main.cpp
