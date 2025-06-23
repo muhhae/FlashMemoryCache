@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <future>
 #include <iostream>
 #include <ostream>
@@ -111,6 +112,7 @@ void Simulate(
         base_path = base_path.substr(0, pos);
     }
 
+    std::filesystem::path output_path = o.output_directory / "log" / (base_path + desc + ".json");
     std::filesystem::path dataset_path =
         o.output_directory / "datasets" / (base_path + desc + ".csv");
 
@@ -152,6 +154,8 @@ void Simulate(
     }
 
     std::cout << output_json.dump(2) << "\n";
+    std::ofstream(output_path) << output_json.dump(2);
+
     free_request(req);
     close_reader(reader);
 }
