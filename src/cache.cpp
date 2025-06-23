@@ -12,16 +12,70 @@
 #include <iostream>
 #include <sstream>
 
+#include "cache/base.hpp"
 #include "cache/common.hpp"
+#include "cache/decayed_clock.hpp"
+#include "cache/dist_clock.hpp"
 #include "cache/ml_clock.hpp"
+#include "cache/my_clock.hpp"
+#include "cache/offline_clock.hpp"
 #include "simulator.hpp"
+
+std::function<
+    cache_t*(const common_cache_params_t ccache_params, const char* cache_specific_params)>
+AlgoSelector(std::string algorithm) {
+    if (algorithm == "decayed-clock") {
+        return decayed::DecayedClockInit;
+    }
+    if (algorithm == "fifo") {
+        return base::FIFOInit;
+    }
+    if (algorithm == "offline-clock") {
+        return cclock::OfflineClockInit;
+    }
+    if (algorithm == "dist-optimal") {
+        return distclock::DistClockInit;
+    }
+    if (algorithm == "lru") {
+        return base::LRUInit;
+    }
+    if (algorithm == "clock") {
+        return base::ClockInit;
+    }
+    if (algorithm == "my") {
+        return myclock::MyClockInit;
+    }
+    if (algorithm == "ML") {
+        throw std::runtime_error("ML is currently disabled");
+        // if (ml_model == "") {
+        //     throw std::runtime_error("ML model need to be provided in ONNX format");
+        // }
+        // if (input_type == "I32") {
+        //     return mlclock::MLClockInit<int32_t>;
+        // }
+        // if (input_type == "I64") {
+        //     return mlclock::MLClockInit<int64_t>;
+        // }
+        // if (input_type == "F32") {
+        //     return mlclock::MLClockInit<float>;
+        // }
+        // throw std::runtime_error("Input type is not valid");
+    }
+    throw std::runtime_error("algorithm not found");
+}
 
 namespace CustomCache {
 ChainedCache::ChainedCache(
-    cache_t* self, ChainedCache* next, const options& o, std::filesystem::path datasets
+    std::string Algorithm,
+    uint64_t cache_size,
+    ChainedCache* next,
+    const options& o,
+    std::filesystem::path datasets
 )
-    : self(self), next(next) {
+    : next(next), algorithm(Algorithm) {
+    self = AlgoSelector(Algorithm)({.cache_size = cache_size}, NULL);
     auto params = (common::CustomParams*)self->eviction_params;
+    admission_treshold = o.flash_admission_treshold;
     if (o.generate_datasets) {
         params->datasets = std::ofstream(datasets);
         for (size_t i = 0; i < common::datasets_columns.size(); i++) {
@@ -101,14 +155,18 @@ void ChainedCache::Admit(const request_t* req, uint64_t freq) {
         tmp->get(tmp, req);
     }
 }
-void ChainedCache::Print(std::ostringstream& s) {
+void ChainedCache::Print(std::ostringstream& s, uint64_t depth) {
+    std::cout << "Layer: " << depth << "\n";
+    std::cout << "Cache: " << algorithm << "\n";
     for (size_t i = 0; i < hit.size(); ++i) {
+        std::cout << "Iteration: " << i << "\n";
         std::cout << "Hit: " << hit[i] << '\n';
         std::cout << "Req: " << req[i] << '\n';
-        std::cout << "MR: " << 1 - (double)hit[i] / req[i] << '\n';
+        std::cout << "MR: " << 1 - (double)hit[i] / req[i] << "\n\n";
     }
+    std::cout << "\n";
     if (next)
-        next->Print(s);
+        next->Print(s, ++depth);
 }
 void ChainedCache::CleanUp(const options& o) {
     auto params = (common::CustomParams*)self->eviction_params;

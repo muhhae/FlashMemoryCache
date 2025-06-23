@@ -13,20 +13,26 @@ namespace CustomCache {
 class ChainedCache {
    public:
     ChainedCache(
-        cache_t* self, ChainedCache* next, const options& o, std::filesystem::path datasets
+        std::string Algorithm,
+        uint64_t cache_size,
+        ChainedCache* next,
+        const options& o,
+        std::filesystem::path datasets
     );
     bool Get(const request_t* req);
     bool Find(const request_t* req);
     void SetupIteration(const options& o, bool last_iteration);
     void EndIteration(const options& o);
     void Admit(const request_t* req, uint64_t freq);
-    void Print(std::ostringstream& s);
+    void Print(std::ostringstream& s, uint64_t depth);
     void CleanUp(const options& o);
 
    public:
     cache_t* self;
     cache_t* tmp;
+
     ChainedCache* next;
+    std::string algorithm;
 
     std::vector<uint64_t> req;
     std::vector<uint64_t> hit;
