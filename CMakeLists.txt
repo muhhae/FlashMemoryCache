@@ -7,10 +7,18 @@ message(
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_library(libCacheSim libCacheSim)
-find_path(libCacheSimInclude libCacheSim)
-message(STATUS "libCacheSim found? ${libCacheSim} ${libCacheSimInclude}")
-include_directories(${libCacheSimInclude})
+add_library(cachesim_libs INTERFACE)
+target_include_directories(cachesim_libs INTERFACE "/usr/local/include")
+target_link_libraries(cachesim_libs INTERFACE
+    "/usr/local/lib/libcache_lib_c.a"
+    "/usr/local/lib/libcache_lib_cpp.a"
+    "/usr/local/lib/libdataStructure_lib.a"
+    "/usr/local/lib/libmrcProfiler_lib.a"
+    "/usr/local/lib/libprofiler_lib.a"
+    "/usr/local/lib/libtraceAnalyzer_lib.a"
+    "/usr/local/lib/libtraceReader_lib.a"
+    "/usr/local/lib/libutils_lib.a"
+)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 find_package(GLib "2.40" REQUIRED)
@@ -47,5 +55,5 @@ add_executable(cacheSimulator
 target_include_directories(cacheSimulator PRIVATE src .)
 
 target_link_libraries(
-  cacheSimulator PUBLIC libCacheSim onnxruntime m ${GLib_LIBRARY} ${ZSTD_LIBRARIES}
+    cacheSimulator PUBLIC cachesim_libs onnxruntime m ${GLib_LIBRARY} ${ZSTD_LIBRARIES}
 )
