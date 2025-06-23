@@ -120,6 +120,7 @@ void ChainedCache::EndIteration(const options& o) {
         next->EndIteration(o);
 }
 void ChainedCache::SetupIteration(const options& o, bool last_iteration) {
+    admission_treshold = o.flash_admission_treshold;
     tmp = clone_cache(self);
     auto params = (common::CustomParams*)self->eviction_params;
     auto tmp_params = (common::CustomParams*)tmp->eviction_params;
@@ -163,6 +164,7 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     for (size_t i = 0; i < hit.size(); ++i) {
         nlohmann::json j;
         j["layer"] = depth;
+        j["admission_treshold"] = admission_treshold;
         j["algorithm"] = algorithm;
         j["hit"] = hit[i];
         j["req"] = req[i];
