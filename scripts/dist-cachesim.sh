@@ -41,7 +41,7 @@ while IFS= read -r link; do
     min_dram=$(( gb+1 ))
 
     for cache_size in "${relative_cache_sizes[@]}"; do
-        echo "shell:1:$min_dram:1:~/OptimalClockOffline/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size --ignore-obj-size -d ignore_obj_size,$algorithm$add_desc" >> $task_out
-        echo "shell:1:$min_dram:1:~/OptimalClockOffline/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size -d $algorithm$add_desc" >> $task_out
+        echo "shell:1:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size --ignore-obj-size -d ignore_obj_size,$algorithm$add_desc" >> $task_out
+        echo "shell:1:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size -d $algorithm$add_desc" >> $task_out
     done
 done < "$traces_txt"
