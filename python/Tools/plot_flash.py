@@ -189,6 +189,7 @@ def WriteIndividual(md, html, add_desc: str, df: pd.DataFrame):
                             "Flash Hit",
                             "DRAM Hit",
                             "Write",
+                            "JSON File",
                         ]
                     ],
                     headers="keys",
@@ -228,6 +229,7 @@ def WriteIndividualReduction(md, html, df: pd.DataFrame):
                             "Miss Reduction",
                             "Promotion Reduction",
                             "Flash Write Reduction",
+                            "JSON File",
                         ]
                     ],
                     headers=[
@@ -259,8 +261,8 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         offline_clock = GetOfflineClockResult(
             [f for f in files if "offline-clock" in f]
         )
-        fifo = GetOtherResult([f for f in files if "fifo" in f], "FIFO")
-        lru = GetOtherResult([f for f in files if "lru" in f], "LRU")
+        fifo = GetOtherResult(files, "fifo", "FIFO")
+        lru = GetOtherResult(files, "lru", "LRU")
         combined = pd.concat([offline_clock, fifo, lru])
         # pprint(combined)
         # combined = (

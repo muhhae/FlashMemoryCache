@@ -207,7 +207,7 @@ def GetOfflineClockResult(paths: List[str]):
     return pd.DataFrame(tmp)
 
 
-def GetOtherResult(paths: List[str], name: str):
+def GetOtherResult(paths: List[str], real_name, name: str):
     tmp = []
     for file in paths:
         if Path(file).stat().st_size == 0:
@@ -215,5 +215,8 @@ def GetOtherResult(paths: List[str], name: str):
         f = open(file, "r")
         j = json.load(f)
         f.close()
-        tmp.append(ProcessResultJSON(j["results"][0], name, file))
+        r = ProcessResultJSON(j["results"][0], name, file)
+        if r["Algorithm"] != real_name:
+            continue
+        tmp.append(r)
     return pd.DataFrame(tmp)
