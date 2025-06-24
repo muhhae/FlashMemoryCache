@@ -124,37 +124,74 @@ def WriteMeanReduction(md, html, df: pd.DataFrame):
         )
 
 
-def WriteIndividual(md, html, df: pd.DataFrame):
-    Write(md, html, "# Individual Result  \n")
-    for s in df["Cache Size"].unique():
+def WriteIndividual(md, html, add_desc: str, df: pd.DataFrame):
+    Write(md, html, f"# Individual Result {add_desc} \n")
+    for s in sorted(df["Cache Size"].unique()):
         Write(md, html, f"## {s}  \n")
         for t in df["Trace"].unique():
-            Write(md, html, f"### {Path(t).stem}  \n")
+            Write(md, html, f"### {t}  \n")
             data = df.query("`Cache Size` == @s and `Trace` == @t").sort_values(
-                by="Flash Write"
+                by="Write"
             )
-            fig = Scatter(
-                data,
-                x="Flash Write",
-                y="Miss Ratio",
-                color="Model",
-                symbol="Model",
+            WriteFig(
+                md,
+                html,
+                Scatter(
+                    data,
+                    x="Write",
+                    y="Overall Miss Ratio",
+                    color="Algorithm",
+                    symbol="Algorithm",
+                ),
             )
-            WriteFig(md, html, fig)
-            fig = CreateFlashWriteComposition(data)
-            WriteFig(md, html, fig)
+            WriteFig(
+                md,
+                html,
+                Scatter(
+                    data,
+                    x="Write",
+                    y="Flash Miss Ratio",
+                    color="Algorithm",
+                    symbol="Algorithm",
+                ),
+            )
+            WriteFig(
+                md,
+                html,
+                VerticalCompositionBar(
+                    data,
+                    X="Algorithm",
+                    Ys=[
+                        "Inserted",
+                        "Reinserted",
+                    ],
+                    title="Flash Write (Inserted + Reinserted) by Algorithm",
+                    yaxis_title="Flash Write",
+                    xaxis_title="Algorithm",
+                    mode="stack",
+                ),
+            )
             Write(
                 md,
                 html,
                 tabulate(
-                    data[["Model", "Miss Ratio", "Miss", "Promotion", "Flash Write"]],
-                    headers=[
-                        "Algorithm",
-                        "Miss Ratio",
-                        "Cache Miss",
-                        "Reinsertion",
-                        "Flash Write",
+                    data[
+                        [
+                            "Algorithm",
+                            "Flash Admission Treshold",
+                            "Overall Request",
+                            "Flash Request",
+                            "DRAM Request",
+                            "Overall Miss Ratio",
+                            "Flash Miss Ratio",
+                            "DRAM Miss Ratio",
+                            "Overall Hit",
+                            "Flash Hit",
+                            "DRAM Hit",
+                            "Write",
+                        ]
                     ],
+                    headers="keys",
                     tablefmt="html",
                     showindex="never",
                     intfmt=",",
@@ -252,7 +289,6 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
 
     pprint(combined)
     pprint(combined.columns)
-    exit(1)
 
     os.makedirs("../../docs/", exist_ok=True)
     os.makedirs("../../results/", exist_ok=True)
@@ -260,13 +296,19 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
     html = open(f"../../docs/{title}.html", "w")
     md = open(f"../../results/{title}.md", "w")
 
-    WriteMean(md, html, combined)
-    WriteIndividual(md, html, combined)
+    # WriteMean(md, html, combined)
+    for t in sorted(combined["Flash Admission Treshold"].unique()):
+        WriteIndividual(
+            md,
+            html,
+            f"Flash Admission Treshold: {t}",
+            combined.query("`Flash Admission Treshold` == @t"),
+        )
 
     # WriteMeanReduction(md, html, combined)
     # WriteIndividualReduction(md, html, combined)
 
-    # WriteHTML(html)
+    WriteHTML(html)
 
 
 def main():

@@ -18,8 +18,8 @@ def Write(md: T.TextIO, html: T.TextIO, content: str):
 
 def WriteFig(md: T.TextIO, html: T.TextIO, fig):
     global g_html_content
-    md.write(fig.to_image(format="svg").decode("utf-8") + "  \n")
-    g_html_content += fig.to_html(full_html=False, include_plotlyjs=False) + "  \n"
+    md.write(fig.to_image(format="svg").decode("utf-8") + "  \n\n")
+    g_html_content += fig.to_html(full_html=False, include_plotlyjs=False) + "  \n\n"
 
 
 def WriteHTML(html: T.TextIO):
@@ -77,7 +77,9 @@ def WriteHTML(html: T.TextIO):
         left: 0;
         background-color: var(--sidebar-bg);
         overflow-x: hidden;
+        overflow-y: auto;
         padding: 2em 1em 2em 2em;
+        transition: transform 0.3s ease;
     }}
     .sidenav.closed {{
         transform: translateX(-100%);
@@ -90,9 +92,6 @@ def WriteHTML(html: T.TextIO):
         text-decoration: none;
         transition: color 0.2s;
     }}
-    .sidenav li > ul {{
-        padding - left: 20px;
-    }}
     .sidenav h2 {{
         padding: 1px 1px 1px 1px;
         font-size: 20px;
@@ -101,38 +100,42 @@ def WriteHTML(html: T.TextIO):
     }}
     .sidenav li::marker {{
         color: var(--sidebar-marker);
-        display: block;
     }}
     .sidenav a:hover {{
         color: var(--sidebar-link-hover);
     }}
     .sidebar-toggle-btn {{
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1002;
-      background: var(--sidebar-bg);
-      color: var(--sidebar-link);
-      border: 1px solid var(--sidebar-link);
-      border-radius: 4px;
-      padding: 8px 14px;
-      cursor: pointer;
-      font-size: 18px;
-      transition: background 0.2s, color 0.2s;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1002;
+        background: var(--sidebar-bg);
+        color: var(--sidebar-link);
+        border: 1px solid var(--sidebar-link);
+        border-radius: 4px;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 18px;
+        transition: background 0.2s, color 0.2s, left 0.3s ease;
     }}
     .sidebar-toggle-btn:hover {{
-      background: var(--sidebar-link-hover);
-      color: var(--bg-color);
+        background: var(--sidebar-link-hover);
+        color: var(--bg-color);
     }}
     .sidenav.closed ~ .content {{
-      margin-left: 0;
+        margin-left: 0;
+    }}
+    .sidenav.closed ~ .sidebar-toggle-btn {{
+        left: 10px;
     }}
     .content {{
         margin-left: 300px;
         padding: 2em;
         width: 100%;
+        transition: margin-left 0.3s ease;
     }}
-    .markdown-body {{box - sizing: border-box;
+    .markdown-body {{
+        box-sizing: border-box;
         min-width: 200px;
         max-width: 980px;
         margin: 0 auto;
@@ -143,6 +146,37 @@ def WriteHTML(html: T.TextIO):
             padding: 15px;
         }}
     }}
+
+    /* --- NEW CSS FOR COLLAPSIBLE TOC ITEMS --- */
+    .sidenav ul {{
+        list-style-type: none;
+        padding-left: 1em;
+    }}
+    .sidenav li > ul {{
+        display: none; /* Hide sub-menus by default */
+        padding-left: 20px;
+    }}
+    .sidenav li.open > ul {{
+        display: block; /* Show sub-menus when parent is open */
+    }}
+    .sidenav li > a.collapsible {{
+        cursor: pointer;
+        position: relative;
+    }}
+    /* Arrow indicator */
+    .sidenav li > a.collapsible::before {{
+        content: '►';
+        position: absolute;
+        left: -1em;
+        font-size: 0.7em;
+        top: 0.4em;
+        transition: transform 0.2s ease-in-out;
+        color: var(--sidebar-marker);
+    }}
+    .sidenav li.open > a.collapsible::before {{
+        transform: rotate(90deg);
+    }}
+
 </style>
 </head>
 <body>
@@ -154,21 +188,48 @@ def WriteHTML(html: T.TextIO):
 <script>
     const sidebar = document.getElementById('sidebar');
     const btn = document.getElementById('sidebarToggleBtn');
+    const content = document.querySelector('.content');
+
+    // --- Sidebar toggle script ---
     btn.addEventListener('click', function(){{
-      sidebar.classList.toggle('closed');
-      if (sidebar.classList.contains('closed')) {{
-        btn.setAttribute('aria-label', 'Open sidebar');
-      }} else {{
-        btn.setAttribute('aria-label', 'Close sidebar');
-      }}
+        sidebar.classList.toggle('closed');
+        if (sidebar.classList.contains('closed')) {{
+            btn.setAttribute('aria-label', 'Open sidebar');
+        }} else {{
+            btn.setAttribute('aria-label', 'Close sidebar');
+        }}
     }});
+
     if(window.innerWidth <= 700){{
-      sidebar.classList.add('closed');
+        sidebar.classList.add('closed');
     }}
+
+    // --- NEW JAVASCRIPT FOR COLLAPSIBLE TOC ITEMS ---
+    document.querySelectorAll('.sidenav li').forEach(item => {{
+        // Check if this list item has a sub-list (a ul element)
+        const sublist = item.querySelector('ul');
+        if (sublist) {{
+            // Find the first anchor tag to be the click trigger
+            const link = item.querySelector('a');
+            if(link) {{
+                link.classList.add('collapsible'); // Add class for styling
+
+                link.addEventListener('click', (e) => {{
+                    // Prevent default link behavior only if it's a placeholder link
+                    if (link.getAttribute('href') === '#') {{
+                       e.preventDefault();
+                    }}
+                    // Toggle the 'open' class on the parent LI
+                    item.classList.toggle('open');
+                }});
+            }}
+        }}
+    }});
+
 </script>
 <main class="content">
 <article class="markdown-body">
-    {html_body}
+{html_body}
 </article>
 </main>
 </body>
