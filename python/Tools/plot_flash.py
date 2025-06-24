@@ -6,7 +6,7 @@ from pprint import pprint
 
 import pandas as pd
 from common import CalculateReduction, sort_key
-from data_reader import GetBaseResult, GetOtherResult
+from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import Write, WriteFig, WriteHTML
 from plotly.graph_objs import Figure
 from plotly_wrapper import Scatter, VerticalCompositionBar
@@ -210,67 +210,68 @@ def WriteIndividualReduction(md, html, df: pd.DataFrame):
 
 def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=True):
     files = [f for f in files if ("ignore_obj_size" in f) == ignore_obj_size]
-
     combined: pd.DataFrame
-
     cache = f".cache/{title}.pkl"
     os.makedirs(".cache", exist_ok=True)
-
     if use_cache and Path(cache).exists():
         print("Using cached DataFrame")
         with open(cache, "rb") as c:
             combined = pickle.load(c)
     else:
         print("Processing DataFrame")
-        offline_clock = GetBaseResult([f for f in files if "offline-clock" in f])
+        offline_clock = GetOfflineClockResult(
+            [f for f in files if "offline-clock" in f]
+        )
         fifo = GetOtherResult([f for f in files if "fifo" in f], "FIFO")
         lru = GetOtherResult([f for f in files if "lru" in f], "LRU")
-
         combined = pd.concat([offline_clock, fifo, lru])
-        combined["Flash Write"] = combined["Miss"] + combined["Promotion"]
-        combined = (
-            combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-            .apply(CalculateReduction, "FIFO", "Flash Write", include_groups=True)
-            .reset_index(drop=True)
-        )
-        combined = (
-            combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-            .apply(CalculateReduction, "FIFO", "Miss Ratio", include_groups=True)
-            .reset_index(drop=True)
-        )
-        combined = (
-            combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-            .apply(CalculateReduction, "FIFO", "Promotion", include_groups=True)
-            .reset_index(drop=True)
-        )
-        combined = (
-            combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-            .apply(CalculateReduction, "FIFO", "Miss", include_groups=True)
-            .reset_index(drop=True)
-        )
+        # pprint(combined)
+        # combined = (
+        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
+        #     .apply(CalculateReduction, "FIFO", "Flash Write", include_groups=True)
+        #     .reset_index(drop=True)
+        # )
+        # combined = (
+        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
+        #     .apply(CalculateReduction, "FIFO", "Miss Ratio", include_groups=True)
+        #     .reset_index(drop=True)
+        # )
+        # combined = (
+        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
+        #     .apply(CalculateReduction, "FIFO", "Promotion", include_groups=True)
+        #     .reset_index(drop=True)
+        # )
+        # combined = (
+        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
+        #     .apply(CalculateReduction, "FIFO", "Miss", include_groups=True)
+        #     .reset_index(drop=True)
+        # )
 
         with open(cache, "wb") as c:
             pickle.dump(combined, c)
 
     pprint(combined)
+    pprint(combined.columns)
+    exit(1)
 
-    os.makedirs("../../docs/Flash", exist_ok=True)
-    os.makedirs("../../result/Flash", exist_ok=True)
+    os.makedirs("../../docs/", exist_ok=True)
+    os.makedirs("../../results/", exist_ok=True)
 
-    html = open(f"../../docs/Flash/{title}.html", "w")
-    md = open(f"../../result/Flash/{title}.md", "w")
+    html = open(f"../../docs/{title}.html", "w")
+    md = open(f"../../results/{title}.md", "w")
 
     WriteMean(md, html, combined)
-    WriteMeanReduction(md, html, combined)
     WriteIndividual(md, html, combined)
-    WriteIndividualReduction(md, html, combined)
 
-    WriteHTML(html)
+    # WriteMeanReduction(md, html, combined)
+    # WriteIndividualReduction(md, html, combined)
+
+    # WriteHTML(html)
 
 
 def main():
-    log_path = "../../result/log/"
-    files = sorted(glob(os.path.join(log_path, "*flash*.csv")), key=sort_key)
+    log_path = "../../results/log/"
+    files = sorted(glob(os.path.join(log_path, "*.json")), key=sort_key)
 
     use_cache = False
 
