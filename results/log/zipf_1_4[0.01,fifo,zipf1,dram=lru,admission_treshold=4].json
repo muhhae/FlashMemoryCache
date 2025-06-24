@@ -1,0 +1,34 @@
+{
+  "cache_size": 39992920,
+  "results": [
+    {
+      "hit": 55846339,
+      "iteration": 0,
+      "metrics": [
+        {
+          "admission_treshold": 4,
+          "algorithm": "lru",
+          "hit": 22637970,
+          "inserted": 77362030,
+          "layer": 0,
+          "miss_ratio": 0.7736203,
+          "reinserted": 22637970,
+          "req": 100000000
+        },
+        {
+          "admission_treshold": 4,
+          "algorithm": "fifo",
+          "hit": 33208369,
+          "inserted": 41347003,
+          "layer": 1,
+          "miss_ratio": 0.5707407238408817,
+          "reinserted": 0,
+          "req": 77362030
+        }
+      ],
+      "miss_ratio": 0.44153661,
+      "req": 100000000
+    }
+  ],
+  "trace": "zipf_1_4.oracleGeneral"
+}
