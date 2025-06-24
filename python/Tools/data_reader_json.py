@@ -1,11 +1,12 @@
-from os import name
-from pprint import pprint
+import json
+import os
 import re
 from pathlib import Path
-from typing import List
+from pprint import pprint
+from typing import List, cast
 
 import pandas as pd
-from common import OutputLog, extract_desc, ordinal
+from common import OutputLog, extract_desc
 
 
 def GetModelResult(paths: List[str], included_sizes: List[str]):
@@ -14,10 +15,13 @@ def GetModelResult(paths: List[str], included_sizes: List[str]):
         if Path(file).stat().st_size == 0:
             continue
         prefix, desc = extract_desc(file)
-        model = desc[-1]["model"]
+        model = ""
+        if isinstance(desc[-1], dict):
+            model = desc[-1]["model"]
         treshold = 0.5
         if "treshold" in desc[-1]:
-            treshold = desc[-1]["treshold"]
+            if isinstance(desc[-1], dict):
+                treshold = desc[-1]["treshold"]
         size = model.split("_")[-1]
         if size not in included_sizes:
             continue
@@ -35,32 +39,7 @@ def GetModelResult(paths: List[str], included_sizes: List[str]):
                 "Promotion": logs[0].n_promoted,
                 "Miss Ratio": logs[0].miss_ratio,
                 "Trace": prefix,
-                "Cache Size": float(desc[0]),
-                "Ignore Obj Size": desc.count("ignore_obj_size"),
-            }
-        )
-    return pd.DataFrame(tmp)
-
-
-def GetOtherResult(paths: List[str], name: str):
-    tmp = []
-    for file in paths:
-        if Path(file).stat().st_size == 0:
-            continue
-        prefix, desc = extract_desc(file)
-        df = pd.read_csv(file)
-        if df.empty:
-            continue
-        logs = [OutputLog(**row) for row in df.to_dict(orient="records")]
-        tmp.append(
-            {
-                "Model": name,
-                "Promotion": logs[0].n_promoted,
-                "Miss Ratio": logs[0].miss_ratio,
-                "Hit": logs[0].n_hit,
-                "Miss": logs[0].n_miss,
-                "Trace": prefix,
-                "Cache Size": float(desc[0]),
+                "Cache Size": float(cast(str, desc[0])),
                 "Ignore Obj Size": desc.count("ignore_obj_size"),
             }
         )
@@ -162,9 +141,11 @@ def GetModelMetrics(
         top_dist = -1
         treshold = 0.5
         if "top" in desc[-1]:
-            top_dist = float(desc[-1]["top"]) * 100
+            if isinstance(desc[-1], dict):
+                top_dist = float(desc[-1]["top"]) * 100
         if "treshold" in desc[-1]:
-            treshold = float(desc[-1]["treshold"])
+            if isinstance(desc[-1], dict):
+                treshold = float(desc[-1]["treshold"])
         if treshold not in included_treshold:
             continue
         # model = f"{model}_{'spec' if size != 'All' else size}"
@@ -182,30 +163,57 @@ def GetModelMetrics(
     return pd.DataFrame(tmp)
 
 
+def ProcessResultJSON(result: dict, name, file):
+    prefix, desc = extract_desc(file)
+    metrics = result["metrics"]
+    dram = metrics[0]
+    flash = metrics[1]
+    return {
+        "Flash Admission Treshold": flash["admission_treshold"],
+        "DRAM Algorithm": dram["algorithm"],
+        "Algorithm": name,
+        "Inserted": flash["inserted"],
+        "Reinserted": flash["reinserted"],
+        "Write": flash["reinserted"] + flash["inserted"],
+        "Flash Miss Ratio": flash["miss_ratio"],
+        "DRAM Miss Ratio": dram["miss_ratio"],
+        "Overall Miss Ratio": result["miss_ratio"],
+        "Flash Hit": flash["hit"],
+        "DRAM Hit": dram["hit"],
+        "Overall Hit": result["hit"],
+        "Flash Request": flash["req"],
+        "DRAM Request": dram["req"],
+        "Overall Request": result["req"],
+        "Trace": os.path.basename(prefix),
+        "JSON File": os.path.basename(file),
+        "Cache Size": float(cast(str, desc[0])),
+        "Ignore Obj Size": desc.count("ignore_obj_size"),
+    }
+
+
 def GetOfflineClockResult(paths: List[str]):
     tmp = []
     names = ["CLOCK", "Offline CLOCK"]
     for file in paths:
         if Path(file).stat().st_size == 0:
             continue
-        prefix, desc = extract_desc(file)
-        df = pd.read_csv(file)
-        if df.empty:
-            continue
-        logs = [OutputLog(**row) for row in df.to_dict(orient="records")]
-        for i, log in enumerate(logs):
+        f = open(file, "r")
+        j = json.load(f)
+        f.close()
+        for i, result in enumerate(j["results"]):
             if i > 1:
                 break
-            tmp.append(
-                {
-                    "Model": names[i],
-                    "Promotion": log.n_promoted,
-                    "Miss Ratio": log.miss_ratio,
-                    "Trace": prefix,
-                    "Cache Size": float(desc[0]),
-                    "Ignore Obj Size": desc.count("ignore_obj_size"),
-                    "Hit": log.n_hit,
-                    "Miss": log.n_miss,
-                }
-            )
+            tmp.append(ProcessResultJSON(result, names[i], file))
+    return pd.DataFrame(tmp)
+
+
+def GetOtherResult(paths: List[str], name: str):
+    tmp = []
+    for file in paths:
+        if Path(file).stat().st_size == 0:
+            continue
+        f = open(file, "r")
+        j = json.load(f)
+        f.close()
+        tmp.append(ProcessResultJSON(j["results"][0], name, file))
     return pd.DataFrame(tmp)
