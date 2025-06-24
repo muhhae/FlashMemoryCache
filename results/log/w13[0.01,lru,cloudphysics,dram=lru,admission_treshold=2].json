@@ -1,0 +1,34 @@
+{
+  "cache_size": 2035458688,
+  "results": [
+    {
+      "hit": 23645023,
+      "iteration": 0,
+      "metrics": [
+        {
+          "admission_treshold": 2,
+          "algorithm": "lru",
+          "hit": 2198484,
+          "inserted": 37624393,
+          "layer": 0,
+          "miss_ratio": 0.944793441217218,
+          "reinserted": 2198484,
+          "req": 39822877
+        },
+        {
+          "admission_treshold": 2,
+          "algorithm": "lru",
+          "hit": 21446539,
+          "inserted": 10653702,
+          "layer": 1,
+          "miss_ratio": 0.4299831229170926,
+          "reinserted": 21423465,
+          "req": 37624393
+        }
+      ],
+      "miss_ratio": 0.406245234366166,
+      "req": 39822877
+    }
+  ],
+  "trace": "w13.oracleGeneral.bin.zst"
+}
