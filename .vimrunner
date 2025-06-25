@@ -1,27 +1,30 @@
-: [ BUILD ]; cd build && cmake .. && make && ./cacheSimulator -h
-: [ CLEAN BUILD ]; rm -rf build && mkdir build && cd build && cmake .. && make && ./cacheSimulator -h
+: [ BUILD AND TEST ]; cd build && cmake .. && make && ctest
+: [ CLEAN BUILD AND TEST ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest
 : ---
-: [ CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=clock" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
-: [ CLOCK without DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=clock"
-: [ CLOCK with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
+: [ BUILD AND TEST VERBOSE ]; cd build && cmake .. && make && ctest --output-on-failure
+: [ CLEAN BUILD AND TEST VERBOSE ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest --output-on-failure
 : ---
-: [ OFFLINE-CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=offline-clock" && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=offline-clock" "dram=lru"
-: [ OFFLINE-CLOCK without DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=offline-clock"
-: [ OFFLINE-CLOCK with DRAM treshold=1]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 1 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=1"
-: [ OFFLINE-CLOCK with DRAM treshold=2]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 2 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=2"
-: [ OFFLINE-CLOCK with DRAM treshold=4]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 4 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=4"
-: [ OFFLINE-CLOCK with DRAM treshold=8]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 8 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=8"
+: [ CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
+: [ CLOCK without DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock"
+: [ CLOCK with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
 : ---
-: [ FIFO without and with DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=fifo" && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=fifo" "dram=lru"
-: [ FIFO without DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=fifo"
-: [ FIFO with DRAM treshold=1]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 1 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=1"
-: [ FIFO with DRAM treshold=2]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 2 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=2"
-: [ FIFO with DRAM treshold=4]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 4 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=4"
-: [ FIFO with DRAM treshold=8]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 8 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=8"
+: [ OFFLINE-CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=offline-clock" && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=offline-clock" "dram=lru"
+: [ OFFLINE-CLOCK without DRAM ]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=offline-clock"
+: [ OFFLINE-CLOCK with DRAM treshold=1]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 1 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=1"
+: [ OFFLINE-CLOCK with DRAM treshold=2]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 2 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=2"
+: [ OFFLINE-CLOCK with DRAM treshold=4]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 4 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=4"
+: [ OFFLINE-CLOCK with DRAM treshold=8]; cd build && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 8 -d "ignore-obj-size" "algo=offline-clock" "dram=lru" "admission_treshold=8"
 : ---
-: [ LRU without and with DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=lru" "dram=lru" && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -d "ignore-obj-size" "algo=lru" "dram=lru"
-: [ LRU without DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral -d "ignore-obj-size" "algo=lru"
-: [ LRU with DRAM treshold=1]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 1 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=1"
-: [ LRU with DRAM treshold=2]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 2 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=2"
-: [ LRU with DRAM treshold=4]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 4 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=4"
-: [ LRU with DRAM treshold=8]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/small_zipf.oracleGeneral --dram -s 8 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=8"
+: [ FIFO without and with DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=fifo" && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=fifo" "dram=lru"
+: [ FIFO without DRAM ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=fifo"
+: [ FIFO with DRAM treshold=1]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 1 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=1"
+: [ FIFO with DRAM treshold=2]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 2 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=2"
+: [ FIFO with DRAM treshold=4]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 4 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=4"
+: [ FIFO with DRAM treshold=8]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 8 -d "ignore-obj-size" "algo=fifo" "dram=lru" "admission_treshold=8"
+: ---
+: [ LRU without and with DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=lru" "dram=lru" && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=lru" "dram=lru"
+: [ LRU without DRAM ]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=lru"
+: [ LRU with DRAM treshold=1]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 1 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=1"
+: [ LRU with DRAM treshold=2]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 2 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=2"
+: [ LRU with DRAM treshold=4]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 4 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=4"
+: [ LRU with DRAM treshold=8]; cd build && ./cacheSimulator -a lru -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -s 8 -d "ignore-obj-size" "algo=lru" "dram=lru" "admission_treshold=8"

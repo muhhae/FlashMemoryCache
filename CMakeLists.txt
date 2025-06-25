@@ -42,9 +42,10 @@ target_link_libraries(cachesim_libs INTERFACE
     ${ZSTD_LIBRARIES}
 )
 
+add_subdirectory(external/googletest)
+enable_testing()
 
-add_executable(cacheSimulator
-  src/main.cpp
+add_library(my_cache_sim
   src/simulator.cpp
   src/cache.cpp
   src/cache/common.cpp
@@ -55,8 +56,17 @@ add_executable(cacheSimulator
   src/cache/my_clock.cpp
   src/cache/dist_clock.cpp
 )
-target_include_directories(cacheSimulator PRIVATE src .)
 
-target_link_libraries(
-    cacheSimulator PUBLIC cachesim_libs onnxruntime m ${GLib_LIBRARY} ${ZSTD_LIBRARIES}
-)
+add_executable(cacheSimulator src/main.cpp)
+add_executable(run_tests tests/tests.cpp)
+
+target_include_directories(cacheSimulator PRIVATE src .)
+target_include_directories(my_cache_sim PRIVATE src .)
+target_include_directories(run_tests PRIVATE src .)
+
+target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime m ${GLib_LIBRARY} ${ZSTD_LIBRARIES})
+target_link_libraries(cacheSimulator PRIVATE my_cache_sim cachesim_libs onnxruntime m ${GLib_LIBRARY} ${ZSTD_LIBRARIES})
+target_link_libraries(run_tests PRIVATE my_cache_sim gtest_main)
+
+include(GoogleTest)
+gtest_discover_tests(run_tests)
