@@ -85,7 +85,6 @@ class CustomParams : public Clock_params_t {
     void InsertNext(cache_obj_t* obj);
 
    public:
-    std::unordered_map<obj_id_t, request_t*> req_map;
     CustomCache::ChainedCache* next;
 
     std::ofstream datasets;

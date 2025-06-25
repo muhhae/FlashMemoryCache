@@ -94,10 +94,6 @@ void ChainedCache::EndIteration() {
     inserted.push_back(tmp_params->n_inserted);
     reinserted.push_back(tmp_params->n_promoted);
 
-    for (auto& e : tmp_params->req_map) {
-        free(e.second);
-    }
-
     for (auto& e : tmp_params->objs_metadata) {
         e.second.Reset();
         e.second.lifetime_freq = 0;
@@ -188,11 +184,6 @@ bool ChainedCache::Get(const request_t* req) {
     auto params = (common::CustomParams*)tmp->eviction_params;
     auto& data = params->objs_metadata[req->obj_id];
 
-    if (params->req_map[req->obj_id] != NULL) {
-        free(params->req_map[req->obj_id]);
-    }
-    params->req_map[req->obj_id] = clone_request(req);
-
     common::OnAccessTracking(data, params, req);
     params->n_req++;
     if (!tmp->get(tmp, req)) {
@@ -207,11 +198,6 @@ bool ChainedCache::Get(const request_t* req) {
 bool ChainedCache::Find(const request_t* req) {
     auto params = (common::CustomParams*)tmp->eviction_params;
     auto& data = params->objs_metadata[req->obj_id];
-
-    if (params->req_map[req->obj_id] != NULL) {
-        free(params->req_map[req->obj_id]);
-    }
-    params->req_map[req->obj_id] = clone_request(req);
 
     common::OnAccessTracking(data, params, req);
     params->n_req++;
