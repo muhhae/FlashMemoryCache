@@ -2,11 +2,9 @@ import os
 import pickle
 from glob import glob
 from pathlib import Path
-from pprint import pprint
 
 import pandas as pd
-from pandas.io.sql import com
-from common import CalculateReduction, sort_key
+from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import Write, WriteFig, WriteHTML
 from plotly.graph_objs import Figure
