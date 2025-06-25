@@ -5,6 +5,7 @@ from pathlib import Path
 from pprint import pprint
 
 import pandas as pd
+from pandas.io.sql import com
 from common import CalculateReduction, sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import Write, WriteFig, WriteHTML
@@ -124,15 +125,22 @@ def WriteMeanReduction(md, html, df: pd.DataFrame):
         )
 
 
-def WriteIndividual(md, html, add_desc: str, df: pd.DataFrame):
+def WriteIndividual(
+    md,
+    html,
+    df: pd.DataFrame,
+    category: str,
+    add_desc: str = "",
+):
     Write(md, html, f"# Individual Result {add_desc} \n")
     for s in sorted(df["Cache Size"].unique()):
         Write(md, html, f"## {s}  \n")
-        for t in df["Trace"].unique():
+        for t in sorted(df["Trace"].unique()):
             Write(md, html, f"### {t}  \n")
             data = df.query("`Cache Size` == @s and `Trace` == @t").sort_values(
                 by="Write"
             )
+            data = data.drop_duplicates(subset=[category])
             WriteFig(
                 md,
                 html,
@@ -140,8 +148,8 @@ def WriteIndividual(md, html, add_desc: str, df: pd.DataFrame):
                     data,
                     x="Write",
                     y="Overall Miss Ratio",
-                    color="Algorithm",
-                    symbol="Algorithm",
+                    color=category,
+                    symbol=category,
                 ),
             )
             WriteFig(
@@ -151,8 +159,8 @@ def WriteIndividual(md, html, add_desc: str, df: pd.DataFrame):
                     data,
                     x="Write",
                     y="Flash Miss Ratio",
-                    color="Algorithm",
-                    symbol="Algorithm",
+                    color=category,
+                    symbol=category,
                 ),
             )
             WriteFig(
@@ -160,14 +168,30 @@ def WriteIndividual(md, html, add_desc: str, df: pd.DataFrame):
                 html,
                 VerticalCompositionBar(
                     data,
-                    X="Algorithm",
+                    X=category,
                     Ys=[
                         "Inserted",
                         "Reinserted",
                     ],
-                    title="Flash Write (Inserted + Reinserted) by Algorithm",
+                    title=f"Flash Write (Inserted + Reinserted) by {category}",
                     yaxis_title="Flash Write",
-                    xaxis_title="Algorithm",
+                    xaxis_title=category,
+                    mode="stack",
+                ),
+            )
+            WriteFig(
+                md,
+                html,
+                VerticalCompositionBar(
+                    data,
+                    X=category,
+                    Ys=[
+                        "Flash Hit",
+                        "DRAM Hit",
+                    ],
+                    title=f"Flash Hit and DRAM Hit by {category}",
+                    yaxis_title="Hit",
+                    xaxis_title=category,
                     mode="stack",
                 ),
             )
@@ -261,56 +285,45 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         offline_clock = GetOfflineClockResult(
             [f for f in files if "offline-clock" in f]
         )
-        fifo = GetOtherResult(files, "fifo", "FIFO")
-        lru = GetOtherResult(files, "lru", "LRU")
+        fifo = GetOtherResult(files, "FIFO", "fifo")
+        lru = GetOtherResult(files, "LRU", "lru")
         combined = pd.concat([offline_clock, fifo, lru])
-        # pprint(combined)
-        # combined = (
-        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-        #     .apply(CalculateReduction, "FIFO", "Flash Write", include_groups=True)
-        #     .reset_index(drop=True)
-        # )
-        # combined = (
-        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-        #     .apply(CalculateReduction, "FIFO", "Miss Ratio", include_groups=True)
-        #     .reset_index(drop=True)
-        # )
-        # combined = (
-        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-        #     .apply(CalculateReduction, "FIFO", "Promotion", include_groups=True)
-        #     .reset_index(drop=True)
-        # )
-        # combined = (
-        #     combined.groupby(["Ignore Obj Size", "Trace", "Cache Size"])
-        #     .apply(CalculateReduction, "FIFO", "Miss", include_groups=True)
-        #     .reset_index(drop=True)
-        # )
-
+        combined["Flash Admission Treshold"] = combined[
+            "Flash Admission Treshold"
+        ].astype("category")
         with open(cache, "wb") as c:
             pickle.dump(combined, c)
-
-    pprint(combined)
-    pprint(combined.columns)
 
     os.makedirs("../../docs/", exist_ok=True)
     os.makedirs("../../results/", exist_ok=True)
 
-    html = open(f"../../docs/{title}.html", "w")
-    md = open(f"../../results/{title}.md", "w")
-
-    # WriteMean(md, html, combined)
-    for t in sorted(combined["Flash Admission Treshold"].unique()):
+    for t in combined["Flash Admission Treshold"].unique():
+        current_title = f"{title} Admission Threshold: {t}"
+        html = open(f"../../docs/{current_title}.html", "w")
+        md = open(f"../../results/{current_title}.md", "w")
         WriteIndividual(
             md,
             html,
-            f"Flash Admission Treshold: {t}",
             combined.query("`Flash Admission Treshold` == @t"),
+            "Algorithm",
+            current_title,
         )
+        WriteHTML(html)
 
-    # WriteMeanReduction(md, html, combined)
-    # WriteIndividualReduction(md, html, combined)
-
-    WriteHTML(html)
+    for t in combined["Algorithm"].unique():
+        current_title = f"{title} Algorithm: {t}"
+        html = open(f"../../docs/{current_title}.html", "w")
+        md = open(f"../../results/{current_title}.md", "w")
+        WriteIndividual(
+            md,
+            html,
+            combined.query("Algorithm == @t").sort_values(
+                by="Flash Admission Treshold"
+            ),
+            "Flash Admission Treshold",
+            current_title,
+        )
+        WriteHTML(html)
 
 
 def main():

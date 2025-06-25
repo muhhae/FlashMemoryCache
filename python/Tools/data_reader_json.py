@@ -163,7 +163,7 @@ def GetModelMetrics(
     return pd.DataFrame(tmp)
 
 
-def ProcessResultJSON(result: dict, name, file):
+def ProcessResultJSON(result: dict, file):
     prefix, desc = extract_desc(file)
     metrics = result["metrics"]
     dram = metrics[0]
@@ -171,7 +171,7 @@ def ProcessResultJSON(result: dict, name, file):
     return {
         "Flash Admission Treshold": flash["admission_treshold"],
         "DRAM Algorithm": dram["algorithm"],
-        "Algorithm": name,
+        "Algorithm": flash["algorithm"],
         "Inserted": flash["inserted"],
         "Reinserted": flash["reinserted"],
         "Write": flash["reinserted"] + flash["inserted"],
@@ -203,11 +203,15 @@ def GetOfflineClockResult(paths: List[str]):
         for i, result in enumerate(j["results"]):
             if i > 1:
                 break
-            tmp.append(ProcessResultJSON(result, names[i], file))
+            j = ProcessResultJSON(result, file)
+            if j["Algorithm"] != "offline-clock":
+                continue
+            j["Algorithm"] = names[i]
+            tmp.append(j)
     return pd.DataFrame(tmp)
 
 
-def GetOtherResult(paths: List[str], real_name, name: str):
+def GetOtherResult(paths: List[str], plot_name: str, json_name: str):
     tmp = []
     for file in paths:
         if Path(file).stat().st_size == 0:
@@ -215,8 +219,9 @@ def GetOtherResult(paths: List[str], real_name, name: str):
         f = open(file, "r")
         j = json.load(f)
         f.close()
-        r = ProcessResultJSON(j["results"][0], name, file)
-        if r["Algorithm"] != real_name:
+        r = ProcessResultJSON(j["results"][0], file)
+        if r["Algorithm"] != json_name:
             continue
+        r["Algorithm"] = plot_name
         tmp.append(r)
     return pd.DataFrame(tmp)

@@ -1,9 +1,8 @@
 from typing import List
-from pandas.core.base import NoNewAttributesMixin
-import plotly.express as px
-import plotly.graph_objs as go
 
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objs as go
 from plotly.io import templates
 
 templates.default = "plotly_dark"
@@ -67,4 +66,5 @@ def VerticalCompositionBar(
     )
     fig.update_xaxes(showgrid=True, nticks=10)
     fig.update_yaxes(showgrid=True, nticks=10)
+    fig.update_xaxes(type="category")
     return fig
