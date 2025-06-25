@@ -1,0 +1,36 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug DoubleLayer_LRU Test", // A descriptive name for the dropdown
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/run_tests", // <--- IMPORTANT: Path to your test program
+            "args": [
+                "--gtest_filter=SimulatorTEST.DoubleLayer_LRU"
+            ], // <--- Add arguments here
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build", // <--- Set the current working directory
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            // Optional: To auto-build before debugging, uncomment the next line
+            // "preLaunchTask": "build_tests" 
+        }
+    ]
+}
