@@ -2,11 +2,11 @@
   "cache_size": 499917,
   "results": [
     {
-      "hit": 87545964,
+      "hit": 93098357,
       "iteration": 0,
       "metrics": [
         {
-          "admission_treshold": 16,
+          "admission_treshold": 1,
           "algorithm": "lru",
           "hit": 52941335,
           "inserted": 47058665,
@@ -16,25 +16,25 @@
           "req": 100000000
         },
         {
-          "admission_treshold": 16,
+          "admission_treshold": 1,
           "algorithm": "offline-clock",
-          "hit": 34604629,
-          "inserted": 462913,
+          "hit": 40157022,
+          "inserted": 6912199,
           "layer": 1,
-          "miss_ratio": 0.26464915653684606,
-          "reinserted": 0,
+          "miss_ratio": 0.14666040781224887,
+          "reinserted": 8720653,
           "req": 47058665
         }
       ],
-      "miss_ratio": 0.12454036000000002,
+      "miss_ratio": 0.06901643000000002,
       "req": 100000000
     },
     {
-      "hit": 87545964,
+      "hit": 93810164,
       "iteration": 1,
       "metrics": [
         {
-          "admission_treshold": 16,
+          "admission_treshold": 1,
           "algorithm": "lru",
           "hit": 52941335,
           "inserted": 47058665,
@@ -44,17 +44,17 @@
           "req": 100000000
         },
         {
-          "admission_treshold": 16,
+          "admission_treshold": 1,
           "algorithm": "offline-clock",
-          "hit": 34604629,
-          "inserted": 462913,
+          "hit": 40868829,
+          "inserted": 6197018,
           "layer": 1,
-          "miss_ratio": 0.26464915653684606,
-          "reinserted": 0,
+          "miss_ratio": 0.13153445810670572,
+          "reinserted": 4907584,
           "req": 47058665
         }
       ],
-      "miss_ratio": 0.12454036000000002,
+      "miss_ratio": 0.06189836000000004,
       "req": 100000000
     }
   ],
