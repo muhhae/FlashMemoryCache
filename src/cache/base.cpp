@@ -46,7 +46,7 @@ void base::LRUEvict(cache_t* cache, const request_t* req) {
 
     // we can simply call remove_obj_from_list here, but for the best performance,
     // we chose to do it manually
-    // remove_obj_from_list(&params->q_head, &params->q_tail, obj)
+    // remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
 
     params->q_tail = params->q_tail->queue.prev;
     if (likely(params->q_tail != NULL)) {
@@ -57,15 +57,6 @@ void base::LRUEvict(cache_t* cache, const request_t* req) {
         params->q_head = NULL;
     }
 
-#if defined(TRACK_DEMOTION)
-    if (cache->track_demotion)
-        printf(
-            "%ld demote %ld %ld\n",
-            cache->n_req,
-            obj_to_evict->create_time,
-            obj_to_evict->misc.next_access_vtime
-        );
-#endif
     ((common::CustomParams*)cache->eviction_params)->InsertNext(obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);
 }
