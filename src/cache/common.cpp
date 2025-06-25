@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <unordered_map>
 
@@ -167,11 +168,9 @@ float common::RunningMeanNormalize(const float X, RunningMeanData& d) {
     return norm;
 }
 
-void common::CustomParams::InsertNext(obj_id_t obj_id) {
+void common::CustomParams::InsertNext(cache_obj_t* obj) {
     if (next) {
-        next->Admit(req_map[obj_id], objs_metadata[obj_id].clock_freq);
-        free(req_map[obj_id]);
-        req_map.erase(obj_id);
+        next->Admit(obj, objs_metadata[obj->obj_id].clock_freq);
     }
 }
 

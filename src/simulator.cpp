@@ -14,7 +14,6 @@
 #include <fstream>
 #include <future>
 #include <iostream>
-#include <ostream>
 #include <string>
 
 #include "cache.hpp"
@@ -97,6 +96,24 @@ reader_t* SetupReader(const options& o, std::filesystem::path trace_path) {
     return open_trace(trace_path.c_str(), trace_type, &reader_init_param);
 }
 
+nlohmann::json SimulationResults(CustomCache::ChainedCache* Cache) {
+    nlohmann::json output_json;
+    Cache->Print(output_json["results"], 0);
+    for (size_t i = 0; i < output_json["results"].size(); ++i) {
+        auto& metrics = output_json["results"][i]["metrics"];
+        uint64_t overall_hit = 0;
+        uint64_t overall_req = metrics[0]["req"];
+        for (size_t j = 0; j < metrics.size(); ++j) {
+            overall_hit += (uint64_t)metrics[j]["hit"];
+        }
+        double overall_miss_ratio = 1 - (double)overall_hit / overall_req;
+        output_json["results"][i]["hit"] = overall_hit;
+        output_json["results"][i]["req"] = overall_req;
+        output_json["results"][i]["miss_ratio"] = overall_miss_ratio;
+    }
+    return output_json;
+}
+
 void Simulate(
     uint64_t cache_size,
     const std::filesystem::path trace_path,
@@ -119,43 +136,35 @@ void Simulate(
     reader_t* reader = SetupReader(o, trace_path);
     request_t* req = new_request();
 
-    CustomCache::ChainedCache Flash =
-        CustomCache::ChainedCache(o.algorithm, cache_size, NULL, o, dataset_path);
-    CustomCache::ChainedCache DRAM =
-        CustomCache::ChainedCache("lru", cache_size / 100, &Flash, o, dataset_path);
+    CustomCache::ChainedCache Flash = CustomCache::ChainedCache(
+        o.algorithm, cache_size, NULL, dataset_path, o.flash_admission_treshold, o.generate_datasets
+    );
+    CustomCache::ChainedCache DRAM = CustomCache::ChainedCache(
+        "lru",
+        cache_size / 100,
+        &Flash,
+        dataset_path,
+        o.flash_admission_treshold,
+        o.generate_datasets
+    );
 
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
     for (size_t i = 0; i < o.max_iteration; ++i) {
-        Cache->SetupIteration(o, i == o.max_iteration - 1);
+        Cache->SetupIteration(i == o.max_iteration - 1 && o.generate_datasets);
         while (read_one_req(reader, req) == 0) {
             Cache->Get(req);
         }
-        Cache->EndIteration(o);
+        Cache->EndIteration();
         reset_reader(reader);
     }
 
-    nlohmann::json output_json;
-
+    auto output_json = SimulationResults(Cache);
     output_json["trace"] = std::filesystem::path(trace_path).filename();
     output_json["cache_size"] = cache_size;
-
-    Cache->Print(output_json["results"], 0);
-    for (size_t i = 0; i < output_json["results"].size(); ++i) {
-        auto& metrics = output_json["results"][i]["metrics"];
-        uint64_t overall_hit = 0;
-        uint64_t overall_req = metrics[0]["req"];
-        for (size_t j = 0; j < metrics.size(); ++j) {
-            overall_hit += (uint64_t)metrics[j]["hit"];
-        }
-        double overall_miss_ratio = 1 - (double)overall_hit / overall_req;
-        output_json["results"][i]["hit"] = overall_hit;
-        output_json["results"][i]["req"] = overall_req;
-        output_json["results"][i]["miss_ratio"] = overall_miss_ratio;
-    }
-
     std::cout << output_json.dump(2) << "\n";
     std::ofstream(output_path) << output_json.dump(2);
 
+    Cache->CleanUp();
     free_request(req);
     close_reader(reader);
 }

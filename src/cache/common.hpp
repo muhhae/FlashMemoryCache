@@ -82,7 +82,7 @@ class CustomParams : public Clock_params_t {
         *(Clock_params_t*)this = base;
     }
     void GlobalTracking(const ObjMetadata& data);
-    void InsertNext(obj_id_t obj_id);
+    void InsertNext(cache_obj_t* obj);
 
    public:
     std::unordered_map<obj_id_t, request_t*> req_map;

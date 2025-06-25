@@ -1,5 +1,6 @@
 #pragma once
 #include <libCacheSim/cache.h>
+#include <libCacheSim/cacheObj.h>
 #include <libCacheSim/request.h>
 #include <sys/types.h>
 
@@ -8,7 +9,7 @@
 #include <vector>
 
 #include "lib/json.hpp"
-#include "simulator.hpp"
+#include "options.hpp"
 
 namespace CustomCache {
 class ChainedCache {
@@ -17,16 +18,17 @@ class ChainedCache {
         std::string Algorithm,
         uint64_t cache_size,
         ChainedCache* next,
-        const options& o,
-        std::filesystem::path datasets
+        std::filesystem::path datasets,
+        uint64_t admission_treshold,
+        bool generate_datasets
     );
     bool Get(const request_t* req);
     bool Find(const request_t* req);
-    void SetupIteration(const options& o, bool last_iteration);
-    void EndIteration(const options& o);
-    void Admit(const request_t* req, uint64_t freq);
+    void SetupIteration(bool generate_datasets);
+    void EndIteration();
+    void Admit(cache_obj_t* obj, uint64_t freq);
     void Print(nlohmann::json& output_json, uint64_t depth);
-    void CleanUp(const options& o);
+    void CleanUp();
 
    public:
     cache_t* self;

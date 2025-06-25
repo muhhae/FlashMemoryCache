@@ -2,6 +2,7 @@
 
 #include <config.h>
 #include <libCacheSim/cache.h>
+#include <libCacheSim/cacheObj.h>
 #include <libCacheSim/request.h>
 
 #include <cstddef>
@@ -9,6 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
+#include <string>
 
 #include "cache/base.hpp"
 #include "cache/common.hpp"
@@ -18,7 +20,6 @@
 #include "cache/my_clock.hpp"
 #include "cache/offline_clock.hpp"
 #include "lib/json.hpp"
-#include "simulator.hpp"
 
 std::function<
     cache_t*(const common_cache_params_t ccache_params, const char* cache_specific_params)>
@@ -68,26 +69,23 @@ ChainedCache::ChainedCache(
     std::string Algorithm,
     uint64_t cache_size,
     ChainedCache* next,
-    const options& o,
-    std::filesystem::path datasets
+    std::filesystem::path datasets,
+    uint64_t admission_treshold,
+    bool generate_datasets
 )
     : next(next), algorithm(Algorithm) {
     self = AlgoSelector(Algorithm)({.cache_size = cache_size}, NULL);
     auto params = (common::CustomParams*)self->eviction_params;
-    admission_treshold = o.flash_admission_treshold;
-    if (o.generate_datasets) {
+    admission_treshold = admission_treshold;
+    if (generate_datasets) {
         params->datasets = std::ofstream(datasets);
         for (size_t i = 0; i < common::datasets_columns.size(); i++) {
             params->datasets << common::datasets_columns[i]
                              << (i == common::datasets_columns.size() - 1 ? '\n' : ',');
         }
     }
-    if (o.algorithm == "ML") {
-        ((mlclock::MLClockParam*)params)->LoadModel(o.ml_model);
-        ((mlclock::MLClockParam*)params)->features_name = o.features_name;
-    }
 }
-void ChainedCache::EndIteration(const options& o) {
+void ChainedCache::EndIteration() {
     auto params = (common::CustomParams*)self->eviction_params;
     auto tmp_params = (common::CustomParams*)tmp->eviction_params;
 
@@ -117,10 +115,9 @@ void ChainedCache::EndIteration(const options& o) {
     }
     tmp->cache_free(tmp);
     if (next)
-        next->EndIteration(o);
+        next->EndIteration();
 }
-void ChainedCache::SetupIteration(const options& o, bool last_iteration) {
-    admission_treshold = o.flash_admission_treshold;
+void ChainedCache::SetupIteration(bool generate_datasets) {
     tmp = clone_cache(self);
     auto params = (common::CustomParams*)self->eviction_params;
     auto tmp_params = (common::CustomParams*)tmp->eviction_params;
@@ -144,21 +141,21 @@ void ChainedCache::SetupIteration(const options& o, bool last_iteration) {
     tmp_params->n_promoted = 0;
     tmp_params->n_inserted = 0;
 
-    if (last_iteration) {
-        tmp_params->generate_datasets = o.generate_datasets;
-    }
+    tmp_params->generate_datasets = generate_datasets;
 
     if (next) {
         ((common::CustomParams*)tmp->eviction_params)->next = next;
-        next->SetupIteration(o, last_iteration);
+        next->SetupIteration(generate_datasets);
     }
 }
-void ChainedCache::Admit(const request_t* req, uint64_t freq) {
-    if (freq >= admission_treshold) {
-        auto hit = tmp->get(tmp, req);
-        if (!hit)
-            ((common::CustomParams*)tmp->eviction_params)->n_inserted++;
-    }
+void ChainedCache::Admit(cache_obj_t* obj, uint64_t freq) {
+    if (freq < admission_treshold)
+        return;
+    request_t* req = new_request();
+    copy_cache_obj_to_request(req, obj);
+    if (!tmp->get(tmp, req))
+        ((common::CustomParams*)tmp->eviction_params)->n_inserted++;
+    free_request(req);
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     for (size_t i = 0; i < hit.size(); ++i) {
@@ -177,15 +174,15 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     if (next)
         next->Print(output_json, ++depth);
 }
-void ChainedCache::CleanUp(const options& o) {
+void ChainedCache::CleanUp() {
     auto params = (common::CustomParams*)self->eviction_params;
     params->objs_metadata.clear();
     self->cache_free(self);
 
-    if (o.generate_datasets)
+    if (params->datasets.is_open())
         params->datasets.close();
     if (next)
-        next->CleanUp(o);
+        next->CleanUp();
 }
 bool ChainedCache::Get(const request_t* req) {
     auto params = (common::CustomParams*)tmp->eviction_params;

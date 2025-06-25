@@ -66,7 +66,7 @@ void base::LRUEvict(cache_t* cache, const request_t* req) {
             obj_to_evict->misc.next_access_vtime
         );
 #endif
-    ((common::CustomParams*)cache->eviction_params)->InsertNext(obj_to_evict->obj_id);
+    ((common::CustomParams*)cache->eviction_params)->InsertNext(obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);
 }
 
