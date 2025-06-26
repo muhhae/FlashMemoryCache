@@ -7,7 +7,7 @@ if [[ -z $input_file ]]; then
 fi
 
 output_dir="$2"
-if [[ -z $input_file ]]; then
+if [[ -z $output_dir ]]; then
     echo "[arg] output_file required"
     exit 1
 fi
