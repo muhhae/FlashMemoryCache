@@ -4,7 +4,7 @@
 : [ BUILD AND TEST VERBOSE ]; cd build && cmake .. && make && ctest --output-on-failure
 : [ CLEAN BUILD AND TEST VERBOSE ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest --output-on-failure
 : ---
-: [ MEM USAGE OFFLINE-CLOCK without and with DRAM ]; cd build && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
+: [ MEM USAGE OFFLINE-CLOCK without and with DRAM ]; cd build && timem ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
 : [ MEM USAGE CLOCK without and with DRAM ]; cd build && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
 : ---
 : [ CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
