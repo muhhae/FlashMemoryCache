@@ -5,17 +5,21 @@
 #include <libCacheSim/cacheObj.h>
 #include <libCacheSim/request.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
 #include <string>
+#include <utility>
 
-#include "cache/base.hpp"
+#include "cache/clock.hpp"
 #include "cache/common.hpp"
 #include "cache/decayed_clock.hpp"
 #include "cache/dist_clock.hpp"
+#include "cache/fifo.hpp"
+#include "cache/lru.hpp"
 #include "cache/ml_clock.hpp"
 #include "cache/my_clock.hpp"
 #include "cache/offline_clock.hpp"
@@ -28,7 +32,7 @@ AlgoSelector(std::string algorithm) {
         return decayed::DecayedClockInit;
     }
     if (algorithm == "fifo") {
-        return base::FIFOInit;
+        return fifo::FIFOInit;
     }
     if (algorithm == "offline-clock") {
         return cclock::OfflineClockInit;
@@ -37,10 +41,10 @@ AlgoSelector(std::string algorithm) {
         return distclock::DistClockInit;
     }
     if (algorithm == "lru") {
-        return base::LRUInit;
+        return lru::LRUInit;
     }
     if (algorithm == "clock") {
-        return base::ClockInit;
+        return bclock::ClockInit;
     }
     if (algorithm == "my") {
         return myclock::MyClockInit;
@@ -85,49 +89,23 @@ ChainedCache::ChainedCache(
         }
     }
 }
-void ChainedCache::EndIteration() {
-    auto params = (common::CustomParams*)self->eviction_params;
-    auto tmp_params = (common::CustomParams*)tmp->eviction_params;
-
-    req.push_back(tmp_params->n_req);
-    hit.push_back(tmp_params->n_hit);
-    inserted.push_back(tmp_params->n_inserted);
-    reinserted.push_back(tmp_params->n_promoted);
-
-    for (auto& e : tmp_params->objs_metadata) {
-        e.second.Reset();
-        e.second.lifetime_freq = 0;
-        e.second.last_promotion = 0;
-    }
-    std::swap(tmp_params->objs_metadata, params->objs_metadata);
-    std::swap(tmp_params->datasets, params->datasets);
-    if (isML) {
-        auto tmp_ml_param = (mlclock::MLClockParam*)tmp_params;
-        auto ml_param = (mlclock::MLClockParam*)params;
-        std::swap(tmp_ml_param->session, ml_param->session);
-        std::swap(tmp_ml_param->session_options, ml_param->session_options);
-        std::swap(tmp_ml_param->env, ml_param->env);
-        std::swap(tmp_ml_param->features_name, ml_param->features_name);
-    }
-    tmp->cache_free(tmp);
-    if (next)
-        next->EndIteration();
-}
 void ChainedCache::SetupIteration(bool generate_datasets) {
     tmp = clone_cache(self);
+
     auto params = (common::CustomParams*)self->eviction_params;
     auto tmp_params = (common::CustomParams*)tmp->eviction_params;
 
-    std::swap(tmp_params->objs_metadata, params->objs_metadata);
-    std::swap(tmp_params->datasets, params->datasets);
+    tmp_params->objs_metadata = std::move(params->objs_metadata);
+    tmp_params->datasets = std::move(params->datasets);
 
     if (isML) {
         auto tmp_ml_param = (mlclock::MLClockParam*)tmp_params;
         auto ml_param = (mlclock::MLClockParam*)params;
-        std::swap(tmp_ml_param->session, ml_param->session);
-        std::swap(tmp_ml_param->session_options, ml_param->session_options);
-        std::swap(tmp_ml_param->env, ml_param->env);
-        std::swap(tmp_ml_param->features_name, ml_param->features_name);
+
+        tmp_ml_param->session = std::move(ml_param->session);
+        tmp_ml_param->session_options = std::move(ml_param->session_options);
+        tmp_ml_param->env = std::move(ml_param->env);
+        tmp_ml_param->features_name = std::move(ml_param->features_name);
 
         tmp_ml_param->treshold = ml_param->treshold;
     }
@@ -143,6 +121,35 @@ void ChainedCache::SetupIteration(bool generate_datasets) {
         ((common::CustomParams*)tmp->eviction_params)->next = next;
         next->SetupIteration(generate_datasets);
     }
+}
+void ChainedCache::EndIteration() {
+    auto params = (common::CustomParams*)self->eviction_params;
+    auto tmp_params = (common::CustomParams*)tmp->eviction_params;
+
+    req.push_back(tmp_params->n_req);
+    hit.push_back(tmp_params->n_hit);
+    inserted.push_back(tmp_params->n_inserted);
+    reinserted.push_back(tmp_params->n_promoted);
+
+    for (auto& e : tmp_params->objs_metadata) {
+        e.second.Reset();
+        e.second.lifetime_freq = 0;
+        e.second.last_promotion = 0;
+    }
+
+    params->objs_metadata = std::move(tmp_params->objs_metadata);
+    params->datasets = std::move(tmp_params->datasets);
+    if (isML) {
+        auto tmp_ml_param = (mlclock::MLClockParam*)tmp_params;
+        auto ml_param = (mlclock::MLClockParam*)params;
+        ml_param->session = std::move(tmp_ml_param->session);
+        ml_param->session_options = std::move(tmp_ml_param->session_options);
+        ml_param->env = std::move(tmp_ml_param->env);
+        ml_param->features_name = std::move(tmp_ml_param->features_name);
+    }
+    tmp->cache_free(tmp);
+    if (next)
+        next->EndIteration();
 }
 void ChainedCache::Admit(cache_obj_t* obj, uint64_t freq) {
     if (freq < admission_treshold)

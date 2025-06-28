@@ -50,7 +50,9 @@ add_library(my_cache_sim
   src/cache.cpp
   src/cache/common.cpp
   src/cache/offline_clock.cpp
-  src/cache/base.cpp
+  src/cache/clock.cpp
+  src/cache/lru.cpp
+  src/cache/fifo.cpp
   src/cache/ml_clock.cpp
   src/cache/decayed_clock.cpp
   src/cache/my_clock.cpp
