@@ -2,6 +2,7 @@ import os
 import pickle
 from glob import glob
 from pathlib import Path
+from pprint import pprint
 
 import pandas as pd
 from common import sort_key
@@ -327,6 +328,16 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
 def main():
     log_path = "../../results/log/"
     files = sorted(glob(os.path.join(log_path, "*.json")), key=sort_key)
+
+    traces = []
+    with open("../../trace/current_trace.txt", "r") as f:
+        traces = f.readlines()
+
+    traces = [os.path.basename(t).strip() for t in traces]
+    traces = [t for t in traces if t != ""]
+    traces = [t[: t.find(".oracleGeneral")] for t in traces]
+
+    files = [f for f in files if os.path.basename(f[: f.find("[")]) in traces]
 
     use_cache = False
 
