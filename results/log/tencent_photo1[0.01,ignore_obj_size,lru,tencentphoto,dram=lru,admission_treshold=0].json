@@ -1,0 +1,34 @@
+{
+  "cache_size": 5295270,
+  "results": [
+    {
+      "hit": 1614338236,
+      "iteration": 0,
+      "metrics": [
+        {
+          "admission_treshold": 1,
+          "algorithm": "lru",
+          "hit": 388641359,
+          "inserted": 2528587281,
+          "layer": 0,
+          "miss_ratio": 0.8667772029689109,
+          "reinserted": 388641359,
+          "req": 2917228640
+        },
+        {
+          "admission_treshold": 1,
+          "algorithm": "lru",
+          "hit": 1225696877,
+          "inserted": 1304522127,
+          "layer": 1,
+          "miss_ratio": 0.5152641610554711,
+          "reinserted": 1224012202,
+          "req": 2528587281
+        }
+      ],
+      "miss_ratio": 0.44661922830978373,
+      "req": 2917228640
+    }
+  ],
+  "trace": "tencent_photo1.oracleGeneral.zst"
+}
