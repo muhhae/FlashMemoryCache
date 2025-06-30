@@ -8,7 +8,7 @@ import pandas as pd
 from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import Write, WriteFig, WriteHTML
-from plotly.graph_objs import Figure
+from plotly.graph_objs import Figure, Trace
 from plotly_wrapper import Scatter, VerticalCompositionBar
 from tabulate import tabulate
 
@@ -140,28 +140,30 @@ def WriteIndividual(
                 by="Write"
             )
             data = data.drop_duplicates(subset=[category])
-            WriteFig(
-                md,
-                html,
-                Scatter(
-                    data,
-                    x="Write",
-                    y="Overall Miss Ratio",
-                    color=category,
-                    symbol=category,
-                ),
-            )
-            WriteFig(
-                md,
-                html,
-                Scatter(
-                    data,
-                    x="Write",
-                    y="Flash Miss Ratio",
-                    color=category,
-                    symbol=category,
-                ),
-            )
+            for y in ["Overall Miss Ratio", "Flash Miss Ratio"]:
+                WriteFig(
+                    md,
+                    html,
+                    Scatter(
+                        data,
+                        x="Write",
+                        y=y,
+                        color=category,
+                        symbol=category,
+                    ),
+                )
+                WriteFig(
+                    md,
+                    html,
+                    Scatter(
+                        data,
+                        include_zero=True,
+                        x="Write",
+                        y=y,
+                        color=category,
+                        symbol=category,
+                    ),
+                )
             WriteFig(
                 md,
                 html,
@@ -330,8 +332,16 @@ def main():
     files = sorted(glob(os.path.join(log_path, "*.json")), key=sort_key)
 
     traces = []
-    with open("../../trace/current_trace.txt", "r") as f:
-        traces = f.readlines()
+    for txt in [
+        "cloudphysics",
+        "zipf1",
+        "wiki_small",
+        "wiki_big",
+        "tencentphoto",
+        "metacdn",
+    ]:
+        with open(f"../../trace/{txt}.txt", "r") as f:
+            traces += f.readlines()
 
     traces = [os.path.basename(t).strip() for t in traces]
     traces = [t for t in traces if t != ""]
@@ -344,6 +354,8 @@ def main():
     Sumz([f for f in files if "zipf1" in f], "Zipf1", use_cache=use_cache)
     Sumz([f for f in files if "cloud" in f], "CloudPhysics", use_cache=use_cache)
     Sumz([f for f in files if "metacdn" in f], "MetaCDN", use_cache=use_cache)
+    Sumz([f for f in files if "wiki" in f], "Wiki", use_cache=use_cache)
+    Sumz([f for f in files if "tencent" in f], "TencentPhotos", use_cache=use_cache)
 
 
 if __name__ == "__main__":

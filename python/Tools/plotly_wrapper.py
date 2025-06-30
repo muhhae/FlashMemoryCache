@@ -8,7 +8,7 @@ from plotly.io import templates
 templates.default = "plotly_dark"
 
 
-def Scatter(df: pd.DataFrame, **kwargs) -> go.Figure:
+def Scatter(df: pd.DataFrame, include_zero: bool = False, **kwargs) -> go.Figure:
     fig = px.scatter(df, **kwargs)
     fig.update_layout(
         font=dict(size=24),
@@ -22,6 +22,9 @@ def Scatter(df: pd.DataFrame, **kwargs) -> go.Figure:
     )
     fig.update_xaxes(showgrid=True, nticks=20)
     fig.update_yaxes(showgrid=True, nticks=20)
+    if include_zero:
+        fig.update_xaxes(rangemode="tozero")
+        fig.update_yaxes(range=[0, 1])
     return fig
 
 
