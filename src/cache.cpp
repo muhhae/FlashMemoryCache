@@ -5,7 +5,6 @@
 #include <libCacheSim/cacheObj.h>
 #include <libCacheSim/request.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -77,10 +76,9 @@ ChainedCache::ChainedCache(
     uint64_t admission_treshold,
     bool generate_datasets
 )
-    : next(next), algorithm(Algorithm) {
+    : next(next), algorithm(Algorithm), admission_treshold(admission_treshold) {
     self = AlgoSelector(Algorithm)({.cache_size = cache_size}, NULL);
     auto params = (common::CustomParams*)self->eviction_params;
-    admission_treshold = admission_treshold;
     if (generate_datasets) {
         params->datasets = std::ofstream(datasets);
         for (size_t i = 0; i < common::datasets_columns.size(); i++) {
