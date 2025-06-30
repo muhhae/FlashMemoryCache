@@ -2,11 +2,11 @@
   "cache_size": 499911,
   "results": [
     {
-      "hit": 91162809,
+      "hit": 91047152,
       "iteration": 0,
       "metrics": [
         {
-          "admission_treshold": 1,
+          "admission_treshold": 2,
           "algorithm": "lru",
           "hit": 52939492,
           "inserted": 47060508,
@@ -16,17 +16,17 @@
           "req": 100000000
         },
         {
-          "admission_treshold": 1,
+          "admission_treshold": 2,
           "algorithm": "fifo",
-          "hit": 38223317,
-          "inserted": 8906898,
+          "hit": 38107660,
+          "inserted": 8019706,
           "layer": 1,
-          "miss_ratio": 0.187783587036502,
+          "miss_ratio": 0.1902412103158767,
           "reinserted": 0,
           "req": 47060508
         }
       ],
-      "miss_ratio": 0.08837191,
+      "miss_ratio": 0.08952848000000002,
       "req": 100000000
     }
   ],
