@@ -132,15 +132,16 @@ def WriteIndividual(
     add_desc: str = "",
 ):
     Write(md, html, f"# Individual Result {add_desc} \n")
-    for s in sorted(df["Cache Size"].unique()):
+    for s in sorted(df["Trace"].unique()):
         Write(md, html, f"## {s}  \n")
-        for t in sorted(df["Trace"].unique()):
-            Write(md, html, f"### {t}  \n")
-            data = df.query("`Cache Size` == @s and `Trace` == @t").sort_values(
+        for t in sorted(df["Cache Size"].unique()):
+            Write(md, html, f"### {t * 100}%  \n")
+            data = df.query("`Cache Size` == @t and `Trace` == @s").sort_values(
                 by="Write"
             )
             data = data.drop_duplicates(subset=[category])
             for y in ["Overall Miss Ratio", "Flash Miss Ratio"]:
+                Write(md, html, f"#### {y}  \n")
                 WriteFig(
                     md,
                     html,
@@ -152,6 +153,7 @@ def WriteIndividual(
                         symbol=category,
                     ),
                 )
+                Write(md, html, f"#### {y} Absolute  \n")
                 WriteFig(
                     md,
                     html,
@@ -164,6 +166,7 @@ def WriteIndividual(
                         symbol=category,
                     ),
                 )
+            Write(md, html, "#### Inserted + Reinserted  \n")
             WriteFig(
                 md,
                 html,
@@ -180,6 +183,7 @@ def WriteIndividual(
                     mode="stack",
                 ),
             )
+            Write(md, html, "#### Flash Hit and DRAM Hit  \n")
             WriteFig(
                 md,
                 html,
@@ -196,6 +200,7 @@ def WriteIndividual(
                     mode="stack",
                 ),
             )
+            Write(md, html, "#### Detail Table  \n")
             Write(
                 md,
                 html,
