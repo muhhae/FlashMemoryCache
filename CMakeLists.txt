@@ -15,6 +15,9 @@ message(
     "glib found? ${GLib_FOUND}, lib = ${GLib_LIBRARY}, header = ${GLib_INCLUDE_DIRS}"
 )
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(TCMALLOC REQUIRED libtcmalloc)
+
 find_package(ZSTD)
 # https://stackoverflow.com/questions/61377055/cannot-find-gflags-gflags-h-while-building-library-osx/61379123#61379123
 include_directories(${ZSTD_INCLUDE_DIR})
@@ -38,8 +41,10 @@ target_link_libraries(cachesim_libs INTERFACE
     "/usr/local/lib/libtraceAnalyzer_lib.a"
     "/usr/local/lib/libtraceReader_lib.a"
     "/usr/local/lib/libutils_lib.a"
-
     ${ZSTD_LIBRARIES}
+    ${TCMALLOC_LIBRARIES}
+    ${GLib_LIBRARY}
+    m
 )
 
 add_subdirectory(external/googletest)
@@ -69,8 +74,8 @@ target_include_directories(cacheSimulator PRIVATE src .)
 target_include_directories(my_cache_sim PRIVATE src .)
 target_include_directories(run_tests PRIVATE src .)
 
-target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime m ${GLib_LIBRARY} ${ZSTD_LIBRARIES})
-target_link_libraries(cacheSimulator PRIVATE my_cache_sim cachesim_libs onnxruntime m ${GLib_LIBRARY} ${ZSTD_LIBRARIES})
+target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime)
+target_link_libraries(cacheSimulator PRIVATE my_cache_sim)
 target_link_libraries(run_tests PRIVATE my_cache_sim gtest_main)
 
 include(GoogleTest)
