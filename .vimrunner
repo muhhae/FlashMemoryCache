@@ -4,8 +4,12 @@
 : [ BUILD AND TEST VERBOSE ]; cd build && cmake .. && make && ctest -VV
 : [ CLEAN BUILD AND TEST VERBOSE ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest -VV
 : ---
+: [ HeapTrack cloudPhysicsIO ]; cd build && heaptrack ./cacheSimulator ../trace/cloudPhysicsIO.oracleGeneral.bin -a offline-clock --dram -s 1 -r 0.1 --ignore-obj-size
+: [ HeapTrack zipf1 ]; cd build && heaptrack ./cacheSimulator ../trace/zipf_1_0.oracleGeneral -a offline-clock --dram -s 1 -r 0.1 --ignore-obj-size
 : [ MEM USAGE OFFLINE-CLOCK without and with DRAM ]; cd build && timem ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
 : [ MEM USAGE CLOCK without and with DRAM ]; cd build && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && timem ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
+: [ MEM USAGE OFFLINE-CLOCK with DRAM zipf1 ]; cd build && timem ./cacheSimulator ../trace/zipf_1_0.oracleGeneral -a offline-clock --dram -s 1 -r 0.1 --ignore-obj-size
+: [ MEM USAGE CLOCK with DRAM zipf1 ]; cd build && timem ./cacheSimulator ../trace/zipf_1_0.oracleGeneral -a clock --dram -s 1 -r 0.1 --ignore-obj-size
 : ---
 : [ CLOCK without and with DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin --dram -d "ignore-obj-size" "algo=clock" "dram=lru"
 : [ CLOCK without DRAM ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin -d "ignore-obj-size" "algo=clock"
