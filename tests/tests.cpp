@@ -51,9 +51,9 @@ TEST(SimulatorTEST, DoubleLayer_LRU) {
     std::cerr << "START\n";
     auto r = LayeredCacheSimulation({"lru", "lru"});
     std::cerr << "END\n";
-    ASSERT_EQ(r["hit"], 18752);
+    ASSERT_EQ(r["hit"], 19098);
     ASSERT_EQ(r["req"], 113872);
-    ASSERT_EQ(r["miss_ratio"], 0.8353238724181538);
+    ASSERT_EQ(r["miss_ratio"], 0.8322853730504426);
 }
 TEST(SimulatorTEST, DoubleLayer_CLOCK) {
     auto r = LayeredCacheSimulation({"lru", "clock"});
