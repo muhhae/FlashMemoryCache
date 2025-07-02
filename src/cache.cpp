@@ -154,13 +154,12 @@ void ChainedCache::EndIteration() {
 void ChainedCache::Admit(cache_obj_t* obj, uint64_t freq) {
     if (freq < admission_treshold)
         return;
-    request_t* req = new_request();
-    copy_cache_obj_to_request(req, obj);
+    request_t req;
+    copy_cache_obj_to_request(&req, obj);
     auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
     auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
-    if (!tmp->get(tmp, req))
+    if (!tmp->get(tmp, &req))
         tmp_additional_cache_data.n_inserted++;
-    free_request(req);
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     for (size_t i = 0; i < hit.size(); ++i) {
