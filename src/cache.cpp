@@ -13,13 +13,12 @@
 #include <string>
 #include <utility>
 
+#include "cache/additional_data.hpp"
 #include "cache/clock.hpp"
-#include "cache/common.hpp"
 #include "cache/decayed_clock.hpp"
 #include "cache/dist_clock.hpp"
 #include "cache/fifo.hpp"
 #include "cache/lru.hpp"
-#include "cache/ml_clock.hpp"
 #include "cache/my_clock.hpp"
 #include "cache/offline_clock.hpp"
 #include "lib/json.hpp"
@@ -78,72 +77,75 @@ ChainedCache::ChainedCache(
 )
     : next(next), algorithm(Algorithm), admission_treshold(admission_treshold) {
     self = AlgoSelector(Algorithm)({.cache_size = cache_size}, NULL);
-    auto params = (common::CustomParams*)self->eviction_params;
+    auto& additional_cache_data =
+        AdditionalData::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(self);
     if (generate_datasets) {
-        params->datasets = std::ofstream(datasets);
-        for (size_t i = 0; i < common::datasets_columns.size(); i++) {
-            params->datasets << common::datasets_columns[i]
-                             << (i == common::datasets_columns.size() - 1 ? '\n' : ',');
+        additional_cache_data.datasets = std::ofstream(datasets);
+        for (size_t i = 0; i < AdditionalData::datasets_columns.size(); i++) {
+            additional_cache_data.datasets
+                << AdditionalData::datasets_columns[i]
+                << (i == AdditionalData::datasets_columns.size() - 1 ? '\n' : ',');
         }
     }
 }
 void ChainedCache::SetupIteration(bool generate_datasets) {
     tmp = clone_cache(self);
 
-    auto params = (common::CustomParams*)self->eviction_params;
-    auto tmp_params = (common::CustomParams*)tmp->eviction_params;
+    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
+    additional_cache_data_storage.TransferOwnership(self, tmp);
 
-    tmp_params->objs_metadata = std::move(params->objs_metadata);
-    tmp_params->datasets = std::move(params->datasets);
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
     if (isML) {
-        auto tmp_ml_param = (mlclock::MLClockParam*)tmp_params;
-        auto ml_param = (mlclock::MLClockParam*)params;
-
-        tmp_ml_param->session = std::move(ml_param->session);
-        tmp_ml_param->session_options = std::move(ml_param->session_options);
-        tmp_ml_param->env = std::move(ml_param->env);
-        tmp_ml_param->features_name = std::move(ml_param->features_name);
-
-        tmp_ml_param->treshold = ml_param->treshold;
+        throw std::runtime_error("ML is currently disabled");
+        // auto tmp_ml_param = (mlclock::MLClockParam*)tmp_params;
+        // auto ml_param = (mlclock::MLClockParam*)params;
+        //
+        // tmp_ml_param->session = std::move(ml_param->session);
+        // tmp_ml_param->session_options = std::move(ml_param->session_options);
+        // tmp_ml_param->env = std::move(ml_param->env);
+        // tmp_ml_param->features_name = std::move(ml_param->features_name);
+        //
+        // tmp_ml_param->treshold = ml_param->treshold;
     }
 
-    tmp_params->n_hit = 0;
-    tmp_params->n_req = 0;
-    tmp_params->n_promoted = 0;
-    tmp_params->n_inserted = 0;
+    tmp_additional_cache_data.n_hit = 0;
+    tmp_additional_cache_data.n_req = 0;
+    tmp_additional_cache_data.n_promoted = 0;
+    tmp_additional_cache_data.n_inserted = 0;
 
-    tmp_params->generate_datasets = generate_datasets;
+    tmp_additional_cache_data.generate_datasets = generate_datasets;
 
     if (next) {
-        ((common::CustomParams*)tmp->eviction_params)->next = next;
+        tmp_additional_cache_data.next = next;
         next->SetupIteration(generate_datasets);
     }
 }
 void ChainedCache::EndIteration() {
-    auto params = (common::CustomParams*)self->eviction_params;
-    auto tmp_params = (common::CustomParams*)tmp->eviction_params;
+    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
-    req.push_back(tmp_params->n_req);
-    hit.push_back(tmp_params->n_hit);
-    inserted.push_back(tmp_params->n_inserted);
-    reinserted.push_back(tmp_params->n_promoted);
+    req.push_back(tmp_additional_cache_data.n_req);
+    hit.push_back(tmp_additional_cache_data.n_hit);
+    inserted.push_back(tmp_additional_cache_data.n_inserted);
+    reinserted.push_back(tmp_additional_cache_data.n_promoted);
 
-    for (auto& e : tmp_params->objs_metadata) {
+    for (auto& e : tmp_additional_cache_data.objs_metadata) {
         e.second.Reset();
         e.second.lifetime_freq = 0;
         e.second.last_promotion = 0;
     }
 
-    params->objs_metadata = std::move(tmp_params->objs_metadata);
-    params->datasets = std::move(tmp_params->datasets);
+    additional_cache_data_storage.TransferOwnership(tmp, self);
+
     if (isML) {
-        auto tmp_ml_param = (mlclock::MLClockParam*)tmp_params;
-        auto ml_param = (mlclock::MLClockParam*)params;
-        ml_param->session = std::move(tmp_ml_param->session);
-        ml_param->session_options = std::move(tmp_ml_param->session_options);
-        ml_param->env = std::move(tmp_ml_param->env);
-        ml_param->features_name = std::move(tmp_ml_param->features_name);
+        throw std::runtime_error("ML is currently disabled");
+        // auto tmp_ml_param = (mlclock::MLClockParam*)tmp_params;
+        // auto ml_param = (mlclock::MLClockParam*)params;
+        // ml_param->session = std::move(tmp_ml_param->session);
+        // ml_param->session_options = std::move(tmp_ml_param->session_options);
+        // ml_param->env = std::move(tmp_ml_param->env);
+        // ml_param->features_name = std::move(tmp_ml_param->features_name);
     }
     tmp->cache_free(tmp);
     if (next)
@@ -154,8 +156,10 @@ void ChainedCache::Admit(cache_obj_t* obj, uint64_t freq) {
         return;
     request_t* req = new_request();
     copy_cache_obj_to_request(req, obj);
+    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
     if (!tmp->get(tmp, req))
-        ((common::CustomParams*)tmp->eviction_params)->n_inserted++;
+        tmp_additional_cache_data.n_inserted++;
     free_request(req);
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
@@ -176,42 +180,47 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
         next->Print(output_json, ++depth);
 }
 void ChainedCache::CleanUp() {
-    auto params = (common::CustomParams*)self->eviction_params;
-    params->objs_metadata.clear();
+    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
+    auto& self_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(self);
+    self_additional_cache_data.objs_metadata.clear();
     self->cache_free(self);
 
-    if (params->datasets.is_open())
-        params->datasets.close();
+    if (self_additional_cache_data.datasets.is_open())
+        self_additional_cache_data.datasets.close();
     if (next)
         next->CleanUp();
 }
 bool ChainedCache::Get(const request_t* req) {
-    auto params = (common::CustomParams*)tmp->eviction_params;
-    auto& data = params->objs_metadata[req->obj_id];
+    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
 
-    common::OnAccessTracking(data, params, req);
-    params->n_req++;
+    tmp_additional_cache_data.OnAccessTracking(data, req);
+    tmp_additional_cache_data.n_req++;
+
     if (!tmp->get(tmp, req)) {
-        params->n_inserted++;
+        tmp_additional_cache_data.n_inserted++;
         if (next)
             return next->Find(req);
         return false;
     }
-    params->n_hit++;
+    tmp_additional_cache_data.n_hit++;
     return true;
 }
 bool ChainedCache::Find(const request_t* req) {
-    auto params = (common::CustomParams*)tmp->eviction_params;
-    auto& data = params->objs_metadata[req->obj_id];
+    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
-    common::OnAccessTracking(data, params, req);
-    params->n_req++;
+    auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
+
+    tmp_additional_cache_data.OnAccessTracking(data, req);
+    tmp_additional_cache_data.n_req++;
     if (tmp->find(tmp, req, false) == NULL) {
         if (next)
             return next->Find(req);
         return false;
     }
-    params->n_hit++;
+    tmp_additional_cache_data.n_hit++;
     return true;
 }
 }  // namespace CustomCache

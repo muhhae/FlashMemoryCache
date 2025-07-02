@@ -1,5 +1,6 @@
 #pragma once
 
+#include <libCacheSim/cache.h>
 #include <libCacheSim/cacheObj.h>
 #include <libCacheSim/evictionAlgo.h>
 #include <libCacheSim/request.h>
@@ -11,11 +12,12 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "cache.hpp"
 
-namespace common {
+namespace AdditionalData {
 
 const static std::vector<std::string> datasets_columns = {
     "obj_id",
@@ -69,20 +71,32 @@ struct ObjMetadata {
     float clock_freq_decayed_rtime = 0;
 };
 
-struct RunningMeanData {
+class RunningMeanData {
+   public:
+    void Track(const float X);
+    float Normalize(const float X);
+
+   public:
     float mean = 0;
     float m2 = 0;
     uint64_t n = 0;
 };
 
-class CustomParams : public Clock_params_t {
+class AdditionalCacheData {
    public:
-    CustomParams() = default;
-    CustomParams(const Clock_params_t& base) {
-        *(Clock_params_t*)this = base;
-    }
+    AdditionalCacheData() = default;
     void GlobalTracking(const ObjMetadata& data);
     void InsertNext(cache_obj_t* obj);
+    void OnAccessTracking(ObjMetadata& data, const request_t* req);
+    void BeforeEvaluationTracking(const cache_obj_t* obj, const request_t* req);
+    void BeforeEvictionTracking(const cache_obj_t* obj, const request_t* req);
+    void OnPromotionTracking(const cache_obj_t* obj, const request_t* req);
+    std::unordered_map<std::string, float> CandidateMetadata(
+        const AdditionalData::ObjMetadata& data,
+        const cache_t* cache,
+        const request_t* current_req,
+        const cache_obj_t* obj_to_evict
+    );
 
    public:
     CustomCache::ChainedCache* next;
@@ -120,27 +134,31 @@ class CustomParams : public Clock_params_t {
     uint64_t dist_optimal_treshold = std::numeric_limits<uint64_t>::max();
     bool generate_datasets;
 };
+class AdditionalCacheDataStorage {
+   public:
+    AdditionalCacheData& GetAdditionalCacheData(cache_t* cache) { return storage[cache]; }
+    void TransferOwnership(cache_t* source, cache_t* destination) {
+        if (source == destination)
+            return;
 
-void OnAccessTracking(ObjMetadata& data, CustomParams* custom_params, const request_t* req);
+        auto it = storage.find(source);
+        if (it == storage.end())
+            return;
 
-void BeforeEvaluationTracking(
-    const cache_obj_t* obj, CustomParams* custom_params, const request_t* req
-);
+        storage[destination] = std::move(it->second);
+        storage.erase(it);
+    }
 
-void BeforeEvictionTracking(
-    const cache_obj_t* obj, CustomParams* custom_params, const request_t* req
-);
+   public:
+    static AdditionalCacheDataStorage& GetStorage() {
+        static AdditionalCacheDataStorage instance;
+        return instance;
+    }
+    AdditionalCacheDataStorage(const AdditionalCacheDataStorage&) = delete;
+    AdditionalCacheDataStorage& operator=(const AdditionalCacheDataStorage&) = delete;
 
-void OnPromotionTracking(const cache_obj_t* obj, CustomParams* custom_params, const request_t* req);
-
-std::unordered_map<std::string, float> CandidateMetadata(
-    const common::ObjMetadata& data,
-    common::CustomParams* params,
-    const cache_t* cache,
-    const request_t* current_req,
-    const cache_obj_t* obj_to_evict
-);
-
-void TrackRunningMean(const float X, RunningMeanData& d);
-float RunningMeanNormalize(const float X, RunningMeanData& d);
-}  // namespace common
+   private:
+    std::unordered_map<cache_t*, AdditionalCacheData> storage;
+    AdditionalCacheDataStorage() = default;
+};
+}  // namespace AdditionalData

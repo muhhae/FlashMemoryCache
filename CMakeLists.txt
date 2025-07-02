@@ -43,17 +43,20 @@ target_link_libraries(cachesim_libs INTERFACE
 )
 
 add_subdirectory(external/googletest)
+
+find_program(MEMORYCHECK_COMMAND NAMES valgrind)
+set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full")
+
 enable_testing()
 
 add_library(my_cache_sim
   src/simulator.cpp
   src/cache.cpp
-  src/cache/common.cpp
+  src/cache/additional_data.cpp
   src/cache/offline_clock.cpp
   src/cache/clock.cpp
   src/cache/lru.cpp
   src/cache/fifo.cpp
-  src/cache/ml_clock.cpp
   src/cache/decayed_clock.cpp
   src/cache/my_clock.cpp
   src/cache/dist_clock.cpp
