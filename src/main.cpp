@@ -79,6 +79,8 @@ int main(int argc, char** argv) {
     );
     app.add_flag("--id-num", o.id_num, "Skip the Hashing process of ObjectID");
     app.add_flag("--dram", o.dram_enabled, "Enable Dram Cache (1\% of the cache)");
+    app.add_option("--dram-size", o.dram_size, "percentage of DRAM compared to Flash")
+        ->default_val(0.01);
 
     CLI11_PARSE(app, argc, argv);
 

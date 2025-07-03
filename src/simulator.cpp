@@ -17,6 +17,7 @@
 #include <string>
 
 #include "cache.hpp"
+#include "cache/additional_data.hpp"
 #include "lib/cache_size.h"
 #include "lib/json.hpp"
 
@@ -52,11 +53,17 @@ void RunExperiment(options o) {
 
         for (const auto& fcs : o.fixed_cache_sizes) {
             o.dist_optimal_treshold = o.ignore_obj_size ? fcs : fcs / wss_byte * wss_obj;
-            std::string desc = "[" + std::to_string(fcs) + (o.ignore_obj_size ? "" : "MiB") +
+            std::string desc = "[" + std::to_string(fcs) +
+                               (o.ignore_obj_size ? "" : "MiB") +
                                (o.desc != "" ? "," : "") + o.desc + "]";
             tasks.emplace_back(
                 std::async(
-                    std::launch::async, Simulate, o.ignore_obj_size ? fcs : fcs * MiB, p, o, desc
+                    std::launch::async,
+                    Simulate,
+                    o.ignore_obj_size ? fcs : fcs * MiB,
+                    p,
+                    o,
+                    desc
                 )
             );
         }
@@ -68,7 +75,9 @@ void RunExperiment(options o) {
                 s.pop_back();
 
             std::string desc = "[" + s + (o.desc != "" ? "," : "") + o.desc + "]";
-            tasks.emplace_back(std::async(std::launch::async, Simulate, wss * rcs, p, o, desc));
+            tasks.emplace_back(
+                std::async(std::launch::async, Simulate, wss * rcs, p, o, desc)
+            );
         }
     }
 
@@ -114,6 +123,15 @@ nlohmann::json SimulationResults(CustomCache::ChainedCache* Cache) {
     return output_json;
 }
 
+template <typename K, typename V>
+size_t get_unordered_map_memory_usage(const std::unordered_map<K, V>& map) {
+    size_t size = sizeof(map);
+    size += map.bucket_count() * sizeof(void*);
+    size_t node_size = sizeof(K) + sizeof(V) + sizeof(void*);
+    size += map.size() * node_size;
+    return size;
+}
+
 void Simulate(
     uint64_t cache_size,
     const std::filesystem::path trace_path,
@@ -129,7 +147,8 @@ void Simulate(
         base_path = base_path.substr(0, pos);
     }
 
-    std::filesystem::path output_path = o.output_directory / "log" / (base_path + desc + ".json");
+    std::filesystem::path output_path =
+        o.output_directory / "log" / (base_path + desc + ".json");
     std::filesystem::path dataset_path =
         o.output_directory / "datasets" / (base_path + desc + ".csv");
 
@@ -137,11 +156,16 @@ void Simulate(
     request_t* req = new_request();
 
     CustomCache::ChainedCache Flash = CustomCache::ChainedCache(
-        o.algorithm, cache_size, NULL, dataset_path, o.flash_admission_treshold, o.generate_datasets
+        o.algorithm,
+        cache_size,
+        NULL,
+        dataset_path,
+        o.flash_admission_treshold,
+        o.generate_datasets
     );
     CustomCache::ChainedCache DRAM = CustomCache::ChainedCache(
         "lru",
-        cache_size / 100,
+        cache_size * o.dram_size,
         &Flash,
         dataset_path,
         o.flash_admission_treshold,
@@ -160,9 +184,23 @@ void Simulate(
 
     auto output_json = SimulationResults(Cache);
     output_json["trace"] = std::filesystem::path(trace_path).filename();
-    output_json["cache_size"] = cache_size;
+    output_json["dram_cache_size"] = DRAM.self->cache_size;
+    output_json["flash_cache_size"] = Flash.self->cache_size;
     std::cout << output_json.dump(2) << "\n";
     std::ofstream(output_path) << output_json.dump(2);
+
+    auto& dram_data =
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(DRAM.self);
+    auto& flash_data =
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(Flash.self);
+
+    std::cout << "DRAM metadata memory usage: "
+              << get_unordered_map_memory_usage(dram_data.objs_metadata) / 1024.0 / 1024.0
+              << " MB" << std::endl;
+    std::cout << "Flash metadata memory usage: "
+              << get_unordered_map_memory_usage(flash_data.objs_metadata) / 1024.0 /
+                     1024.0
+              << " MB" << std::endl;
 
     Cache->CleanUp();
     free_request(req);

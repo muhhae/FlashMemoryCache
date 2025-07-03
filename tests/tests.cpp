@@ -44,6 +44,58 @@ TEST(SimulatorTEST, SingleLayer_OFFLINE_CLOCK) {
     );
     ASSERT_EQ(results, expected);
 }
+TEST(SimulatorTEST, SingleLayer_SLRU) {
+    nlohmann::json results = LayeredCacheSimulation({"slru"});
+    nlohmann::json expected = nlohmann::json::parse(
+        R"(
+{
+  "hit": 15556,
+  "iteration": 1,
+  "metrics": [
+    {
+      "admission_treshold": 1,
+      "algorithm": "slru",
+      "hit": 15556,
+      "inserted": 98316,
+      "layer": 0,
+      "miss_ratio": 0.8633904735141211,
+      "reinserted": 0,
+      "req": 113872
+    }
+  ],
+  "miss_ratio": 0.8633904735141211,
+  "req": 113872
+}
+)"
+    );
+    ASSERT_EQ(results, expected);
+}
+TEST(SimulatorTEST, SingleLayer_GDSF) {
+    nlohmann::json results = LayeredCacheSimulation({"gdsf"});
+    nlohmann::json expected = nlohmann::json::parse(
+        R"(
+{
+  "hit": 14832,
+  "iteration": 1,
+  "metrics": [
+    {
+      "admission_treshold": 1,
+      "algorithm": "gdsf",
+      "hit": 14832,
+      "inserted": 99040,
+      "layer": 0,
+      "miss_ratio": 0.8697484895321063,
+      "reinserted": 0,
+      "req": 113872
+    }
+  ],
+  "miss_ratio": 0.8697484895321063,
+  "req": 113872
+}
+)"
+    );
+    ASSERT_EQ(results, expected);
+}
 TEST(SimulatorTEST, DoubleLayer) {
     nlohmann::json results = LayeredCacheSimulation({"lru", "fifo"});
     nlohmann::json expected = nlohmann::json::parse(
@@ -76,6 +128,78 @@ TEST(SimulatorTEST, DoubleLayer_OFFLINE_CLOCK) {
     nlohmann::json results = LayeredCacheSimulation({"lru", "offline-clock"});
     nlohmann::json expected = nlohmann::json::parse(
         R"({"hit":19169,"iteration":1,"metrics":[{"admission_treshold":1,"algorithm":"lru","hit":13657,"inserted":100215,"layer":0,"miss_ratio":0.8800670928762119,"reinserted":13657,"req":113872},{"admission_treshold":1,"algorithm":"offline-clock","hit":5512,"inserted":94725,"layer":1,"miss_ratio":0.944998253754428,"reinserted":833,"req":100215}],"miss_ratio":0.8316618659547562,"req":113872})"
+    );
+    ASSERT_EQ(results, expected);
+}
+TEST(SimulatorTEST, DoubleLayer_SLRU) {
+    nlohmann::json results = LayeredCacheSimulation({"lru", "slru"});
+    nlohmann::json expected = nlohmann::json::parse(
+        R"(
+{
+  "hit": 20256,
+  "iteration": 1,
+  "metrics": [
+    {
+      "admission_treshold": 1,
+      "algorithm": "lru",
+      "hit": 13657,
+      "inserted": 100215,
+      "layer": 0,
+      "miss_ratio": 0.8800670928762119,
+      "reinserted": 13657,
+      "req": 113872
+    },
+    {
+      "admission_treshold": 1,
+      "algorithm": "slru",
+      "hit": 6599,
+      "inserted": 93640,
+      "layer": 1,
+      "miss_ratio": 0.9341515741156513,
+      "reinserted": 0,
+      "req": 100215
+    }
+  ],
+  "miss_ratio": 0.8221160601376984,
+  "req": 113872
+}
+)"
+    );
+    ASSERT_EQ(results, expected);
+}
+TEST(SimulatorTEST, DoubleLayer_GDSF) {
+    nlohmann::json results = LayeredCacheSimulation({"lru", "gdsf"});
+    nlohmann::json expected = nlohmann::json::parse(
+        R"(
+{
+  "hit": 19601,
+  "iteration": 1,
+  "metrics": [
+    {
+      "admission_treshold": 1,
+      "algorithm": "lru",
+      "hit": 13657,
+      "inserted": 100215,
+      "layer": 0,
+      "miss_ratio": 0.8800670928762119,
+      "reinserted": 13657,
+      "req": 113872
+    },
+    {
+      "admission_treshold": 1,
+      "algorithm": "gdsf",
+      "hit": 5944,
+      "inserted": 94272,
+      "layer": 1,
+      "miss_ratio": 0.9406875218280697,
+      "reinserted": 0,
+      "req": 100215
+    }
+  ],
+  "miss_ratio": 0.8278681326401574,
+  "req": 113872
+}
+)"
     );
     ASSERT_EQ(results, expected);
 }

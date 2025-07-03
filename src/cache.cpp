@@ -3,6 +3,7 @@
 #include <config.h>
 #include <libCacheSim/cache.h>
 #include <libCacheSim/cacheObj.h>
+#include <libCacheSim/evictionAlgo.h>
 #include <libCacheSim/request.h>
 
 #include <cstddef>
@@ -10,7 +11,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
+#include <functional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 #include "cache/additional_data.hpp"
@@ -22,33 +25,30 @@
 #include "cache/offline_clock.hpp"
 #include "lib/json.hpp"
 
-std::function<
-    cache_t*(
-        const common_cache_params_t ccache_params, const char* cache_specific_params
-    )>
-AlgoSelector(std::string algorithm) {
-    if (algorithm == "decayed-clock") {
-        return algorithm::DecayedClockInit;
-    }
-    if (algorithm == "fifo") {
-        return algorithm::FIFOInit;
-    }
-    if (algorithm == "offline-clock") {
-        return algorithm::OfflineClockInit;
-    }
-    if (algorithm == "dist-optimal") {
-        return algorithm::DistClockInit;
-    }
-    if (algorithm == "lru") {
-        return algorithm::LRUInit;
-    }
-    if (algorithm == "clock") {
-        return algorithm::ClockInit;
-    }
+typedef std::function<cache_t*(
+    const common_cache_params_t ccache_params, const char* cache_specific_params
+)>
+    cache_init_func;
+
+cache_init_func AlgoSelector(std::string algorithm) {
+    std::unordered_map<std::string, cache_init_func> simple_algorithm = {
+        {"decayed_clock", algorithm::DecayedClockInit},
+        {"fifo", algorithm::FIFOInit},
+        {"offline-clock", algorithm::OfflineClockInit},
+        {"dist-optimal", algorithm::DistClockInit},
+        {"lru", algorithm::LRUInit},
+        {"clock", algorithm::ClockInit},
+        {"slru", SLRU_init},
+        {"gdsf", GDSF_init},
+    };
+    if (simple_algorithm.count(algorithm))
+        return simple_algorithm.at(algorithm);
+
     if (algorithm == "ML") {
         throw std::runtime_error("ML is currently disabled");
         // if (ml_model == "") {
-        //     throw std::runtime_error("ML model need to be provided in ONNX format");
+        //     throw std::runtime_error("ML model need to be provided in ONNX
+        //     format");
         // }
         // if (input_type == "I32") {
         //     return mlclock::MLClockInit<int32_t>;
