@@ -151,16 +151,23 @@ void ChainedCache::EndIteration() {
     if (next)
         next->EndIteration();
 }
-void ChainedCache::Admit(cache_obj_t* obj, uint64_t freq) {
+void ChainedCache::Admit(const request_t* req, const uint64_t freq) {
+    if (freq < admission_treshold)
+        return;
+    if (!tmp->get(tmp, req))
+        data::AdditionalCacheDataStorage::GetStorage()
+            .GetAdditionalCacheData(tmp)
+            .n_inserted++;
+}
+void ChainedCache::Admit(const cache_obj_t* obj, const uint64_t freq) {
     if (freq < admission_treshold)
         return;
     request_t req;
     copy_cache_obj_to_request(&req, obj);
-    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data =
-        additional_cache_data_storage.GetAdditionalCacheData(tmp);
     if (!tmp->get(tmp, &req))
-        tmp_additional_cache_data.n_inserted++;
+        data::AdditionalCacheDataStorage::GetStorage()
+            .GetAdditionalCacheData(tmp)
+            .n_inserted++;
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     for (size_t i = 0; i < hit.size(); ++i) {
@@ -200,12 +207,15 @@ bool ChainedCache::Get(const request_t* req) {
     tmp_additional_cache_data.OnAccessTracking(data, req);
     tmp_additional_cache_data.n_req++;
 
-    if (!tmp->get(tmp, req)) {
-        tmp_additional_cache_data.n_inserted++;
+    if (!tmp->find(tmp, req, false)) {
+        Admit(req, data.lifetime_freq);
         if (next)
             return next->Find(req);
         return false;
+    } else {
+        tmp->get(tmp, req);
     }
+
     tmp_additional_cache_data.n_hit++;
     return true;
 }

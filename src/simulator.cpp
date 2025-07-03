@@ -164,12 +164,7 @@ void Simulate(
         o.generate_datasets
     );
     CustomCache::ChainedCache DRAM = CustomCache::ChainedCache(
-        "lru",
-        cache_size * o.dram_size,
-        &Flash,
-        dataset_path,
-        o.flash_admission_treshold,
-        o.generate_datasets
+        "lru", cache_size * o.dram_size, &Flash, dataset_path, 0, o.generate_datasets
     );
 
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
@@ -189,18 +184,19 @@ void Simulate(
     std::cout << output_json.dump(2) << "\n";
     std::ofstream(output_path) << output_json.dump(2);
 
-    auto& dram_data =
-        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(DRAM.self);
-    auto& flash_data =
-        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(Flash.self);
-
-    std::cout << "DRAM metadata memory usage: "
-              << get_unordered_map_memory_usage(dram_data.objs_metadata) / 1024.0 / 1024.0
-              << " MB" << std::endl;
-    std::cout << "Flash metadata memory usage: "
-              << get_unordered_map_memory_usage(flash_data.objs_metadata) / 1024.0 /
-                     1024.0
-              << " MB" << std::endl;
+    // auto& dram_data =
+    //     data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(DRAM.self);
+    // auto& flash_data =
+    //     data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(Flash.self);
+    //
+    // std::cout << "DRAM metadata memory usage: "
+    //           << get_unordered_map_memory_usage(dram_data.objs_metadata) / 1024.0 /
+    //           1024.0
+    //           << " MB" << std::endl;
+    // std::cout << "Flash metadata memory usage: "
+    //           << get_unordered_map_memory_usage(flash_data.objs_metadata) / 1024.0 /
+    //                  1024.0
+    //           << " MB" << std::endl;
 
     Cache->CleanUp();
     free_request(req);

@@ -26,7 +26,8 @@ class ChainedCache {
     bool Find(const request_t* req);
     void SetupIteration(bool generate_datasets);
     void EndIteration();
-    void Admit(cache_obj_t* obj, uint64_t freq);
+    void Admit(const cache_obj_t* obj, const uint64_t freq);
+    void Admit(const request_t* req, const uint64_t freq);
     void Print(nlohmann::json& output_json, uint64_t depth);
     void CleanUp();
 

@@ -4,7 +4,6 @@
 #include <libCacheSim/reader.h>
 
 #include <cstddef>
-#include <iostream>
 #include <vector>
 
 #include "cache.hpp"
@@ -13,6 +12,7 @@
 
 static nlohmann::json LayeredCacheSimulation(
     std::vector<std::string> algorithms,
+    uint64_t admission_threshold = 0,
     uint64_t cache_size = 100,
     bool ignore_obj_size = true,
     std::string trace = "../trace/cloudPhysicsIO.oracleGeneral.bin",
@@ -31,7 +31,11 @@ static nlohmann::json LayeredCacheSimulation(
 
     std::vector<CustomCache::ChainedCache> Caches;
     for (const auto& a : algorithms) {
-        Caches.push_back(CustomCache::ChainedCache(a, cache_size, NULL, "", 1, false));
+        Caches.push_back(
+            CustomCache::ChainedCache(
+                a, cache_size, NULL, "", admission_threshold++, false
+            )
+        );
         cache_size *= 10;
     }
     for (size_t i = 0; i < Caches.size() - 1; ++i) {
