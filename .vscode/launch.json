@@ -5,6 +5,39 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug Zipf1 Test", // A descriptive name for the dropdown
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/cacheSimulator", // <--- IMPORTANT: Path to your test program
+            "args": [
+                "../trace/zipf_1_0.oracleGeneral", 
+                "-a",                              
+                "offline-clock",                   
+                "--dram",                          
+                "-s",                              
+                "1",                               
+                "-r",                              
+                "0.1",                             
+                "--ignore-obj-size"                
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build", // <--- Set the current working directory
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+        },{
             "name": "Debug DoubleLayer_LRU Test", // A descriptive name for the dropdown
             "type": "cppdbg",
             "request": "launch",
