@@ -1,8 +1,8 @@
-: [ BUILD AND TEST ]; cd build && cmake .. && make && ctest
-: [ CLEAN BUILD AND TEST ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest
+: [ BUILD AND TEST ]; cd build && cmake .. && make && ctest --output-on-failure --stop-on-failure
+: [ CLEAN BUILD AND TEST ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest --output-on-failure --stop-on-failure
 : ---
-: [ BUILD AND TEST VERBOSE ]; cd build && cmake .. && make && ctest -VV
-: [ CLEAN BUILD AND TEST VERBOSE ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest -VV
+: [ BUILD AND TEST VERBOSE ]; cd build && cmake .. && make && ctest -V
+: [ CLEAN BUILD AND TEST VERBOSE ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest -V
 : ---
 : [ HeapTrack cloudPhysicsIO ]; cd build && heaptrack ./cacheSimulator ../trace/cloudPhysicsIO.oracleGeneral.bin -a offline-clock --dram -s 1 -r 0.1 --ignore-obj-size
 : [ HeapTrack zipf1 ]; cd build && heaptrack ./cacheSimulator ../trace/zipf_1_0.oracleGeneral -a offline-clock --dram -s 1 -r 0.1 --ignore-obj-size
