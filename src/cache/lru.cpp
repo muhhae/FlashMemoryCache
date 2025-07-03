@@ -3,9 +3,12 @@
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
 
+#include <cstdlib>
+
 #include "cache/additional_data.hpp"
 
-void lru::LRUEvict(cache_t* cache, const request_t* req) {
+namespace algorithm {
+void LRUEvict(cache_t* cache, const request_t* req) {
     LRU_params_t* params = (LRU_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
     DEBUG_ASSERT(params->q_tail != NULL);
@@ -22,25 +25,27 @@ void lru::LRUEvict(cache_t* cache, const request_t* req) {
         DEBUG_ASSERT(cache->n_obj == 1);
         params->q_head = NULL;
     }
-    auto& additional_cache_data =
-        AdditionalData::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
-    additional_cache_data.InsertNext(obj_to_evict);
+
+    data::AdditionalCacheDataStorage::GetStorage()
+        .GetAdditionalCacheData(cache)
+        .InsertNext(obj_to_evict);
+
     cache_evict_base(cache, obj_to_evict, true);
 }
 
-cache_obj_t* lru::LRUFind(cache_t* cache, const request_t* req, const bool update_cache) {
-    auto& additional_cache_data =
-        AdditionalData::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+cache_obj_t* LRUFind(cache_t* cache, const request_t* req, const bool update_cache) {
     LRU_params_t* params = (LRU_params_t*)cache->eviction_params;
     cache_obj_t* cache_obj = cache_find_base(cache, req, update_cache);
     if (cache_obj && likely(update_cache)) {
         move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
-        additional_cache_data.n_promoted++;
+        data::AdditionalCacheDataStorage::GetStorage()
+            .GetAdditionalCacheData(cache)
+            .n_promoted++;
     }
     return cache_obj;
 }
 
-cache_t* lru::LRUInit(
+cache_t* LRUInit(
     const common_cache_params_t ccache_params, const char* cache_specific_params
 ) {
     auto cache = LRU_init(ccache_params, cache_specific_params);
@@ -50,3 +55,4 @@ cache_t* lru::LRUInit(
     cache->find = LRUFind;
     return cache;
 }
+}  // namespace algorithm

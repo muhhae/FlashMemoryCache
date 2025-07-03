@@ -29,11 +29,14 @@ int main(int argc, char** argv) {
     app.add_option(
         "-d,--descriptions",
         o.descs,
-        "Additional description for experiment, would shows on filename, can be more than one"
+        "Additional description for experiment, would shows on filename, can be more "
+        "than one"
     );
     app.add_option("trace_paths", o.trace_paths, "Can be more than one")->required();
     app.add_option(
-           "-a,--algo", o.algorithm, "available [offline-clock, clock, fifo, ML, decayed-clock]"
+           "-a,--algo",
+           o.algorithm,
+           "available [offline-clock, clock, fifo,  decayed-clock]"
     )
         ->required();
     app.add_option("-m,--model", o.ml_model, "ML model to use, required when algo = ML");
@@ -56,17 +59,24 @@ int main(int argc, char** argv) {
         );
     app.add_option("-T, --trace-type", o.trace_type, "Traces type [oracleGeneral, csv]")
         ->default_val("oracleGeneral");
-    app.add_option("-H, --treshold", o.treshold, "ML Model decision treshold")->default_val(0.5);
+    app.add_option("-H, --treshold", o.treshold, "ML Model decision treshold")
+        ->default_val(0.5);
     app.add_option(
            "-s, --flash-admission-treshold",
            o.flash_admission_treshold,
            "Min. freq an object has before admitted into Flash"
     )
         ->default_val(1);
-    app.add_option("-p, --decay-power", o.decay_power, "Decaying rate of clock and lifetime freq")
+    app.add_option(
+           "-p, --decay-power", o.decay_power, "Decaying rate of clock and lifetime freq"
+    )
         ->default_val(0.001);
-    app.add_flag("--ignore-obj-size", o.ignore_obj_size, "Ignore object sizes from trace");
-    app.add_flag("--generate-datasets", o.generate_datasets, "Generate datasets from simulation");
+    app.add_flag(
+        "--ignore-obj-size", o.ignore_obj_size, "Ignore object sizes from trace"
+    );
+    app.add_flag(
+        "--generate-datasets", o.generate_datasets, "Generate datasets from simulation"
+    );
     app.add_flag("--id-num", o.id_num, "Skip the Hashing process of ObjectID");
     app.add_flag("--dram", o.dram_enabled, "Enable Dram Cache (1\% of the cache)");
 

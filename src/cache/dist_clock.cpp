@@ -6,9 +6,10 @@
 
 #include "additional_data.hpp"
 
+namespace algorithm {
 static void DistClockEvict(cache_t* cache, const request_t* req) {
     auto& additional_cache_data =
-        AdditionalData::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
 
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
@@ -20,10 +21,10 @@ static void DistClockEvict(cache_t* cache, const request_t* req) {
             auto data = additional_cache_data.objs_metadata[obj_to_evict->obj_id];
             auto features = additional_cache_data.CandidateMetadata(data, cache, req, obj_to_evict);
             features["wasted"] = wasted;
-            for (size_t i = 0; i < AdditionalData::datasets_columns.size(); i++) {
+            for (size_t i = 0; i < data::datasets_columns.size(); i++) {
                 additional_cache_data.datasets
-                    << features[AdditionalData::datasets_columns[i]]
-                    << (i == AdditionalData::datasets_columns.size() - 1 ? '\n' : ',');
+                    << features[data::datasets_columns[i]]
+                    << (i == data::datasets_columns.size() - 1 ? '\n' : ',');
             }
         }
         additional_cache_data.BeforeEvictionTracking(obj_to_evict, req);
@@ -41,7 +42,7 @@ static void DistClockEvict(cache_t* cache, const request_t* req) {
     cache_evict_base(cache, obj_to_evict, true);
 }
 
-cache_t* distclock::DistClockInit(
+cache_t* DistClockInit(
     const common_cache_params_t ccache_params, const char* cache_specifiadditional_cache_data
 ) {
     auto cache = Clock_init(ccache_params, cache_specifiadditional_cache_data);
@@ -51,3 +52,4 @@ cache_t* distclock::DistClockInit(
 
     return cache;
 }
+}  // namespace algorithm

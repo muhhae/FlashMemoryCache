@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <unordered_map>
 
-namespace AdditionalData {
+namespace data {
 std::unordered_map<std::string, float> AdditionalCacheData::CandidateMetadata(
     const ObjMetadata& data,
     const cache_t* cache,
@@ -175,4 +175,4 @@ void AdditionalCacheData::GlobalTracking(const ObjMetadata& data) {
     rm_lifetime_freq_log.Track(log(data.lifetime_freq + 1));
     rm_rtime_between_log.Track(log(data.rtime_between + 1));
 }
-}  // namespace AdditionalData
+}  // namespace data

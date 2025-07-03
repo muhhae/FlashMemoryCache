@@ -17,7 +17,7 @@
 
 #include "cache.hpp"
 
-namespace AdditionalData {
+namespace data {
 
 const static std::vector<std::string> datasets_columns = {
     "obj_id",
@@ -92,7 +92,7 @@ class AdditionalCacheData {
     void BeforeEvictionTracking(const cache_obj_t* obj, const request_t* req);
     void OnPromotionTracking(const cache_obj_t* obj, const request_t* req);
     std::unordered_map<std::string, float> CandidateMetadata(
-        const AdditionalData::ObjMetadata& data,
+        const ObjMetadata& data,
         const cache_t* cache,
         const request_t* current_req,
         const cache_obj_t* obj_to_evict
@@ -161,4 +161,4 @@ class AdditionalCacheDataStorage {
     std::unordered_map<cache_t*, AdditionalCacheData> storage;
     AdditionalCacheDataStorage() = default;
 };
-}  // namespace AdditionalData
+}  // namespace data

@@ -6,9 +6,10 @@
 
 #include "cache/additional_data.hpp"
 
-void bclock::ClockEvict(cache_t* cache, const request_t* req) {
+namespace algorithm {
+void ClockEvict(cache_t* cache, const request_t* req) {
     auto& additional_cache_data =
-        AdditionalData::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
 
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
@@ -26,11 +27,10 @@ void bclock::ClockEvict(cache_t* cache, const request_t* req) {
     cache_evict_base(cache, obj_to_evict, true);
 }
 
-cache_t* bclock::ClockInit(
-    const common_cache_params_t ccache_params, const char* cache_specific_params
-) {
+cache_t* ClockInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
     cache->cache_init = ClockInit;
     cache->evict = ClockEvict;
     return cache;
 }
+}  // namespace algorithm

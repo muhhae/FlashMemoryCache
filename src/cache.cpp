@@ -19,33 +19,31 @@
 #include "cache/dist_clock.hpp"
 #include "cache/fifo.hpp"
 #include "cache/lru.hpp"
-#include "cache/my_clock.hpp"
 #include "cache/offline_clock.hpp"
 #include "lib/json.hpp"
 
 std::function<
-    cache_t*(const common_cache_params_t ccache_params, const char* cache_specific_params)>
+    cache_t*(
+        const common_cache_params_t ccache_params, const char* cache_specific_params
+    )>
 AlgoSelector(std::string algorithm) {
     if (algorithm == "decayed-clock") {
-        return decayed::DecayedClockInit;
+        return algorithm::DecayedClockInit;
     }
     if (algorithm == "fifo") {
-        return fifo::FIFOInit;
+        return algorithm::FIFOInit;
     }
     if (algorithm == "offline-clock") {
-        return cclock::OfflineClockInit;
+        return algorithm::OfflineClockInit;
     }
     if (algorithm == "dist-optimal") {
-        return distclock::DistClockInit;
+        return algorithm::DistClockInit;
     }
     if (algorithm == "lru") {
-        return lru::LRUInit;
+        return algorithm::LRUInit;
     }
     if (algorithm == "clock") {
-        return bclock::ClockInit;
-    }
-    if (algorithm == "my") {
-        return myclock::MyClockInit;
+        return algorithm::ClockInit;
     }
     if (algorithm == "ML") {
         throw std::runtime_error("ML is currently disabled");
@@ -78,23 +76,24 @@ ChainedCache::ChainedCache(
     : next(next), algorithm(Algorithm), admission_treshold(admission_treshold) {
     self = AlgoSelector(Algorithm)({.cache_size = cache_size}, NULL);
     auto& additional_cache_data =
-        AdditionalData::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(self);
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(self);
     if (generate_datasets) {
         additional_cache_data.datasets = std::ofstream(datasets);
-        for (size_t i = 0; i < AdditionalData::datasets_columns.size(); i++) {
+        for (size_t i = 0; i < data::datasets_columns.size(); i++) {
             additional_cache_data.datasets
-                << AdditionalData::datasets_columns[i]
-                << (i == AdditionalData::datasets_columns.size() - 1 ? '\n' : ',');
+                << data::datasets_columns[i]
+                << (i == data::datasets_columns.size() - 1 ? '\n' : ',');
         }
     }
 }
 void ChainedCache::SetupIteration(bool generate_datasets) {
     tmp = clone_cache(self);
 
-    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
     additional_cache_data_storage.TransferOwnership(self, tmp);
 
-    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& tmp_additional_cache_data =
+        additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
     if (isML) {
         throw std::runtime_error("ML is currently disabled");
@@ -122,8 +121,9 @@ void ChainedCache::SetupIteration(bool generate_datasets) {
     }
 }
 void ChainedCache::EndIteration() {
-    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data =
+        additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
     req.push_back(tmp_additional_cache_data.n_req);
     hit.push_back(tmp_additional_cache_data.n_hit);
@@ -156,8 +156,9 @@ void ChainedCache::Admit(cache_obj_t* obj, uint64_t freq) {
         return;
     request_t req;
     copy_cache_obj_to_request(&req, obj);
-    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data =
+        additional_cache_data_storage.GetAdditionalCacheData(tmp);
     if (!tmp->get(tmp, &req))
         tmp_additional_cache_data.n_inserted++;
 }
@@ -179,8 +180,9 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
         next->Print(output_json, ++depth);
 }
 void ChainedCache::CleanUp() {
-    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
-    auto& self_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(self);
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
+    auto& self_additional_cache_data =
+        additional_cache_data_storage.GetAdditionalCacheData(self);
     self_additional_cache_data.objs_metadata.clear();
     self->cache_free(self);
 
@@ -190,8 +192,9 @@ void ChainedCache::CleanUp() {
         next->CleanUp();
 }
 bool ChainedCache::Get(const request_t* req) {
-    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data =
+        additional_cache_data_storage.GetAdditionalCacheData(tmp);
     auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
 
     tmp_additional_cache_data.OnAccessTracking(data, req);
@@ -207,8 +210,9 @@ bool ChainedCache::Get(const request_t* req) {
     return true;
 }
 bool ChainedCache::Find(const request_t* req) {
-    auto& additional_cache_data_storage = AdditionalData::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data =
+        additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
     auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
 

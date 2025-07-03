@@ -8,10 +8,11 @@
 
 #include "cache/additional_data.hpp"
 
-void cclock::OfflineClockEvict(cache_t* cache, const request_t* req) {
+namespace algorithm {
+void OfflineClockEvict(cache_t* cache, const request_t* req) {
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     auto& additional_cache_data =
-        AdditionalData::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
 
     cache_obj_t* obj_to_evict = params->q_tail;
     while (obj_to_evict->clock.freq >= 1) {
@@ -19,16 +20,17 @@ void cclock::OfflineClockEvict(cache_t* cache, const request_t* req) {
         data.last_promotion = data.lifetime_freq;
 
         additional_cache_data.BeforeEvaluationTracking(obj_to_evict, req);
-        bool wasted =
-            data.wasted_promotions.find(data.last_promotion) != data.wasted_promotions.end();
+        bool wasted = data.wasted_promotions.find(data.last_promotion) !=
+                      data.wasted_promotions.end();
 
         if (additional_cache_data.generate_datasets) {
-            auto features = additional_cache_data.CandidateMetadata(data, cache, req, obj_to_evict);
+            auto features =
+                additional_cache_data.CandidateMetadata(data, cache, req, obj_to_evict);
             features["wasted"] = wasted;
-            for (size_t i = 0; i < AdditionalData::datasets_columns.size(); i++) {
+            for (size_t i = 0; i < data::datasets_columns.size(); i++) {
                 additional_cache_data.datasets
-                    << features[AdditionalData::datasets_columns[i]]
-                    << (i == AdditionalData::datasets_columns.size() - 1 ? "\n" : ",");
+                    << features[data::datasets_columns[i]]
+                    << (i == data::datasets_columns.size() - 1 ? "\n" : ",");
             }
         }
 
@@ -50,7 +52,7 @@ void cclock::OfflineClockEvict(cache_t* cache, const request_t* req) {
     cache_evict_base(cache, obj_to_evict, true);
 }
 
-cache_t* cclock::OfflineClockInit(
+cache_t* OfflineClockInit(
     const common_cache_params_t ccache_params, const char* cache_specific_params
 ) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
@@ -60,3 +62,4 @@ cache_t* cclock::OfflineClockInit(
 
     return cache;
 }
+}  // namespace algorithm
