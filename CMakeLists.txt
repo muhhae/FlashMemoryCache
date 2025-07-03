@@ -48,6 +48,7 @@ target_link_libraries(cachesim_libs INTERFACE
 )
 
 add_subdirectory(external/googletest)
+add_subdirectory(external/robin-map)
 
 find_program(MEMORYCHECK_COMMAND NAMES valgrind)
 set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full")
@@ -73,7 +74,7 @@ target_include_directories(cacheSimulator PRIVATE src .)
 target_include_directories(my_cache_sim PRIVATE src .)
 target_include_directories(run_tests PRIVATE src .)
 
-target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime)
+target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime tsl::robin_map)
 target_link_libraries(cacheSimulator PRIVATE my_cache_sim)
 target_link_libraries(run_tests PRIVATE my_cache_sim gtest_main)
 
