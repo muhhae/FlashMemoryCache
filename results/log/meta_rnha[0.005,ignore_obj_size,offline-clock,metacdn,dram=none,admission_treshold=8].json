@@ -1,0 +1,43 @@
+{
+  "dram_cache_size": 1752,
+  "flash_cache_size": 175201,
+  "results": [
+    {
+      "hit": 25932445,
+      "iteration": 0,
+      "metrics": [
+        {
+          "admission_treshold": 8,
+          "algorithm": "offline-clock",
+          "hit": 25932445,
+          "inserted": 4589280,
+          "layer": 0,
+          "miss_ratio": 0.7317721780739042,
+          "reinserted": 3465975,
+          "req": 96680668
+        }
+      ],
+      "miss_ratio": 0.7317721780739042,
+      "req": 96680668
+    },
+    {
+      "hit": 26218036,
+      "iteration": 1,
+      "metrics": [
+        {
+          "admission_treshold": 8,
+          "algorithm": "offline-clock",
+          "hit": 26218036,
+          "inserted": 4303689,
+          "layer": 0,
+          "miss_ratio": 0.7288182162746331,
+          "reinserted": 1145856,
+          "req": 96680668
+        }
+      ],
+      "miss_ratio": 0.7288182162746331,
+      "req": 96680668
+    }
+  ],
+  "trace": "meta_rnha.oracleGeneral.zst"
+}
