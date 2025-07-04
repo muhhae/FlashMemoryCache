@@ -1,0 +1,63 @@
+{
+  "dram_cache_size": 14515,
+  "flash_cache_size": 145151,
+  "results": [
+    {
+      "hit": 40798228,
+      "iteration": 0,
+      "metrics": [
+        {
+          "admission_treshold": 0,
+          "algorithm": "lru",
+          "hit": 34376261,
+          "inserted": 54094471,
+          "layer": 0,
+          "miss_ratio": 0.6114391706400711,
+          "reinserted": 34376261,
+          "req": 88470732
+        },
+        {
+          "admission_treshold": 2,
+          "algorithm": "offline-clock",
+          "hit": 6421967,
+          "inserted": 23104598,
+          "layer": 1,
+          "miss_ratio": 0.8812823772692038,
+          "reinserted": 3598725,
+          "req": 54094471
+        }
+      ],
+      "miss_ratio": 0.5388505658571923,
+      "req": 88470732
+    },
+    {
+      "hit": 40858694,
+      "iteration": 1,
+      "metrics": [
+        {
+          "admission_treshold": 0,
+          "algorithm": "lru",
+          "hit": 34376261,
+          "inserted": 54094471,
+          "layer": 0,
+          "miss_ratio": 0.6114391706400711,
+          "reinserted": 34376261,
+          "req": 88470732
+        },
+        {
+          "admission_treshold": 2,
+          "algorithm": "offline-clock",
+          "hit": 6482433,
+          "inserted": 23043585,
+          "layer": 1,
+          "miss_ratio": 0.8801645920523005,
+          "reinserted": 1410781,
+          "req": 54094471
+        }
+      ],
+      "miss_ratio": 0.5381671081912152,
+      "req": 88470732
+    }
+  ],
+  "trace": "meta_rprn.oracleGeneral.zst"
+}

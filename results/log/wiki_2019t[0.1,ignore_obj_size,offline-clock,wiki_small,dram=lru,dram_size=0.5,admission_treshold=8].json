@@ -1,0 +1,63 @@
+{
+  "dram_cache_size": 918855,
+  "flash_cache_size": 1837711,
+  "results": [
+    {
+      "hit": 167239728,
+      "iteration": 0,
+      "metrics": [
+        {
+          "admission_treshold": 8,
+          "algorithm": "lru",
+          "hit": 144170311,
+          "inserted": 63475691,
+          "layer": 0,
+          "miss_ratio": 0.3056918524248784,
+          "reinserted": 144170311,
+          "req": 207646002
+        },
+        {
+          "admission_treshold": 8,
+          "algorithm": "offline-clock",
+          "hit": 23069417,
+          "inserted": 2825902,
+          "layer": 1,
+          "miss_ratio": 0.6365629639226771,
+          "reinserted": 4661918,
+          "req": 63475691
+        }
+      ],
+      "miss_ratio": 0.19459211162659418,
+      "req": 207646002
+    },
+    {
+      "hit": 167346415,
+      "iteration": 1,
+      "metrics": [
+        {
+          "admission_treshold": 8,
+          "algorithm": "lru",
+          "hit": 144170311,
+          "inserted": 63475691,
+          "layer": 0,
+          "miss_ratio": 0.3056918524248784,
+          "reinserted": 144170311,
+          "req": 207646002
+        },
+        {
+          "admission_treshold": 8,
+          "algorithm": "offline-clock",
+          "hit": 23176104,
+          "inserted": 2664251,
+          "layer": 1,
+          "miss_ratio": 0.6348822102621932,
+          "reinserted": 2690776,
+          "req": 63475691
+        }
+      ],
+      "miss_ratio": 0.19407831892665095,
+      "req": 207646002
+    }
+  ],
+  "trace": "wiki_2019t.oracleGeneral.zst"
+}
