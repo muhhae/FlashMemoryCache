@@ -5,6 +5,7 @@ from pathlib import Path
 from pprint import pprint
 
 import pandas as pd
+from pandas.core.frame import itertools
 from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import Write, WriteFig, WriteHTML
@@ -124,6 +125,52 @@ def WriteMeanReduction(md, html, df: pd.DataFrame):
         )
 
 
+def WriteIndividualReduction(md, html, df: pd.DataFrame):
+    Write(md, html, "# Individual Reduction Result  \n")
+    for s in df["Cache Size"].unique():
+        Write(md, html, f"## {s}  \n")
+        for t in df["Trace"].unique():
+            Write(md, html, f"### {Path(t).stem}  \n")
+            data = df.query("`Cache Size` == @s and `Trace` == @t").sort_values(
+                by="Flash Write Reduction", ascending=False
+            )
+            fig = Scatter(
+                data,
+                x="Flash Write Reduction",
+                y="Miss Ratio Reduction",
+                color="Model",
+                symbol="Model",
+            )
+            WriteFig(md, html, fig)
+            Write(
+                md,
+                html,
+                tabulate(
+                    data[
+                        [
+                            "Model",
+                            "Miss Ratio Reduction",
+                            "Miss Reduction",
+                            "Promotion Reduction",
+                            "Flash Write Reduction",
+                            "JSON File",
+                        ]
+                    ],
+                    headers=[
+                        "Algorithm",
+                        "Miss Ratio Reduction",
+                        "Cache Miss Reduction",
+                        "Reinsertion Reduction",
+                        "Flash Write Reduction",
+                    ],
+                    tablefmt="html",
+                    showindex="never",
+                    intfmt=",",
+                )
+                + "  \n\n",
+            )
+
+
 def WriteIndividual(
     md,
     html,
@@ -231,52 +278,6 @@ def WriteIndividual(
             )
 
 
-def WriteIndividualReduction(md, html, df: pd.DataFrame):
-    Write(md, html, "# Individual Reduction Result  \n")
-    for s in df["Cache Size"].unique():
-        Write(md, html, f"## {s}  \n")
-        for t in df["Trace"].unique():
-            Write(md, html, f"### {Path(t).stem}  \n")
-            data = df.query("`Cache Size` == @s and `Trace` == @t").sort_values(
-                by="Flash Write Reduction", ascending=False
-            )
-            fig = Scatter(
-                data,
-                x="Flash Write Reduction",
-                y="Miss Ratio Reduction",
-                color="Model",
-                symbol="Model",
-            )
-            WriteFig(md, html, fig)
-            Write(
-                md,
-                html,
-                tabulate(
-                    data[
-                        [
-                            "Model",
-                            "Miss Ratio Reduction",
-                            "Miss Reduction",
-                            "Promotion Reduction",
-                            "Flash Write Reduction",
-                            "JSON File",
-                        ]
-                    ],
-                    headers=[
-                        "Algorithm",
-                        "Miss Ratio Reduction",
-                        "Cache Miss Reduction",
-                        "Reinsertion Reduction",
-                        "Flash Write Reduction",
-                    ],
-                    tablefmt="html",
-                    showindex="never",
-                    intfmt=",",
-                )
-                + "  \n\n",
-            )
-
-
 def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=True):
     files = [f for f in files if ("ignore_obj_size" in f) == ignore_obj_size]
     combined: pd.DataFrame
@@ -303,33 +304,22 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
     os.makedirs("../../docs/", exist_ok=True)
     os.makedirs("../../results/", exist_ok=True)
 
-    for t in combined["Flash Admission Treshold"].unique():
-        current_title = f"{title} Admission Threshold: {t}"
-        html = open(f"../../docs/{current_title}.html", "w")
-        md = open(f"../../results/{current_title}.md", "w")
-        WriteIndividual(
-            md,
-            html,
-            combined.query("`Flash Admission Treshold` == @t"),
-            "Algorithm",
-            current_title,
-        )
-        WriteHTML(html)
-
-    for t in combined["Algorithm"].unique():
-        current_title = f"{title} Algorithm: {t}"
-        html = open(f"../../docs/{current_title}.html", "w")
-        md = open(f"../../results/{current_title}.md", "w")
-        WriteIndividual(
-            md,
-            html,
-            combined.query("Algorithm == @t").sort_values(
-                by="Flash Admission Treshold"
-            ),
-            "Flash Admission Treshold",
-            current_title,
-        )
-        WriteHTML(html)
+    modifier = ["Flash Admission Treshold", "Algorithm", "DRAM Size"]
+    modifier_permutations = list(itertools.permutations(modifier, 2))
+    pprint(modifier_permutations)
+    for group, val in modifier_permutations:
+        for t in combined[val].unique():
+            current_title = f"{title} Grouped By {group} has {val}: {t}"
+            html = open(f"../../docs/{current_title}.html", "w")
+            md = open(f"../../results/{current_title}.md", "w")
+            WriteIndividual(
+                md,
+                html,
+                combined.query(f"`{val}` == @t"),
+                group,
+                current_title,
+            )
+            WriteHTML(html)
 
 
 def main():
@@ -340,6 +330,7 @@ def main():
     for txt in [
         "cloudphysics",
         "zipf1",
+        "zipf",
         "wiki_small",
         "wiki_big",
         "tencentphoto",
@@ -356,7 +347,7 @@ def main():
 
     use_cache = False
 
-    Sumz([f for f in files if "zipf1" in f], "Zipf1", use_cache=use_cache)
+    Sumz([f for f in files if "zipf" in f], "Zipf", use_cache=use_cache)
     Sumz([f for f in files if "cloud" in f], "CloudPhysics", use_cache=use_cache)
     Sumz([f for f in files if "metacdn" in f], "MetaCDN", use_cache=use_cache)
     Sumz([f for f in files if "wiki" in f], "Wiki", use_cache=use_cache)

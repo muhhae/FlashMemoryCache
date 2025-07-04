@@ -12,11 +12,11 @@ def Scatter(df: pd.DataFrame, include_zero: bool = False, **kwargs) -> go.Figure
     fig = px.scatter(df, **kwargs)
     fig.update_layout(
         font=dict(size=24),
-        height=800,
+        height=1000,
         width=1000,
     )
     fig.update_traces(
-        marker_size=24,
+        marker_size=30,
         marker_line=dict(width=6),
         selector=dict(mode="markers"),
     )
