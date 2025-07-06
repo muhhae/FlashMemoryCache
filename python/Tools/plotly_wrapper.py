@@ -5,23 +5,46 @@ import plotly.express as px
 import plotly.graph_objs as go
 from plotly.io import templates
 
-templates.default = "plotly_dark"
+templates.default = "plotly_white"
+
+
+def Line(df: pd.DataFrame, x, y, include_zero: bool = False, **kwargs) -> go.Figure:
+    fig = px.line(
+        df,
+        x=x,
+        y=y,
+        **kwargs,
+    )
+    fig.update_layout(
+        font=dict(size=32),
+        height=1000,
+        width=1000,
+    )
+    fig.update_traces(
+        line=dict(width=12),
+    )
+    fig.update_xaxes(showgrid=True, nticks=10)
+    fig.update_yaxes(showgrid=True, nticks=30)
+    if include_zero:
+        fig.update_xaxes(rangemode="tozero")
+        fig.update_yaxes(range=[0, 1])
+    return fig
 
 
 def Scatter(df: pd.DataFrame, include_zero: bool = False, **kwargs) -> go.Figure:
     fig = px.scatter(df, **kwargs)
     fig.update_layout(
-        font=dict(size=24),
+        font=dict(size=32),
         height=1000,
         width=1000,
     )
     fig.update_traces(
-        marker_size=30,
+        marker_size=36,
         marker_line=dict(width=6),
         selector=dict(mode="markers"),
     )
-    fig.update_xaxes(showgrid=True, nticks=20)
-    fig.update_yaxes(showgrid=True, nticks=20)
+    fig.update_xaxes(showgrid=True, nticks=10)
+    fig.update_yaxes(showgrid=True, nticks=30)
     if include_zero:
         fig.update_xaxes(rangemode="tozero")
         fig.update_yaxes(range=[0, 1])
@@ -32,12 +55,12 @@ def Box(df: pd.DataFrame, **kwargs) -> go.Figure:
     fig = px.box(df, **kwargs)
     fig.update_xaxes(dtick=10)
     fig.update_layout(
-        font=dict(size=24),
+        font=dict(size=32),
         height=30 * len(df[kwargs.get("y")].unique()),
         width=1000,
         showlegend=False,
     )
-    fig.update_xaxes(showgrid=True, nticks=20)
+    fig.update_xaxes(showgrid=True, nticks=10)
     fig.update_yaxes(showgrid=True, nticks=20)
     return fig
 
@@ -50,6 +73,7 @@ def VerticalCompositionBar(
     yaxis_title: str | None = None,
     xaxis_title: str | None = None,
     mode: str = "stack",
+    y_max=None,
 ) -> go.Figure:
     fig = go.Figure()
     for Y in Ys:
@@ -62,12 +86,12 @@ def VerticalCompositionBar(
         )
     fig.update_layout(
         barmode=mode,
-        font=dict(size=24),
+        font=dict(size=32),
         title_text=title,
         xaxis_title=xaxis_title,
         yaxis_title=yaxis_title,
     )
     fig.update_xaxes(showgrid=True, nticks=10)
-    fig.update_yaxes(showgrid=True, nticks=10)
+    fig.update_yaxes(showgrid=True, nticks=10, range=[0, y_max])
     fig.update_xaxes(type="category")
     return fig

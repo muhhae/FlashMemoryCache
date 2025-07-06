@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import pickle
 from glob import glob
@@ -10,7 +11,7 @@ from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import Write, WriteFig, WriteHTML
 from plotly.graph_objs import Figure, Trace
-from plotly_wrapper import Scatter, VerticalCompositionBar
+from plotly_wrapper import Line, Scatter, VerticalCompositionBar
 from tabulate import tabulate
 
 
@@ -187,6 +188,17 @@ def WriteIndividual(
                 by="Write"
             )
             data = data.drop_duplicates(subset=[category])
+            if pd.to_numeric(data[category], errors="coerce").notna().all():
+                Write(md, html, f"#### Overall Miss Ratio with {category}  \n")
+                WriteFig(
+                    md,
+                    html,
+                    Line(
+                        data,
+                        x=category,
+                        y="Overall Miss Ratio",
+                    ),
+                )
             for y in ["Overall Miss Ratio", "Flash Miss Ratio"]:
                 Write(md, html, f"#### {y}  \n")
                 WriteFig(
@@ -278,6 +290,21 @@ def WriteIndividual(
             )
 
 
+def WriteSumz(combined, category, title, a, b, i, j):
+    current_title = f"{title} Categorized By {category} with {a}: {i} and {b}: {j}"
+    html = open(f"../../docs/{current_title}.html", "w")
+    md = open(f"../../results/{current_title}.md", "w")
+    WriteIndividual(
+        md,
+        html,
+        combined.query(f"`{a}` == @i and `{b}` == @j"),
+        category,
+        current_title,
+    )
+    WriteHTML(html)
+    print("Finished generating " + current_title)
+
+
 def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=True):
     files = [f for f in files if ("ignore_obj_size" in f) == ignore_obj_size]
     combined: pd.DataFrame
@@ -301,25 +328,22 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         with open(cache, "wb") as c:
             pickle.dump(combined, c)
 
+    # print(combined[combined["DRAM Size"] == "0.01"][["DRAM Size", "JSON File"]])
+    # exit(1)
+
     os.makedirs("../../docs/", exist_ok=True)
     os.makedirs("../../results/", exist_ok=True)
 
-    modifier = ["Flash Admission Treshold", "Algorithm", "DRAM Size"]
-    modifier_permutations = list(itertools.permutations(modifier, 2))
-    pprint(modifier_permutations)
-    for group, val in modifier_permutations:
-        for t in combined[val].unique():
-            current_title = f"{title} Grouped By {group} has {val}: {t}"
-            html = open(f"../../docs/{current_title}.html", "w")
-            md = open(f"../../results/{current_title}.md", "w")
-            WriteIndividual(
-                md,
-                html,
-                combined.query(f"`{val}` == @t"),
-                group,
-                current_title,
-            )
-            WriteHTML(html)
+    modifier = ["DRAM Size", "Flash Admission Treshold", "Algorithm"]
+    modifier_permutations = list(itertools.permutations(modifier, 3))
+    args = []
+    for category, a, b in modifier_permutations:
+        for i in combined[a].unique():
+            for j in combined[b].unique():
+                args.append((combined, category, title, a, b, i, j))
+
+    with multiprocessing.Pool() as pool:
+        pool.starmap(WriteSumz, args)
 
 
 def main():
@@ -347,11 +371,11 @@ def main():
 
     use_cache = False
 
-    Sumz([f for f in files if "zipf" in f], "Zipf", use_cache=use_cache)
-    Sumz([f for f in files if "cloud" in f], "CloudPhysics", use_cache=use_cache)
-    Sumz([f for f in files if "metacdn" in f], "MetaCDN", use_cache=use_cache)
-    Sumz([f for f in files if "wiki" in f], "Wiki", use_cache=use_cache)
-    Sumz([f for f in files if "tencent" in f], "TencentPhotos", use_cache=use_cache)
+    Sumz([f for f in files if "zipf" in f], "Zipf", True, use_cache)
+    # ([f for f in files if "cloud" in f], "CloudPhysics", True, use_cache),
+    # ([f for f in files if "metacdn" in f], "MetaCDN", True, use_cache),
+    # ([f for f in files if "wiki" in f], "Wiki", True, use_cache),
+    # ([f for f in files if "tencent" in f], "TencentPhotos", True, use_cache),
 
 
 if __name__ == "__main__":

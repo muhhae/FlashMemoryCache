@@ -40,7 +40,7 @@ def ProcessResultJSON(result: dict, file):
         "DRAM Miss Ratio": dram["miss_ratio"] if dram is not None else 0,
         "DRAM Hit": dram["hit"] if dram is not None else 0,
         "DRAM Request": dram["req"] if dram is not None else 0,
-        "DRAM Size": desc[-1]["dram_size"]
+        "DRAM Size": float(desc[-1]["dram_size"])
         if isinstance(desc[-1], dict) and "dram_size" in desc[-1]
         else 0.01
         if dram is not None
