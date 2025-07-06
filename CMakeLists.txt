@@ -33,14 +33,7 @@ include_directories(onnxruntimeInclude)
 add_library(cachesim_libs INTERFACE)
 target_include_directories(cachesim_libs INTERFACE "/usr/local/include")
 target_link_libraries(cachesim_libs INTERFACE
-    "/usr/local/lib/libcache_lib_c.a"
-    "/usr/local/lib/libcache_lib_cpp.a"
-    "/usr/local/lib/libdataStructure_lib.a"
-    "/usr/local/lib/libmrcProfiler_lib.a"
-    "/usr/local/lib/libprofiler_lib.a"
-    "/usr/local/lib/libtraceAnalyzer_lib.a"
-    "/usr/local/lib/libtraceReader_lib.a"
-    "/usr/local/lib/libutils_lib.a"
+    "/usr/local/lib/liblibCacheSim.a"
     ${ZSTD_LIBRARIES}
     ${TCMALLOC_LIBRARIES}
     ${GLib_LIBRARY}
@@ -49,9 +42,6 @@ target_link_libraries(cachesim_libs INTERFACE
 
 add_subdirectory(external/googletest)
 add_subdirectory(external/robin-map)
-
-find_program(MEMORYCHECK_COMMAND NAMES valgrind)
-set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full")
 
 enable_testing()
 
