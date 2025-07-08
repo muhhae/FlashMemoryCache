@@ -51,6 +51,7 @@ while IFS= read -r link; do
         if $ignore_obj_size; then
             output_path="$out_dir/log/$basename[$cache_size,ignore_obj_size,$algorithm$add_desc].json"
             if [ ! -s "$output_path" ] || $force_replace; then
+                echo "$output_path doesn't exist, running!"
                 echo "shell:1:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size --ignore-obj-size -d ignore_obj_size,$algorithm$add_desc" >> $task_out
             else
                 echo "$output_path exist, skipping!"
