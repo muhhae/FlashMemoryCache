@@ -125,10 +125,14 @@ void ChainedCache::EndIteration() {
     auto& tmp_additional_cache_data =
         additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
-    req.push_back(tmp_additional_cache_data.n_req);
-    hit.push_back(tmp_additional_cache_data.n_hit);
-    inserted.push_back(tmp_additional_cache_data.n_inserted);
-    reinserted.push_back(tmp_additional_cache_data.n_promoted);
+    CacheMetrics metric = {
+        tmp_additional_cache_data.n_req,
+        tmp_additional_cache_data.n_hit,
+        tmp_additional_cache_data.n_inserted,
+        tmp_additional_cache_data.n_promoted,
+
+    };
+    metrics.push_back(metric);
 
     for (auto& e : tmp_additional_cache_data.objs_metadata) {
         e.second.Reset();
@@ -170,16 +174,16 @@ void ChainedCache::Admit(const cache_obj_t* obj, const uint64_t freq) {
             .n_inserted++;
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
-    for (size_t i = 0; i < hit.size(); ++i) {
+    for (size_t i = 0; i < metrics.size(); ++i) {
         nlohmann::json j;
         j["layer"] = depth;
         j["admission_treshold"] = admission_treshold;
         j["algorithm"] = algorithm;
-        j["hit"] = hit[i];
-        j["req"] = req[i];
-        j["inserted"] = inserted[i];
-        j["reinserted"] = reinserted[i];
-        j["miss_ratio"] = 1 - (double)hit[i] / req[i];
+        j["hit"] = metrics[i].hit;
+        j["req"] = metrics[i].req;
+        j["inserted"] = metrics[i].inserted;
+        j["reinserted"] = metrics[i].reinserted;
+        j["miss_ratio"] = 1 - (double)metrics[i].hit / metrics[i].req;
         output_json[i]["metrics"].push_back(j);
         output_json[i]["iteration"] = i;
     }
@@ -205,7 +209,6 @@ bool ChainedCache::Get(const request_t* req) {
     auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
 
     tmp_additional_cache_data.OnAccessTracking(data, req);
-    tmp_additional_cache_data.n_req++;
 
     if (!tmp->find(tmp, req, false)) {
         Admit(req, data.lifetime_freq);
@@ -227,12 +230,13 @@ bool ChainedCache::Find(const request_t* req) {
     auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
 
     tmp_additional_cache_data.OnAccessTracking(data, req);
-    tmp_additional_cache_data.n_req++;
+
     if (tmp->find(tmp, req, false) == NULL) {
         if (next)
             return next->Find(req);
         return false;
     }
+
     tmp_additional_cache_data.n_hit++;
     return true;
 }

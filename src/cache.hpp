@@ -38,10 +38,18 @@ class ChainedCache {
     ChainedCache* next;
     std::string algorithm;
 
-    std::vector<uint64_t> req;
-    std::vector<uint64_t> hit;
-    std::vector<uint64_t> inserted;
-    std::vector<uint64_t> reinserted;
+    struct CacheMetrics {
+        uint64_t req;
+        uint64_t hit;
+        uint64_t inserted;
+        uint64_t reinserted;
+
+        uint64_t byte_read;
+        uint64_t byte_reinserted;
+        uint64_t byte_inserted;
+    };
+
+    std::vector<CacheMetrics> metrics;
 
     uint64_t admission_treshold = 1;
     bool isML = false;
