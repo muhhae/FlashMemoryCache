@@ -41,6 +41,12 @@ while IFS= read -r link; do
 
     filename=$(basename $link)
     file="$traces_dir/$filename"
+
+    if [ ! -f "$file" ]; then
+        echo "File '$file' does not exist."
+        continue
+    fi
+
     basename="${filename%%.oracleGeneral*}"
     size=$(stat --format="%s" "$file")
 
