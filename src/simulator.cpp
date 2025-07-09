@@ -17,7 +17,6 @@
 #include <string>
 
 #include "cache.hpp"
-#include "cache/additional_data.hpp"
 #include "lib/cache_size.h"
 #include "lib/json.hpp"
 
