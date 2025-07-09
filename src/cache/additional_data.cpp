@@ -43,14 +43,16 @@ std::unordered_map<std::string, float> AdditionalCacheData::CandidateMetadata(
     features["rtime_between"] = data.rtime_between;
     features["rtime_between_std"] = rm_rtime_between.Normalize(data.rtime_between);
     features["rtime_between_log"] = log(data.rtime_between + 1);
-    features["rtime_between_log_std"] = rm_rtime_between_log.Normalize(log(data.rtime_between + 1));
+    features["rtime_between_log_std"] =
+        rm_rtime_between_log.Normalize(log(data.rtime_between + 1));
 
     features["clock_freq"] = data.clock_freq;
     features["clock_freq_decayed_rtime"] = data.clock_freq_decayed_rtime;
     features["clock_freq_decayed_vtime"] = data.clock_freq_decayed_vtime;
     features["clock_freq_std"] = rm_clock_freq.Normalize(data.clock_freq);
     features["clock_freq_log"] = log(data.clock_freq + 1);
-    features["clock_freq_log_std"] = rm_clock_freq_log.Normalize(log(data.clock_freq + 1));
+    features["clock_freq_log_std"] =
+        rm_clock_freq_log.Normalize(log(data.clock_freq + 1));
 
     features["lifetime_freq"] = data.lifetime_freq;
     features["lifetime_freq_decayed_rtime"] =
@@ -59,7 +61,8 @@ std::unordered_map<std::string, float> AdditionalCacheData::CandidateMetadata(
         data.lifetime_freq_decayed_vtime * exp(-decay_power * vtime_since);
     features["lifetime_freq_std"] = rm_lifetime_freq.Normalize(data.lifetime_freq);
     features["lifetime_freq_log"] = log(data.lifetime_freq + 1);
-    features["lifetime_freq_log_std"] = rm_lifetime_freq_log.Normalize(log(data.lifetime_freq + 1));
+    features["lifetime_freq_log_std"] =
+        rm_lifetime_freq_log.Normalize(log(data.lifetime_freq + 1));
 
     return features;
 }
@@ -79,6 +82,8 @@ void ObjMetadata::Reset() {
 }
 
 void AdditionalCacheData::OnAccessTracking(ObjMetadata& data, const request_t* req) {
+    n_req++;
+
     uint64_t rtime_since = req->clock_time - data.rtime;
     uint64_t vtime_since = vtime - data.vtime;
 
@@ -91,8 +96,10 @@ void AdditionalCacheData::OnAccessTracking(ObjMetadata& data, const request_t* r
     data.clock_freq++;
     data.lifetime_freq++;
 
-    data.clock_freq_decayed_rtime = data.clock_freq_decayed_rtime * exp(-decay_power * rtime_since);
-    data.clock_freq_decayed_vtime = data.clock_freq_decayed_vtime * exp(-decay_power * vtime_since);
+    data.clock_freq_decayed_rtime =
+        data.clock_freq_decayed_rtime * exp(-decay_power * rtime_since);
+    data.clock_freq_decayed_vtime =
+        data.clock_freq_decayed_vtime * exp(-decay_power * vtime_since);
 
     data.lifetime_freq_decayed_rtime =
         data.lifetime_freq_decayed_rtime * exp(-decay_power * rtime_since);
@@ -105,17 +112,23 @@ void AdditionalCacheData::OnAccessTracking(ObjMetadata& data, const request_t* r
     data.lifetime_freq_decayed_vtime++;
 }
 
-void AdditionalCacheData::BeforeEvaluationTracking(const cache_obj_t* obj, const request_t* req) {
+void AdditionalCacheData::BeforeEvaluationTracking(
+    const cache_obj_t* obj, const request_t* req
+) {
     auto& data = objs_metadata[obj->obj_id];
 
     uint64_t rtime_since = req->clock_time - data.rtime;
     uint64_t vtime_since = vtime - data.vtime;
 
-    data.clock_freq_decayed_rtime = data.clock_freq_decayed_rtime * exp(-decay_power * rtime_since);
-    data.clock_freq_decayed_vtime = data.clock_freq_decayed_vtime * exp(-decay_power * vtime_since);
+    data.clock_freq_decayed_rtime =
+        data.clock_freq_decayed_rtime * exp(-decay_power * rtime_since);
+    data.clock_freq_decayed_vtime =
+        data.clock_freq_decayed_vtime * exp(-decay_power * vtime_since);
 }
 
-void AdditionalCacheData::BeforeEvictionTracking(const cache_obj_t* obj, const request_t* req) {
+void AdditionalCacheData::BeforeEvictionTracking(
+    const cache_obj_t* obj, const request_t* req
+) {
     auto& data = objs_metadata[obj->obj_id];
 
     data.clock_freq_decayed_rtime = 0;
@@ -123,7 +136,9 @@ void AdditionalCacheData::BeforeEvictionTracking(const cache_obj_t* obj, const r
     data.clock_freq = 0;
 }
 
-void AdditionalCacheData::OnPromotionTracking(const cache_obj_t* obj, const request_t* req) {
+void AdditionalCacheData::OnPromotionTracking(
+    const cache_obj_t* obj, const request_t* req
+) {
     n_promoted++;
     auto& data = objs_metadata[obj->obj_id];
     // data.Reset();
