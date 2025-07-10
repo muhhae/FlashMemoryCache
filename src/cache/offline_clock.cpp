@@ -20,8 +20,7 @@ void OfflineClockEvict(cache_t* cache, const request_t* req) {
         data.last_promotion = data.lifetime_freq;
 
         additional_cache_data.BeforeEvaluationTracking(obj_to_evict, req);
-        bool wasted = data.wasted_promotions.find(data.last_promotion) !=
-                      data.wasted_promotions.end();
+        bool wasted = data.wasted_promotions.contains(data.last_promotion);
 
         if (additional_cache_data.generate_datasets) {
             auto features =
