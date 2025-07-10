@@ -23,6 +23,7 @@
 #include "cache/fifo.hpp"
 #include "cache/lru.hpp"
 #include "cache/offline_clock.hpp"
+#include "cache/offline_clock_v2.hpp"
 #include "lib/json.hpp"
 
 typedef std::function<cache_t*(
@@ -35,6 +36,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"decayed_clock", algorithm::DecayedClockInit},
         {"fifo", algorithm::FIFOInit},
         {"offline-clock", algorithm::OfflineClockInit},
+        {"offline-clock-v2", algorithm::OfflineClockV2Init},
         {"dist-optimal", algorithm::DistClockInit},
         {"lru", algorithm::LRUInit},
         {"clock", algorithm::ClockInit},

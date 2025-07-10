@@ -1,8 +1,11 @@
-: [ BUILD AND TEST ]; cd build && cmake .. && make && ctest --output-on-failure --stop-on-failure
-: [ CLEAN BUILD AND TEST ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest --output-on-failure --stop-on-failure
+: [ BUILD AND TEST ]; cd build && cmake .. && make && ctest --output-on-failure
+: [ CLEAN BUILD AND TEST ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest --output-on-failure
 : ---
 : [ BUILD AND TEST VERBOSE ]; cd build && cmake .. && make && ctest -V
 : [ CLEAN BUILD AND TEST VERBOSE ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest -V
+: ---
+: [ OFFLINE-CLOCK v1 and v2 JQ  ]; cd build && { ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}" && ./cacheSimulator -a offline-clock-v2 -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}" }
+: [ OFFLINE-CLOCK v1 and v2 RAW ]; cd build && { ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin && ./cacheSimulator -a offline-clock-v2 -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin }
 : ---
 : [ HeapTrack cloudPhysicsIO ]; cd build && heaptrack ./cacheSimulator ../trace/cloudPhysicsIO.oracleGeneral.bin -a offline-clock --dram -s 1 -r 0.1 --ignore-obj-size
 : [ HeapTrack zipf1 ]; cd build && heaptrack ./cacheSimulator ../trace/zipf_1_0.oracleGeneral -a offline-clock --dram -s 1 -r 0.1 --ignore-obj-size

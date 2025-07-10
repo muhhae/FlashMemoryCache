@@ -21,8 +21,10 @@
 #include "lib/json.hpp"
 
 void RunExperiment(options o) {
-    if (o.algorithm == "offline-clock" && o.max_iteration < 2)
+    if (o.max_iteration < 2 &&
+        (o.algorithm == "offline-clock" || o.algorithm == "offline-clock-v2"))
         o.max_iteration = 2;
+
     std::filesystem::create_directories(o.output_directory / "log");
     if (o.generate_datasets)
         std::filesystem::create_directories(o.output_directory / "datasets");

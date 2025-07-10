@@ -5,9 +5,13 @@ message(
   "****************** this example only works after libCacheSim has been installed ******************"
 )
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 find_package(GLib "2.40" REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 message(
@@ -41,7 +45,6 @@ target_link_libraries(cachesim_libs INTERFACE
 )
 
 add_subdirectory(external/googletest)
-add_subdirectory(external/robin-map)
 
 enable_testing()
 
@@ -50,6 +53,7 @@ add_library(my_cache_sim
   src/cache.cpp
   src/cache/additional_data.cpp
   src/cache/offline_clock.cpp
+  src/cache/offline_clock_v2.cpp
   src/cache/clock.cpp
   src/cache/lru.cpp
   src/cache/fifo.cpp
@@ -64,7 +68,7 @@ target_include_directories(cacheSimulator PRIVATE src .)
 target_include_directories(my_cache_sim PRIVATE src .)
 target_include_directories(run_tests PRIVATE src .)
 
-target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime tsl::robin_map)
+target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime)
 target_link_libraries(cacheSimulator PRIVATE my_cache_sim)
 target_link_libraries(run_tests PRIVATE my_cache_sim gtest_main)
 

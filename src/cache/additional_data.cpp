@@ -93,6 +93,7 @@ void AdditionalCacheData::OnAccessTracking(ObjMetadata& data, const request_t* r
 
     data.obj_size = req->obj_size;
 
+    data.current_access_after_promotion[data.last_promotion]++;
     data.clock_freq++;
     data.lifetime_freq++;
 

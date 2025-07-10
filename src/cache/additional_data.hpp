@@ -56,6 +56,9 @@ struct ObjMetadata {
 
     std::unordered_set<uint64_t> wasted_promotions;
 
+    std::unordered_map<uint64_t, uint64_t> final_access_after_promotion;
+    std::unordered_map<uint64_t, uint64_t> current_access_after_promotion;
+
     void Reset();
 
     int64_t rtime = 0;
@@ -136,7 +139,9 @@ class AdditionalCacheData {
 };
 class AdditionalCacheDataStorage {
    public:
+    AdditionalCacheData& operator[](cache_t* cache) { return storage[cache]; }
     AdditionalCacheData& GetAdditionalCacheData(cache_t* cache) { return storage[cache]; }
+
     void TransferOwnership(cache_t* source, cache_t* destination) {
         if (source == destination)
             return;
