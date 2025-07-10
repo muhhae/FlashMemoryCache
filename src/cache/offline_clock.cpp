@@ -24,7 +24,7 @@ void OfflineClockEvict(cache_t* cache, const request_t* req) {
 
         if (additional_cache_data.generate_datasets) {
             auto features =
-                additional_cache_data.CandidateMetadata(data, cache, req, obj_to_evict);
+                additional_cache_data.ObjectFeatures(data, cache, req, obj_to_evict);
             features["wasted"] = wasted;
             for (size_t i = 0; i < data::datasets_columns.size(); i++) {
                 additional_cache_data.datasets

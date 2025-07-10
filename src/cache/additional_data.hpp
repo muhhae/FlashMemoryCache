@@ -94,7 +94,7 @@ class AdditionalCacheData {
     void BeforeEvaluationTracking(const cache_obj_t* obj, const request_t* req);
     void BeforeEvictionTracking(const cache_obj_t* obj, const request_t* req);
     void OnPromotionTracking(const cache_obj_t* obj, const request_t* req);
-    std::unordered_map<std::string, float> CandidateMetadata(
+    std::unordered_map<std::string, float> ObjectFeatures(
         const ObjMetadata& data,
         const cache_t* cache,
         const request_t* current_req,

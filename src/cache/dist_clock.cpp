@@ -19,7 +19,8 @@ static void DistClockEvict(cache_t* cache, const request_t* req) {
         bool wasted = obj_to_evict->obj_id >= additional_cache_data.dist_optimal_treshold;
         if (additional_cache_data.generate_datasets) {
             auto data = additional_cache_data.objs_metadata[obj_to_evict->obj_id];
-            auto features = additional_cache_data.CandidateMetadata(data, cache, req, obj_to_evict);
+            auto features =
+                additional_cache_data.ObjectFeatures(data, cache, req, obj_to_evict);
             features["wasted"] = wasted;
             for (size_t i = 0; i < data::datasets_columns.size(); i++) {
                 additional_cache_data.datasets
@@ -43,7 +44,8 @@ static void DistClockEvict(cache_t* cache, const request_t* req) {
 }
 
 cache_t* DistClockInit(
-    const common_cache_params_t ccache_params, const char* cache_specifiadditional_cache_data
+    const common_cache_params_t ccache_params,
+    const char* cache_specifiadditional_cache_data
 ) {
     auto cache = Clock_init(ccache_params, cache_specifiadditional_cache_data);
 

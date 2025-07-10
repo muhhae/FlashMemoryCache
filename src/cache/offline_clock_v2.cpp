@@ -26,7 +26,7 @@ void OfflineClockV2Evict(cache_t* cache, const request_t* req) {
 
         if (additional_cache_data.generate_datasets) {
             auto features =
-                additional_cache_data.CandidateMetadata(data, cache, req, obj_to_evict);
+                additional_cache_data.ObjectFeatures(data, cache, req, obj_to_evict);
             features["wasted"] = wasted;
             features["access_after_promotion"] =
                 data.final_access_after_promotion[data.last_promotion];

@@ -10,7 +10,7 @@
 #include <unordered_map>
 
 namespace data {
-std::unordered_map<std::string, float> AdditionalCacheData::CandidateMetadata(
+std::unordered_map<std::string, float> AdditionalCacheData::ObjectFeatures(
     const ObjMetadata& data,
     const cache_t* cache,
     const request_t* current_req,
