@@ -12,7 +12,6 @@
 #include <ctime>
 #include <filesystem>
 #include <functional>
-#include <print>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -129,8 +128,6 @@ void ChainedCache::EndIteration() {
         additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
     metrics.push_back(tmp_additional_cache_data.metric);
-
-    std::println("Metrics Time Count: {}", metrics_time.size());
 
     metrics_times.push_back(metrics_time);
     metrics_time.clear();
