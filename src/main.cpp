@@ -2,7 +2,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <format>
 #include <string>
 #include <vector>
 
