@@ -12,6 +12,7 @@
 #include <ctime>
 #include <filesystem>
 #include <functional>
+#include <print>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -129,6 +130,11 @@ void ChainedCache::EndIteration() {
 
     metrics.push_back(tmp_additional_cache_data.metric);
 
+    std::println("Metrics Time Count: {}", metrics_time.size());
+
+    metrics_times.push_back(metrics_time);
+    metrics_time.clear();
+
     for (auto& e : tmp_additional_cache_data.objs_metadata) {
         e.second.Reset();
         e.second.lifetime_freq = 0;
@@ -181,6 +187,21 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
         j["byte_read"] = metrics[i].byte_read;
         j["byte_inserted"] = metrics[i].byte_inserted;
         j["byte_reinserted"] = metrics[i].byte_reinserted;
+        for (const auto& x : metrics_times[i]) {
+            nlohmann::json e;
+            e["hit"] = x.hit;
+            e["req"] = x.req;
+            e["inserted"] = x.inserted;
+            e["reinserted"] = x.reinserted;
+            e["miss_ratio"] = 1 - (double)x.hit / x.req;
+            e["byte_miss"] = x.byte_miss;
+            e["byte_read"] = x.byte_read;
+            e["byte_inserted"] = x.byte_inserted;
+            e["byte_reinserted"] = x.byte_reinserted;
+
+            j["metrics_time"].push_back(e);
+        }
+
         output_json[i]["metrics"].push_back(j);
         output_json[i]["iteration"] = i;
     }
@@ -200,42 +221,69 @@ void ChainedCache::CleanUp() {
         next->CleanUp();
 }
 
-bool ChainedCache::LookUpAndTrack(const request_t* req) {
+void ChainedCache::TrackMetricsTime(uint64_t time) {
+    if (time - prev_time < 3600)
+        return;
+
+    CacheMetrics current_metrics =
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(tmp).metric;
+    CacheMetrics delta_metrics = {
+        current_metrics.req - prev_metrics.req,
+        current_metrics.hit - prev_metrics.hit,
+        current_metrics.inserted - prev_metrics.inserted,
+        current_metrics.reinserted - prev_metrics.reinserted,
+        current_metrics.byte_read - prev_metrics.byte_read,
+        current_metrics.byte_miss - prev_metrics.byte_miss,
+        current_metrics.byte_reinserted - prev_metrics.byte_reinserted,
+        current_metrics.byte_inserted - prev_metrics.byte_inserted,
+    };
+
+    metrics_time.push_back(delta_metrics);
+    prev_metrics = current_metrics;
+    prev_time = time;
+
+    if (next)
+        next->TrackMetricsTime(time);
+}
+
+bool ChainedCache::LookUpAndTrack(const request_t* req, bool update_cache_state) {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
     auto& tmp_additional_cache_data =
         additional_cache_data_storage.GetAdditionalCacheData(tmp);
     auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
     tmp_additional_cache_data.OnAccessTracking(data, req);
-    if (!tmp->find(tmp, req, false)) {
+
+    bool hit = tmp->find(tmp, req, false);
+    if (!hit) {
         tmp_additional_cache_data.metric.byte_miss += req->obj_size;
-        return false;
+        if (update_cache_state) {
+            Admit(req, data.lifetime_freq);
+        }
+    } else {
+        tmp_additional_cache_data.metric.byte_read += req->obj_size;
+        tmp_additional_cache_data.metric.hit++;
+        if (update_cache_state) {
+            tmp->get(tmp, req);
+        }
     }
-    tmp_additional_cache_data.metric.byte_read += req->obj_size;
-    tmp_additional_cache_data.metric.hit++;
-    return true;
+    return hit;
 }
 
 bool ChainedCache::Get(const request_t* req) {
-    if (!LookUpAndTrack(req)) {
-        auto freq = data::AdditionalCacheDataStorage::GetStorage()
-                        .GetAdditionalCacheData(tmp)
-                        .objs_metadata[req->obj_id]
-                        .lifetime_freq;
-        Admit(req, freq);
-        if (next)
-            return next->Find(req);
-        return false;
-    }
-    tmp->get(tmp, req);
-    return true;
+    bool hit = LookUpAndTrack(req, true);
+    if (hit)
+        return true;
+    if (next)
+        return next->Find(req);
+    return false;
 }
 
 bool ChainedCache::Find(const request_t* req) {
-    if (!LookUpAndTrack(req)) {
-        if (next)
-            return next->Find(req);
-        return false;
-    }
-    return true;
+    bool hit = LookUpAndTrack(req, false);
+    if (hit)
+        return true;
+    if (next)
+        return next->Find(req);
+    return false;
 }
 }  // namespace CustomCache

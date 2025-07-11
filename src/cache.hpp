@@ -41,6 +41,7 @@ class ChainedCache {
     void Admit(const cache_obj_t* obj, const uint64_t freq);
     void Admit(const request_t* req, const uint64_t freq);
     void Print(nlohmann::json& output_json, uint64_t depth);
+    void TrackMetricsTime(uint64_t current_time);
     void CleanUp();
 
    public:
@@ -51,10 +52,15 @@ class ChainedCache {
     std::string algorithm;
     std::vector<CacheMetrics> metrics;
 
+    std::vector<std::vector<CacheMetrics>> metrics_times;
+    std::vector<CacheMetrics> metrics_time;
+    CacheMetrics prev_metrics;
+    uint64_t prev_time;
+
     uint64_t admission_treshold = 1;
     bool isML = false;
 
    private:
-    bool LookUpAndTrack(const request_t* req);
+    bool LookUpAndTrack(const request_t* req, bool update_cache_state);
 };
 }  // namespace CustomCache

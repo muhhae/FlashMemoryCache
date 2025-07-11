@@ -173,6 +173,7 @@ void Simulate(
         Cache->SetupIteration(i == o.max_iteration - 1 && o.generate_datasets);
         while (read_one_req(reader, req) == 0) {
             Cache->Get(req);
+            Cache->TrackMetricsTime(req->clock_time);
         }
         Cache->EndIteration();
         reset_reader(reader);
