@@ -199,45 +199,43 @@ void ChainedCache::CleanUp() {
     if (next)
         next->CleanUp();
 }
-bool ChainedCache::Get(const request_t* req) {
+
+bool ChainedCache::LookUpAndTrack(const request_t* req) {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
     auto& tmp_additional_cache_data =
         additional_cache_data_storage.GetAdditionalCacheData(tmp);
     auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
-
     tmp_additional_cache_data.OnAccessTracking(data, req);
-
     if (!tmp->find(tmp, req, false)) {
         tmp_additional_cache_data.metric.byte_miss += req->obj_size;
-        Admit(req, data.lifetime_freq);
-        if (next)
-            return next->Find(req);
         return false;
     }
     tmp_additional_cache_data.metric.byte_read += req->obj_size;
     tmp_additional_cache_data.metric.hit++;
+    return true;
+}
 
+bool ChainedCache::Get(const request_t* req) {
+    if (!LookUpAndTrack(req)) {
+        auto freq = data::AdditionalCacheDataStorage::GetStorage()
+                        .GetAdditionalCacheData(tmp)
+                        .objs_metadata[req->obj_id]
+                        .lifetime_freq;
+        Admit(req, freq);
+        if (next)
+            return next->Find(req);
+        return false;
+    }
     tmp->get(tmp, req);
     return true;
 }
+
 bool ChainedCache::Find(const request_t* req) {
-    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data =
-        additional_cache_data_storage.GetAdditionalCacheData(tmp);
-
-    auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
-
-    tmp_additional_cache_data.OnAccessTracking(data, req);
-
-    if (!tmp->find(tmp, req, false)) {
-        tmp_additional_cache_data.metric.byte_miss += req->obj_size;
+    if (!LookUpAndTrack(req)) {
         if (next)
             return next->Find(req);
         return false;
     }
-
-    tmp_additional_cache_data.metric.byte_read += req->obj_size;
-    tmp_additional_cache_data.metric.hit++;
     return true;
 }
 }  // namespace CustomCache

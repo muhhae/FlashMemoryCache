@@ -53,5 +53,8 @@ class ChainedCache {
 
     uint64_t admission_treshold = 1;
     bool isML = false;
+
+   private:
+    bool LookUpAndTrack(const request_t* req);
 };
 }  // namespace CustomCache
