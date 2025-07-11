@@ -107,10 +107,7 @@ class AdditionalCacheData {
     std::ofstream datasets;
     std::unordered_map<obj_id_t, ObjMetadata> objs_metadata;
 
-    uint64_t n_hit;
-    uint64_t n_req;
-    uint64_t n_promoted;
-    uint64_t n_inserted;
+    CacheMetrics metric = {0};
 
     uint64_t max_lifetime_freq = 1;
     uint64_t max_clock_freq = 1;

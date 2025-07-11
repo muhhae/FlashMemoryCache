@@ -11,6 +11,18 @@
 #include "lib/json.hpp"
 #include "options.hpp"
 
+struct CacheMetrics {
+    uint64_t req;
+    uint64_t hit;
+    uint64_t inserted;
+    uint64_t reinserted;
+
+    uint64_t byte_read;
+    uint64_t byte_miss;
+    uint64_t byte_reinserted;
+    uint64_t byte_inserted;
+};
+
 namespace CustomCache {
 class ChainedCache {
    public:
@@ -37,18 +49,6 @@ class ChainedCache {
 
     ChainedCache* next;
     std::string algorithm;
-
-    struct CacheMetrics {
-        uint64_t req;
-        uint64_t hit;
-        uint64_t inserted;
-        uint64_t reinserted;
-
-        uint64_t byte_read;
-        uint64_t byte_reinserted;
-        uint64_t byte_inserted;
-    };
-
     std::vector<CacheMetrics> metrics;
 
     uint64_t admission_treshold = 1;

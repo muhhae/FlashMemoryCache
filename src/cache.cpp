@@ -110,10 +110,10 @@ void ChainedCache::SetupIteration(bool generate_datasets) {
         // tmp_ml_param->treshold = ml_param->treshold;
     }
 
-    tmp_additional_cache_data.n_hit = 0;
-    tmp_additional_cache_data.n_req = 0;
-    tmp_additional_cache_data.n_promoted = 0;
-    tmp_additional_cache_data.n_inserted = 0;
+    tmp_additional_cache_data.metric.hit = 0;
+    tmp_additional_cache_data.metric.req = 0;
+    tmp_additional_cache_data.metric.reinserted = 0;
+    tmp_additional_cache_data.metric.inserted = 0;
 
     tmp_additional_cache_data.generate_datasets = generate_datasets;
 
@@ -127,14 +127,7 @@ void ChainedCache::EndIteration() {
     auto& tmp_additional_cache_data =
         additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
-    CacheMetrics metric = {
-        tmp_additional_cache_data.n_req,
-        tmp_additional_cache_data.n_hit,
-        tmp_additional_cache_data.n_inserted,
-        tmp_additional_cache_data.n_promoted,
-
-    };
-    metrics.push_back(metric);
+    metrics.push_back(tmp_additional_cache_data.metric);
 
     for (auto& e : tmp_additional_cache_data.objs_metadata) {
         e.second.Reset();
@@ -160,20 +153,18 @@ void ChainedCache::EndIteration() {
 void ChainedCache::Admit(const request_t* req, const uint64_t freq) {
     if (freq < admission_treshold)
         return;
-    if (!tmp->get(tmp, req))
-        data::AdditionalCacheDataStorage::GetStorage()
-            .GetAdditionalCacheData(tmp)
-            .n_inserted++;
+    if (!tmp->get(tmp, req)) {
+        auto& metric = data::AdditionalCacheDataStorage::GetStorage()
+                           .GetAdditionalCacheData(tmp)
+                           .metric;
+        metric.byte_inserted += req->obj_size;
+        metric.inserted++;
+    }
 }
 void ChainedCache::Admit(const cache_obj_t* obj, const uint64_t freq) {
-    if (freq < admission_treshold)
-        return;
     request_t req;
     copy_cache_obj_to_request(&req, obj);
-    if (!tmp->get(tmp, &req))
-        data::AdditionalCacheDataStorage::GetStorage()
-            .GetAdditionalCacheData(tmp)
-            .n_inserted++;
+    Admit(&req, freq);
 }
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     for (size_t i = 0; i < metrics.size(); ++i) {
@@ -186,6 +177,10 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
         j["inserted"] = metrics[i].inserted;
         j["reinserted"] = metrics[i].reinserted;
         j["miss_ratio"] = 1 - (double)metrics[i].hit / metrics[i].req;
+        j["byte_miss"] = metrics[i].byte_miss;
+        j["byte_read"] = metrics[i].byte_read;
+        j["byte_inserted"] = metrics[i].byte_inserted;
+        j["byte_reinserted"] = metrics[i].byte_reinserted;
         output_json[i]["metrics"].push_back(j);
         output_json[i]["iteration"] = i;
     }
@@ -213,15 +208,16 @@ bool ChainedCache::Get(const request_t* req) {
     tmp_additional_cache_data.OnAccessTracking(data, req);
 
     if (!tmp->find(tmp, req, false)) {
+        tmp_additional_cache_data.metric.byte_miss += req->obj_size;
         Admit(req, data.lifetime_freq);
         if (next)
             return next->Find(req);
         return false;
-    } else {
-        tmp->get(tmp, req);
     }
+    tmp_additional_cache_data.metric.byte_read += req->obj_size;
+    tmp_additional_cache_data.metric.hit++;
 
-    tmp_additional_cache_data.n_hit++;
+    tmp->get(tmp, req);
     return true;
 }
 bool ChainedCache::Find(const request_t* req) {
@@ -233,13 +229,15 @@ bool ChainedCache::Find(const request_t* req) {
 
     tmp_additional_cache_data.OnAccessTracking(data, req);
 
-    if (tmp->find(tmp, req, false) == NULL) {
+    if (!tmp->find(tmp, req, false)) {
+        tmp_additional_cache_data.metric.byte_miss += req->obj_size;
         if (next)
             return next->Find(req);
         return false;
     }
 
-    tmp_additional_cache_data.n_hit++;
+    tmp_additional_cache_data.metric.byte_read += req->obj_size;
+    tmp_additional_cache_data.metric.hit++;
     return true;
 }
 }  // namespace CustomCache

@@ -82,7 +82,7 @@ void ObjMetadata::Reset() {
 }
 
 void AdditionalCacheData::OnAccessTracking(ObjMetadata& data, const request_t* req) {
-    n_req++;
+    metric.req++;
 
     uint64_t rtime_since = req->clock_time - data.rtime;
     uint64_t vtime_since = vtime - data.vtime;
@@ -140,7 +140,8 @@ void AdditionalCacheData::BeforeEvictionTracking(
 void AdditionalCacheData::OnPromotionTracking(
     const cache_obj_t* obj, const request_t* req
 ) {
-    n_promoted++;
+    metric.reinserted++;
+    metric.byte_reinserted += obj->obj_size;
     auto& data = objs_metadata[obj->obj_id];
     // data.Reset();
 }
