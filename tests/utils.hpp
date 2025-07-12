@@ -50,5 +50,12 @@ static nlohmann::json LayeredCacheSimulation(
         reset_reader(reader);
     }
     Caches[0].CleanUp();
-    return SimulationResults(&Caches[0])["results"][1];
+    auto result = SimulationResults(&Caches[0])["results"][1];
+    for (auto& m : result["metrics"]) {
+        m.erase("byte_inserted");
+        m.erase("byte_miss");
+        m.erase("byte_read");
+        m.erase("byte_reinserted");
+    }
+    return result;
 }
