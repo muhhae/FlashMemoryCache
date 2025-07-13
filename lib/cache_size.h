@@ -5,7 +5,9 @@
 
 #include <cstdint>
 
-static void cal_working_set_size(reader_t* reader, int64_t* wss_obj, int64_t* wss_byte) {
+static uint64_t cal_working_set_size(
+    reader_t* reader, int64_t* wss_obj, int64_t* wss_byte
+) {
     reset_reader(reader);
     request_t* req = new_request();
     GHashTable* obj_table = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -66,4 +68,5 @@ static void cal_working_set_size(reader_t* reader, int64_t* wss_obj, int64_t* ws
 
     free_request(req);
     reset_reader(reader);
+    return n_req;
 }

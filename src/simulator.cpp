@@ -14,6 +14,7 @@
 #include <fstream>
 #include <future>
 #include <iostream>
+#include <print>
 #include <string>
 
 #include "cache.hpp"
@@ -48,7 +49,8 @@ void RunExperiment(options o) {
         reader_t* reader = open_trace(p.c_str(), trace_type, &reader_init_param);
         int64_t wss_obj = 0;
         int64_t wss_byte = 0;
-        cal_working_set_size(reader, &wss_obj, &wss_byte);
+        auto approximate_request_count =
+            cal_working_set_size(reader, &wss_obj, &wss_byte);
         close_reader(reader);
         int64_t wss = o.ignore_obj_size ? wss_obj : wss_byte;
 
@@ -57,14 +59,16 @@ void RunExperiment(options o) {
             std::string desc = "[" + std::to_string(fcs) +
                                (o.ignore_obj_size ? "" : "MiB") +
                                (o.desc != "" ? "," : "") + o.desc + "]";
+            uint64_t cache_size = o.ignore_obj_size ? fcs : fcs * MiB;
             tasks.emplace_back(
                 std::async(
                     std::launch::async,
                     Simulate,
-                    o.ignore_obj_size ? fcs : fcs * MiB,
+                    cache_size,
                     p,
                     o,
-                    desc
+                    desc,
+                    approximate_request_count
                 )
             );
         }
@@ -76,8 +80,17 @@ void RunExperiment(options o) {
                 s.pop_back();
 
             std::string desc = "[" + s + (o.desc != "" ? "," : "") + o.desc + "]";
+            uint64_t cache_size = wss * rcs;
             tasks.emplace_back(
-                std::async(std::launch::async, Simulate, wss * rcs, p, o, desc)
+                std::async(
+                    std::launch::async,
+                    Simulate,
+                    cache_size,
+                    p,
+                    o,
+                    desc,
+                    approximate_request_count
+                )
             );
         }
     }
@@ -134,10 +147,11 @@ size_t get_unordered_map_memory_usage(const std::unordered_map<K, V>& map) {
 }
 
 void Simulate(
-    uint64_t cache_size,
+    const uint64_t cache_size,
     const std::filesystem::path trace_path,
     const options o,
-    const std::string desc
+    const std::string desc,
+    const int64_t approximate_request_count
 ) {
     std::string base_path = std::filesystem::path(trace_path).filename();
     size_t pos = base_path.find(".oracleGeneral");
@@ -169,14 +183,22 @@ void Simulate(
     );
 
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
+    uint64_t req_counter = 0;
+    uint64_t req_limit = o.req_limit * approximate_request_count;
+    std::println("req_limit: {}", req_limit);
+
     for (size_t i = 0; i < o.max_iteration; ++i) {
         Cache->SetupIteration(i == o.max_iteration - 1 && o.generate_datasets);
         while (read_one_req(reader, req) == 0) {
+            if (o.req_limit != 1 && req_counter >= req_limit)
+                break;
+            req_counter++;
             Cache->Get(req);
             Cache->TrackMetricsTime(req->clock_time);
         }
         Cache->EndIteration();
         reset_reader(reader);
+        req_counter = 0;
     }
 
     auto output_json = SimulationResults(Cache);

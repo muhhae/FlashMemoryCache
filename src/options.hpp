@@ -17,6 +17,7 @@ struct options {
     uint64_t dist_optimal_treshold = std::numeric_limits<uint64_t>::max();
     float decay_power = 0.001;
     float dram_size = 0.01;
+    float req_limit = 1;
 
     bool dram_enabled = false;
     bool id_num = false;

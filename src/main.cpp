@@ -81,6 +81,8 @@ int main(int argc, char** argv) {
     app.add_flag("--dram", o.dram_enabled, "Enable Dram Cache (1\% of the cache)");
     app.add_option("--dram-size", o.dram_size, "percentage of DRAM compared to Flash")
         ->default_val(0.01);
+    app.add_option("-l,--request-limit", o.req_limit, "Limit of request simulated, 0 - 1")
+        ->default_val(1);
 
     CLI11_PARSE(app, argc, argv);
 

@@ -11,10 +11,11 @@
 #include "cache.hpp"
 
 void Simulate(
-    uint64_t cache_size,
+    const uint64_t cache_size,
     const std::filesystem::path trace_path,
     const options o,
-    const std::string desc
+    const std::string desc,
+    const int64_t approximate_request_count
 );
 void RunExperiment(options o);
 void BasicSimulation(CustomCache::ChainedCache* Cache, reader_t* reader);
