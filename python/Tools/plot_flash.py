@@ -1,11 +1,13 @@
 import multiprocessing
 import os
+from os.path import exists
 import pickle
 from glob import glob
 from pathlib import Path
 from pprint import pprint
 
 import pandas as pd
+from pandas.core import algorithms
 from pandas.core.frame import itertools
 from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
@@ -188,43 +190,42 @@ def WriteIndividual(
                 by="Write"
             )
             data = data.drop_duplicates(subset=[category])
-            if pd.to_numeric(data[category], errors="coerce").notna().all():
-                Write(md, html, f"#### Overall Miss Ratio with {category}  \n")
-                WriteFig(
-                    md,
-                    html,
-                    Line(
-                        data,
-                        x=category,
-                        y="Overall Miss Ratio",
-                    ),
-                )
-            for y in ["Overall Miss Ratio", "Flash Miss Ratio"]:
-                Write(md, html, f"#### {y}  \n")
-                WriteFig(
-                    md,
-                    html,
-                    Scatter(
-                        data,
-                        x="Write",
-                        y=y,
-                        color=category,
-                        symbol=category,
-                    ),
-                )
-                Write(md, html, f"#### {y} Absolute  \n")
-                WriteFig(
-                    md,
-                    html,
-                    Scatter(
-                        data,
-                        include_zero=True,
-                        x="Write",
-                        y=y,
-                        color=category,
-                        symbol=category,
-                    ),
-                )
+            # Write(md, html, f"#### Overall Miss Ratio with {category}  \n")
+            # WriteFig(
+            #     md,
+            #     html,
+            #     Line(
+            #         data,
+            #         x=category,
+            #         y="Overall Miss Ratio",
+            #     ),
+            # )
+            # for y in ["Overall Miss Ratio", "Flash Miss Ratio"]:
+            #     Write(md, html, f"#### {y}  \n")
+            #     WriteFig(
+            #         md,
+            #         html,
+            #         Scatter(
+            #             data,
+            #             x="Write",
+            #             y=y,
+            #             color=category,
+            #             symbol=category,
+            #         ),
+            #     )
+            #     Write(md, html, f"#### {y} Absolute  \n")
+            #     WriteFig(
+            #         md,
+            #         html,
+            #         Scatter(
+            #             data,
+            #             include_zero=True,
+            #             x="Write",
+            #             y=y,
+            #             color=category,
+            #             symbol=category,
+            #         ),
+            #     )
             Write(md, html, "#### Inserted + Reinserted  \n")
             WriteFig(
                 md,
@@ -290,18 +291,99 @@ def WriteIndividual(
             )
 
 
-def WriteSumz(combined, category, title, a, b, i, j):
-    current_title = f"{title} Categorized By {category} with {a}: {i} and {b}: {j}"
-    html = open(f"../../docs/{current_title}.html", "w")
-    md = open(f"../../results/{current_title}.md", "w")
-    WriteIndividual(
+def WriteIndividualV2(
+    md,
+    html,
+    df: pd.DataFrame,
+    add_desc: str,
+    category: str,
+    numeric_modifier_continuous: str,
+):
+    Write(md, html, f"# Individual Result {add_desc} \n")
+    for s in sorted(df["Trace"].unique()):
+        Write(md, html, f"## {s}  \n")
+        for t in sorted(df["Cache Size"].unique()):
+            Write(md, html, f"### {t * 100}%  \n")
+            data = df.query("`Cache Size` == @t and `Trace` == @s").sort_values(
+                by=numeric_modifier_continuous,
+            )
+            for y in [
+                "Overall Miss Ratio",
+                "Flash Miss Ratio",
+                "Write",
+                "Inserted",
+                "Reinserted",
+            ]:
+                Write(
+                    md,
+                    html,
+                    f"#### Effects of {numeric_modifier_continuous} on {y}  \n",
+                )
+                WriteFig(
+                    md,
+                    html,
+                    Line(data, x=numeric_modifier_continuous, y=y, color=category),
+                )
+            data = data.sort_values(by=category)
+            Write(md, html, "#### Detail Table  \n")
+            Write(
+                md,
+                html,
+                tabulate(
+                    data[
+                        [
+                            "Algorithm",
+                            "Flash Admission Treshold",
+                            "Overall Request",
+                            "Flash Request",
+                            "DRAM Request",
+                            "Overall Miss Ratio",
+                            "Flash Miss Ratio",
+                            "DRAM Miss Ratio",
+                            "Overall Hit",
+                            "Flash Hit",
+                            "DRAM Hit",
+                            "Write",
+                            "JSON File",
+                        ]
+                    ],
+                    headers="keys",
+                    tablefmt="html",
+                    showindex="never",
+                    intfmt=",",
+                )
+                + "  \n\n",
+            )
+
+
+def WriteSumz(
+    df: pd.DataFrame,
+    ignore_obj_size: bool,
+    category: str,
+    numeric_modifier_continuous: str,
+    numeric_modifier_spesific: tuple[str, float],
+    title: str,
+):
+    current_title = f"{title} Categorized By {category} with {numeric_modifier_spesific[0]}: {numeric_modifier_spesific[1]}"
+    html = open(
+        f"../../docs/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.html",
+        "w",
+    )
+    md = open(
+        f"../../markdown/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.md",
+        "w",
+    )
+    WriteIndividualV2(
         md,
         html,
-        combined.query(f"`{a}` == @i and `{b}` == @j"),
-        category,
+        df.query(f"`{numeric_modifier_spesific[0]}` == @numeric_modifier_spesific[1]"),
         current_title,
+        category,
+        numeric_modifier_continuous,
     )
     WriteHTML(html)
+    md.close()
+    html.close()
     print("Finished generating " + current_title)
 
 
@@ -322,60 +404,72 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         fifo = GetOtherResult(files, "FIFO", "fifo")
         lru = GetOtherResult(files, "LRU", "lru")
         combined = pd.concat([offline_clock, fifo, lru])
-        combined["Flash Admission Treshold"] = combined[
-            "Flash Admission Treshold"
-        ].astype("category")
+        if combined.empty:
+            print(f"Title: {title}")
+            print(f"ignore_obj_size: {ignore_obj_size}")
+            print("is Empty")
+            return
+        pprint(combined)
         with open(cache, "wb") as c:
             pickle.dump(combined, c)
 
-    # print(combined[combined["DRAM Size"] == "0.01"][["DRAM Size", "JSON File"]])
-    # exit(1)
+    os.makedirs(
+        f"../../docs/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/",
+        exist_ok=True,
+    )
+    os.makedirs(
+        f"../../markdown/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/",
+        exist_ok=True,
+    )
 
-    os.makedirs("../../docs/", exist_ok=True)
-    os.makedirs("../../results/", exist_ok=True)
-
-    modifier = ["DRAM Size", "Flash Admission Treshold", "Algorithm"]
-    modifier_permutations = list(itertools.permutations(modifier, 3))
+    modifier = ["DRAM Size", "Flash Admission Treshold"]
+    modifier_permutations = list(itertools.permutations(modifier, len(modifier)))
     args = []
-    for category, a, b in modifier_permutations:
+    for a, b in modifier_permutations:
         for i in combined[a].unique():
-            for j in combined[b].unique():
-                args.append((combined, category, title, a, b, i, j))
+            args.append((combined, ignore_obj_size, "Algorithm", b, (a, i), title))
 
     with multiprocessing.Pool() as pool:
         pool.starmap(WriteSumz, args)
 
 
-def main():
-    log_path = "../../results/log/"
+def FilterByTraceGroups(trace_groups: list[str]):
+    log_path = "../../../FlashMemoryCacheResults/log/"
     files = sorted(glob(os.path.join(log_path, "*.json")), key=sort_key)
 
-    traces = []
-    for txt in [
-        "cloudphysics",
-        "zipf1",
-        "zipf",
-        "wiki_small",
-        "wiki_big",
-        "tencentphoto",
-        "metacdn",
-    ]:
-        with open(f"../../trace/{txt}.txt", "r") as f:
-            traces += f.readlines()
+    trace_list = []
+    for trace_group in trace_groups:
+        trace_list_file = open(f"../../trace/{trace_group}.txt", "r")
+        trace_list = trace_list_file.readlines()
+        trace_list_file.close()
 
-    traces = [os.path.basename(t).strip() for t in traces]
-    traces = [t for t in traces if t != ""]
-    traces = [t[: t.find(".oracleGeneral")] for t in traces]
+    trace_list = [os.path.basename(t).strip() for t in trace_list]
+    trace_list = [t for t in trace_list if t != ""]
+    trace_list = [t[: t.find(".oracleGeneral")] for t in trace_list]
 
-    files = [f for f in files if os.path.basename(f[: f.find("[")]) in traces]
+    return [f for f in files if os.path.basename(f[: f.find("[")]) in trace_list]
+
+
+def main():
+    zipf = FilterByTraceGroups(["zipf"])
+    wiki = FilterByTraceGroups(["wiki_small"])
+    metacdn = FilterByTraceGroups(["metacdn"])
+    cloudphysics = FilterByTraceGroups(["cloudphysics"])
+    tencentphoto = FilterByTraceGroups(["tencentphoto"])
 
     use_cache = False
 
-    Sumz([f for f in files if "zipf" in f], "Zipf", True, use_cache)
-    # ([f for f in files if "cloud" in f], "CloudPhysics", True, use_cache),
-    # ([f for f in files if "metacdn" in f], "MetaCDN", True, use_cache),
-    # ([f for f in files if "wiki" in f], "Wiki", True, use_cache),
-    # ([f for f in files if "tencent" in f], "TencentPhotos", True, use_cache),
+    Sumz(zipf, "Zipf", False, use_cache)
+    Sumz(cloudphysics, "CloudPhysics", False, use_cache)
+    Sumz(metacdn, "MetaCDN", False, use_cache)
+    Sumz(wiki, "Wiki", False, use_cache)
+    Sumz(tencentphoto, "TencentPhotos", False, use_cache)
+
+    Sumz(zipf, "Zipf", True, use_cache)
+    Sumz(cloudphysics, "CloudPhysics", True, use_cache)
+    Sumz(metacdn, "MetaCDN", True, use_cache)
+    Sumz(wiki, "Wiki", True, use_cache)
+    Sumz(tencentphoto, "TencentPhotos", True, use_cache)
 
 
 if __name__ == "__main__":

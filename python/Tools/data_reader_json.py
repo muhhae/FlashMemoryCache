@@ -46,6 +46,7 @@ def ProcessResultJSON(result: dict, file):
         if dram is not None
         else 0,
         "Ignore Obj Size": desc.count("ignore_obj_size"),
+        "Flash Metrics Time": flash["metrics_time"],
     }
     return result
 

@@ -4,6 +4,7 @@
 #include <libCacheSim/reader.h>
 
 #include <cstddef>
+#include <print>
 #include <vector>
 
 #include "cache.hpp"
@@ -57,5 +58,6 @@ static nlohmann::json LayeredCacheSimulation(
         m.erase("byte_read");
         m.erase("byte_reinserted");
     }
+    std::println("results: {}", result.dump(2));
     return result;
 }
