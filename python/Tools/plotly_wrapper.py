@@ -13,6 +13,7 @@ def Line(df: pd.DataFrame, x, y, include_zero: bool = False, **kwargs) -> go.Fig
         df,
         x=x,
         y=y,
+        render_mode="webgl",
         **kwargs,
     )
     fig.update_layout(
@@ -32,7 +33,7 @@ def Line(df: pd.DataFrame, x, y, include_zero: bool = False, **kwargs) -> go.Fig
 
 
 def Scatter(df: pd.DataFrame, include_zero: bool = False, **kwargs) -> go.Figure:
-    fig = px.scatter(df, **kwargs)
+    fig = px.scatter(df, render_mode="webgl", **kwargs)
     fig.update_layout(
         font=dict(size=32),
         height=1000,

@@ -324,6 +324,8 @@ def WriteIndividualV2(
                     html,
                     Line(data, x=numeric_modifier_continuous, y=y, color=category),
                 )
+            for i in sorted(df["numeric_modifier_continuous"].unique()):
+                pass
             data = data.sort_values(by=category)
             Write(md, html, "#### Detail Table  \n")
             Write(
@@ -397,7 +399,7 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         with open(cache, "rb") as c:
             combined = pickle.load(c)
     else:
-        print("Processing DataFrame")
+        print(f"Processing DataFrame {title}")
         offline_clock = GetOfflineClockResult(
             [f for f in files if "offline-clock" in f]
         )
@@ -409,7 +411,9 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
             print(f"ignore_obj_size: {ignore_obj_size}")
             print("is Empty")
             return
-        pprint(combined)
+        # pprint(combined.iloc[0]["Flash Metrics Time"])
+        # pprint(combined.iloc[0]["JSON File"])
+        # exit(1)
         with open(cache, "wb") as c:
             pickle.dump(combined, c)
 
@@ -429,7 +433,7 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         for i in combined[a].unique():
             args.append((combined, ignore_obj_size, "Algorithm", b, (a, i), title))
 
-    with multiprocessing.Pool() as pool:
+    with multiprocessing.Pool(4) as pool:
         pool.starmap(WriteSumz, args)
 
 
