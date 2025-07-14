@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <print>
 
 #include "cache/additional_data.hpp"
 
@@ -41,7 +40,6 @@ void OfflineClockV2Evict(cache_t* cache, const request_t* req) {
         bool wasted = false;
         if (data.final_access_after_promotion.contains(data.lifetime_freq)) {
             uint64_t future_freq = data.final_access_after_promotion[data.lifetime_freq];
-            std::println("access: {}", future_freq);
             bool wasted = future_freq < 1;
         }
 

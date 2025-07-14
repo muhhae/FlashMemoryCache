@@ -14,7 +14,6 @@
 #include <fstream>
 #include <future>
 #include <iostream>
-#include <print>
 #include <string>
 
 #include "cache.hpp"
@@ -185,7 +184,6 @@ void Simulate(
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
     uint64_t req_counter = 0;
     uint64_t req_limit = o.req_limit * approximate_request_count;
-    std::println("req_limit: {}", req_limit);
 
     for (size_t i = 0; i < o.max_iteration; ++i) {
         Cache->SetupIteration(i == o.max_iteration - 1 && o.generate_datasets);
