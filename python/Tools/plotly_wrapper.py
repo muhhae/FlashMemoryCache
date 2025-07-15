@@ -13,19 +13,18 @@ def Line(df: pd.DataFrame, x, y, include_zero: bool = False, **kwargs) -> go.Fig
         df,
         x=x,
         y=y,
-        render_mode="webgl",
         **kwargs,
     )
     fig.update_layout(
         font=dict(size=32),
-        height=1000,
+        # height=1000,
         width=1000,
     )
     fig.update_traces(
         line=dict(width=12),
     )
-    fig.update_xaxes(showgrid=True, nticks=10)
-    fig.update_yaxes(showgrid=True, nticks=30)
+    fig.update_xaxes(showgrid=True, nticks=15)
+    fig.update_yaxes(showgrid=True, nticks=15)
     if include_zero:
         fig.update_xaxes(rangemode="tozero")
         fig.update_yaxes(range=[0, 1])
@@ -33,10 +32,10 @@ def Line(df: pd.DataFrame, x, y, include_zero: bool = False, **kwargs) -> go.Fig
 
 
 def Scatter(df: pd.DataFrame, include_zero: bool = False, **kwargs) -> go.Figure:
-    fig = px.scatter(df, render_mode="webgl", **kwargs)
+    fig = px.scatter(df, **kwargs)
     fig.update_layout(
         font=dict(size=32),
-        height=1000,
+        # height=1000,
         width=1000,
     )
     fig.update_traces(

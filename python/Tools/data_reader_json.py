@@ -1,15 +1,13 @@
 import json
 import os
-import re
 from pathlib import Path
-from pprint import pprint
 from typing import List, cast
 
 import pandas as pd
 from common import extract_desc
 
 
-def ProcessResultJSON(result: dict, file):
+def ProcessResultJSON(result: dict, file, algorithm):
     prefix, desc = extract_desc(file)
     metrics = result["metrics"]
     dram = None
@@ -20,10 +18,24 @@ def ProcessResultJSON(result: dict, file):
         flash = metrics[1]
     else:
         flash = metrics[0]
-
+    metrics_time = None
+    if "metrics_time" in flash:
+        metrics_time = pd.DataFrame(flash["metrics_time"][1:])
+        metrics_time["byte_write"] = (
+            metrics_time["byte_inserted"] + metrics_time["byte_reinserted"]
+        )
+        metrics_time["Algorithm"] = algorithm
+        metrics_time["DRAM Size"] = (
+            float(desc[-1]["dram_size"])
+            if isinstance(desc[-1], dict) and "dram_size" in desc[-1]
+            else 0.01
+            if dram is not None
+            else 0
+        )
+        metrics_time["Flash Admission Treshold"] = flash["admission_treshold"]
     result = {
         "Flash Admission Treshold": flash["admission_treshold"],
-        "Algorithm": flash["algorithm"],
+        "Algorithm": algorithm,
         "Inserted": flash["inserted"],
         "Reinserted": flash["reinserted"],
         "Write": flash["reinserted"] + flash["inserted"],
@@ -46,7 +58,7 @@ def ProcessResultJSON(result: dict, file):
         if dram is not None
         else 0,
         "Ignore Obj Size": desc.count("ignore_obj_size"),
-        # "Flash Metrics Time": pd.DataFrame(flash["metrics_time"]),
+        "Flash Metrics Time": metrics_time,
     }
     return result
 
@@ -63,15 +75,12 @@ def GetOfflineClockResult(paths: List[str]):
         for i, result in enumerate(j["results"]):
             if i > 1:
                 break
-            j = ProcessResultJSON(result, file)
-            if j["Algorithm"] != "offline-clock":
-                continue
-            j["Algorithm"] = names[i]
+            j = ProcessResultJSON(result, file, names[i])
             tmp.append(j)
     return pd.DataFrame(tmp)
 
 
-def GetOtherResult(paths: List[str], plot_name: str, json_name: str):
+def GetOtherResult(paths: List[str], plot_name: str):
     tmp = []
     for file in paths:
         if Path(file).stat().st_size == 0:
@@ -79,9 +88,6 @@ def GetOtherResult(paths: List[str], plot_name: str, json_name: str):
         f = open(file, "r")
         j = json.load(f)
         f.close()
-        r = ProcessResultJSON(j["results"][0], file)
-        if r["Algorithm"] != json_name:
-            continue
-        r["Algorithm"] = plot_name
+        r = ProcessResultJSON(j["results"][0], file, plot_name)
         tmp.append(r)
     return pd.DataFrame(tmp)

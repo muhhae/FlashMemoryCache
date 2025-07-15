@@ -1,18 +1,17 @@
 import multiprocessing
 import os
-from os.path import exists
 import pickle
+from pprint import pprint
 from glob import glob
 from pathlib import Path
-from pprint import pprint
+import sys
 
 import pandas as pd
-from pandas.core import algorithms
-from pandas.core.frame import itertools
 from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import Write, WriteFig, WriteHTML
-from plotly.graph_objs import Figure, Trace
+from pandas.core.frame import itertools
+from plotly.graph_objs import Figure
 from plotly_wrapper import Line, Scatter, VerticalCompositionBar
 from tabulate import tabulate
 
@@ -174,123 +173,6 @@ def WriteIndividualReduction(md, html, df: pd.DataFrame):
             )
 
 
-def WriteIndividual(
-    md,
-    html,
-    df: pd.DataFrame,
-    category: str,
-    add_desc: str = "",
-):
-    Write(md, html, f"# Individual Result {add_desc} \n")
-    for s in sorted(df["Trace"].unique()):
-        Write(md, html, f"## {s}  \n")
-        for t in sorted(df["Cache Size"].unique()):
-            Write(md, html, f"### {t * 100}%  \n")
-            data = df.query("`Cache Size` == @t and `Trace` == @s").sort_values(
-                by="Write"
-            )
-            data = data.drop_duplicates(subset=[category])
-            # Write(md, html, f"#### Overall Miss Ratio with {category}  \n")
-            # WriteFig(
-            #     md,
-            #     html,
-            #     Line(
-            #         data,
-            #         x=category,
-            #         y="Overall Miss Ratio",
-            #     ),
-            # )
-            # for y in ["Overall Miss Ratio", "Flash Miss Ratio"]:
-            #     Write(md, html, f"#### {y}  \n")
-            #     WriteFig(
-            #         md,
-            #         html,
-            #         Scatter(
-            #             data,
-            #             x="Write",
-            #             y=y,
-            #             color=category,
-            #             symbol=category,
-            #         ),
-            #     )
-            #     Write(md, html, f"#### {y} Absolute  \n")
-            #     WriteFig(
-            #         md,
-            #         html,
-            #         Scatter(
-            #             data,
-            #             include_zero=True,
-            #             x="Write",
-            #             y=y,
-            #             color=category,
-            #             symbol=category,
-            #         ),
-            #     )
-            Write(md, html, "#### Inserted + Reinserted  \n")
-            WriteFig(
-                md,
-                html,
-                VerticalCompositionBar(
-                    data,
-                    X=category,
-                    Ys=[
-                        "Inserted",
-                        "Reinserted",
-                    ],
-                    title=f"Flash Write (Inserted + Reinserted) by {category}",
-                    yaxis_title="Flash Write",
-                    xaxis_title=category,
-                    mode="stack",
-                ),
-            )
-            Write(md, html, "#### Flash Hit and DRAM Hit  \n")
-            WriteFig(
-                md,
-                html,
-                VerticalCompositionBar(
-                    data,
-                    X=category,
-                    Ys=[
-                        "Flash Hit",
-                        "DRAM Hit",
-                    ],
-                    title=f"Flash Hit and DRAM Hit by {category}",
-                    yaxis_title="Hit",
-                    xaxis_title=category,
-                    mode="stack",
-                ),
-            )
-            Write(md, html, "#### Detail Table  \n")
-            Write(
-                md,
-                html,
-                tabulate(
-                    data[
-                        [
-                            "Algorithm",
-                            "Flash Admission Treshold",
-                            "Overall Request",
-                            "Flash Request",
-                            "DRAM Request",
-                            "Overall Miss Ratio",
-                            "Flash Miss Ratio",
-                            "DRAM Miss Ratio",
-                            "Overall Hit",
-                            "Flash Hit",
-                            "DRAM Hit",
-                            "Write",
-                            "JSON File",
-                        ]
-                    ],
-                    headers="keys",
-                    tablefmt="html",
-                    showindex="never",
-                    intfmt=",",
-                )
-                + "  \n\n",
-            )
-
-
 def WriteIndividualV2(
     md,
     html,
@@ -324,8 +206,85 @@ def WriteIndividualV2(
                     html,
                     Line(data, x=numeric_modifier_continuous, y=y, color=category),
                 )
-            for i in sorted(df["numeric_modifier_continuous"].unique()):
-                pass
+                WriteFig(
+                    md,
+                    html,
+                    Line(
+                        data,
+                        x=numeric_modifier_continuous,
+                        y=y,
+                        color=category,
+                        include_zero=True,
+                    ),
+                )
+            timeline_list: list[pd.DataFrame] = []
+            timeline_list = [
+                x
+                for x in data["Flash Metrics Time"].tolist()
+                if x is not None and isinstance(x, pd.DataFrame)
+            ]
+            if len(timeline_list):
+                timeline: pd.DataFrame = pd.concat(timeline_list)
+                timeline = timeline.sort_index()
+                for t in [
+                    "byte_write",
+                    "byte_inserted",
+                    "byte_reinserted",
+                    "byte_read",
+                    "byte_miss",
+                    "req",
+                    "hit",
+                    "miss_ratio",
+                    "inserted",
+                    "reinserted",
+                ]:
+                    Write(md, html, f"#### {t} Timeline  \n")
+                    WriteFig(
+                        md,
+                        html,
+                        Line(
+                            timeline,
+                            x=None,
+                            y=t,
+                            color=category,
+                            facet_row=numeric_modifier_continuous,
+                        ),
+                    )
+            # Write(md, html, "#### Inserted + Reinserted  \n")
+            # WriteFig(
+            #     md,
+            #     html,
+            #     VerticalCompositionBar(
+            #         data,
+            #         X=category,
+            #         Ys=[
+            #             "Inserted",
+            #             "Reinserted",
+            #         ],
+            #         title=f"Flash Write (Inserted + Reinserted) by {category}",
+            #         yaxis_title="Flash Write",
+            #         xaxis_title=category,
+            #         mode="stack",
+            #     ),
+            # )
+            # Write(md, html, "#### Flash Hit and DRAM Hit  \n")
+            # WriteFig(
+            #     md,
+            #     html,
+            #     VerticalCompositionBar(
+            #         data,
+            #         X=category,
+            #         Ys=[
+            #             "Flash Hit",
+            #             "DRAM Hit",
+            #         ],
+            #         title=f"Flash Hit and DRAM Hit by {category}",
+            #         yaxis_title="Hit",
+            #         xaxis_title=category,
+            #         mode="stack",
+            #     ),
+            # )
+
             data = data.sort_values(by=category)
             Write(md, html, "#### Detail Table  \n")
             Write(
@@ -403,17 +362,14 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         offline_clock = GetOfflineClockResult(
             [f for f in files if "offline-clock" in f]
         )
-        fifo = GetOtherResult(files, "FIFO", "fifo")
-        lru = GetOtherResult(files, "LRU", "lru")
+        fifo = GetOtherResult([f for f in files if ",fifo," in f], "FIFO")
+        lru = GetOtherResult([f for f in files if ",lru," in f], "LRU")
         combined = pd.concat([offline_clock, fifo, lru])
         if combined.empty:
             print(f"Title: {title}")
             print(f"ignore_obj_size: {ignore_obj_size}")
             print("is Empty")
             return
-        # pprint(combined.iloc[0]["Flash Metrics Time"])
-        # pprint(combined.iloc[0]["JSON File"])
-        # exit(1)
         with open(cache, "wb") as c:
             pickle.dump(combined, c)
 
@@ -433,7 +389,9 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         for i in combined[a].unique():
             args.append((combined, ignore_obj_size, "Algorithm", b, (a, i), title))
 
-    with multiprocessing.Pool(4) as pool:
+    max_core = int(sys.argv[1]) if len(sys.argv) > 1 else None
+    pprint("Generating figures with " + str(max_core) + " cores")
+    with multiprocessing.Pool(max_core) as pool:
         pool.starmap(WriteSumz, args)
 
 
