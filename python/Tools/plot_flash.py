@@ -9,10 +9,10 @@ import sys
 import pandas as pd
 from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
-from docs_writer import Write, WriteFig, WriteHTML
+from docs_writer import DocsWriter
 from pandas.core.frame import itertools
 from plotly.graph_objs import Figure
-from plotly_wrapper import Line, Scatter, VerticalCompositionBar
+from plotly_wrapper import Line, VerticalCompositionBar
 from tabulate import tabulate
 
 
@@ -31,161 +31,19 @@ def CreateFlashWriteComposition(df: pd.DataFrame) -> Figure:
     )
 
 
-def WriteMean(md, html, df: pd.DataFrame):
-    Write(md, html, "# Mean  \n")
-    for s in df["Cache Size"].unique():
-        Write(md, html, f"## {s}  \n")
-        data = (
-            df.query("`Cache Size` == @s")
-            .groupby("Model")[["Miss Ratio", "Flash Write", "Promotion", "Miss"]]
-            .mean()
-            .reset_index()
-            .sort_values(by="Flash Write")
-        )
-        fig = Scatter(
-            data,
-            x="Flash Write",
-            y="Miss Ratio",
-            color="Model",
-            symbol="Model",
-        )
-        WriteFig(md, html, fig)
-        fig = CreateFlashWriteComposition(data)
-        WriteFig(md, html, fig)
-        Write(
-            md,
-            html,
-            tabulate(
-                data[["Model", "Miss Ratio", "Miss", "Promotion", "Flash Write"]],
-                headers=[
-                    "Algorithm",
-                    "Miss Ratio",
-                    "Cache Miss",
-                    "Reinsertion",
-                    "Flash Write",
-                ],
-                tablefmt="html",
-                showindex="never",
-                intfmt=",",
-            )
-            + "  \n\n",
-        )
-
-
-def WriteMeanReduction(md, html, df: pd.DataFrame):
-    Write(md, html, "# Mean Reduction Compared to FIFO  \n")
-    for s in df["Cache Size"].unique():
-        Write(md, html, f"## {s}  \n")
-        data = (
-            df.query("`Cache Size` == @s")
-            .groupby("Model")[
-                [
-                    "Miss Ratio Reduction",
-                    "Flash Write Reduction",
-                    "Miss Reduction",
-                    "Promotion Reduction",
-                ]
-            ]
-            .mean()
-            .reset_index()
-            .sort_values(by="Flash Write Reduction", ascending=False)
-        )
-
-        fig = Scatter(
-            data,
-            x="Flash Write Reduction",
-            y="Miss Ratio Reduction",
-            color="Model",
-            symbol="Model",
-        )
-        WriteFig(md, html, fig)
-        Write(
-            md,
-            html,
-            tabulate(
-                data[
-                    [
-                        "Model",
-                        "Miss Ratio Reduction",
-                        "Miss Reduction",
-                        "Promotion Reduction",
-                        "Flash Write Reduction",
-                    ]
-                ],
-                headers=[
-                    "Algorithm",
-                    "Miss Ratio Reduction",
-                    "Cache Miss Reduction",
-                    "Reinsertion Reduction",
-                    "Flash Write Reduction",
-                ],
-                tablefmt="html",
-                showindex="never",
-                intfmt=",",
-            )
-            + "  \n\n",
-        )
-
-
-def WriteIndividualReduction(md, html, df: pd.DataFrame):
-    Write(md, html, "# Individual Reduction Result  \n")
-    for s in df["Cache Size"].unique():
-        Write(md, html, f"## {s}  \n")
-        for t in df["Trace"].unique():
-            Write(md, html, f"### {Path(t).stem}  \n")
-            data = df.query("`Cache Size` == @s and `Trace` == @t").sort_values(
-                by="Flash Write Reduction", ascending=False
-            )
-            fig = Scatter(
-                data,
-                x="Flash Write Reduction",
-                y="Miss Ratio Reduction",
-                color="Model",
-                symbol="Model",
-            )
-            WriteFig(md, html, fig)
-            Write(
-                md,
-                html,
-                tabulate(
-                    data[
-                        [
-                            "Model",
-                            "Miss Ratio Reduction",
-                            "Miss Reduction",
-                            "Promotion Reduction",
-                            "Flash Write Reduction",
-                            "JSON File",
-                        ]
-                    ],
-                    headers=[
-                        "Algorithm",
-                        "Miss Ratio Reduction",
-                        "Cache Miss Reduction",
-                        "Reinsertion Reduction",
-                        "Flash Write Reduction",
-                    ],
-                    tablefmt="html",
-                    showindex="never",
-                    intfmt=",",
-                )
-                + "  \n\n",
-            )
-
-
 def WriteIndividualV2(
-    md,
-    html,
+    writer: DocsWriter,
     df: pd.DataFrame,
     add_desc: str,
     category: str,
     numeric_modifier_continuous: str,
 ):
-    Write(md, html, f"# Individual Result {add_desc} \n")
+    writer.Write(f"# Individual Result {add_desc} \n")
+    category_order = sorted(df[category].unique())
     for s in sorted(df["Trace"].unique()):
-        Write(md, html, f"## {s}  \n")
+        writer.Write(f"## {s}  \n")
         for t in sorted(df["Cache Size"].unique()):
-            Write(md, html, f"### {t * 100}%  \n")
+            writer.Write(f"### {t * 100}%  \n")
             data = df.query("`Cache Size` == @t and `Trace` == @s").sort_values(
                 by=numeric_modifier_continuous,
             )
@@ -196,24 +54,25 @@ def WriteIndividualV2(
                 "Inserted",
                 "Reinserted",
             ]:
-                Write(
-                    md,
-                    html,
+                writer.Write(
                     f"#### Effects of {numeric_modifier_continuous} on {y}  \n",
                 )
-                WriteFig(
-                    md,
-                    html,
-                    Line(data, x=numeric_modifier_continuous, y=y, color=category),
-                )
-                WriteFig(
-                    md,
-                    html,
+                writer.WriteFig(
                     Line(
                         data,
                         x=numeric_modifier_continuous,
                         y=y,
                         color=category,
+                        category_orders={category: category_order},
+                    ),
+                )
+                writer.WriteFig(
+                    Line(
+                        data,
+                        x=numeric_modifier_continuous,
+                        y=y,
+                        color=category,
+                        category_orders={category: category_order},
                         include_zero=True,
                     ),
                 )
@@ -238,58 +97,58 @@ def WriteIndividualV2(
                     "inserted",
                     "reinserted",
                 ]:
-                    Write(md, html, f"#### {t} Timeline  \n")
-                    WriteFig(
-                        md,
-                        html,
-                        Line(
-                            timeline,
-                            x=None,
-                            y=t,
-                            color=category,
-                            facet_row=numeric_modifier_continuous,
-                        ),
-                    )
-            # Write(md, html, "#### Inserted + Reinserted  \n")
-            # WriteFig(
-            #     md,
-            #     html,
-            #     VerticalCompositionBar(
-            #         data,
-            #         X=category,
-            #         Ys=[
-            #             "Inserted",
-            #             "Reinserted",
-            #         ],
-            #         title=f"Flash Write (Inserted + Reinserted) by {category}",
-            #         yaxis_title="Flash Write",
-            #         xaxis_title=category,
-            #         mode="stack",
-            #     ),
-            # )
-            # Write(md, html, "#### Flash Hit and DRAM Hit  \n")
-            # WriteFig(
-            #     md,
-            #     html,
-            #     VerticalCompositionBar(
-            #         data,
-            #         X=category,
-            #         Ys=[
-            #             "Flash Hit",
-            #             "DRAM Hit",
-            #         ],
-            #         title=f"Flash Hit and DRAM Hit by {category}",
-            #         yaxis_title="Hit",
-            #         xaxis_title=category,
-            #         mode="stack",
-            #     ),
-            # )
+                    writer.Write(f"#### {t} Timeline  \n")
+                    for n in sorted(timeline[numeric_modifier_continuous].unique()):
+                        writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
+                        writer.WriteFig(
+                            Line(
+                                timeline.query(
+                                    f"`{numeric_modifier_continuous}` == @n"
+                                ),
+                                x=None,
+                                y=t,
+                                color=category,
+                                category_orders={category: category_order},
+                            ),
+                        )
+            writer.Write("#### Inserted + Reinserted  \n")
+            for n in sorted(data[numeric_modifier_continuous].unique()):
+                writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
+                writer.WriteFig(
+                    VerticalCompositionBar(
+                        data.query(f"`{numeric_modifier_continuous}` == @n"),
+                        X=category,
+                        Ys=[
+                            "Inserted",
+                            "Reinserted",
+                        ],
+                        title=f"Flash Write (Inserted + Reinserted) by {category}",
+                        yaxis_title="Flash Write",
+                        xaxis_title=category,
+                        mode="stack",
+                    ),
+                )
+            writer.Write("#### Flash Hit and DRAM Hit  \n")
+            for n in sorted(data[numeric_modifier_continuous].unique()):
+                writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
+                writer.WriteFig(
+                    VerticalCompositionBar(
+                        data.query(f"`{numeric_modifier_continuous}` == @n"),
+                        X=category,
+                        Ys=[
+                            "Flash Hit",
+                            "DRAM Hit",
+                        ],
+                        title=f"Flash Hit and DRAM Hit by {category}",
+                        yaxis_title="Hit",
+                        xaxis_title=category,
+                        mode="stack",
+                    ),
+                )
 
             data = data.sort_values(by=category)
-            Write(md, html, "#### Detail Table  \n")
-            Write(
-                md,
-                html,
+            writer.Write("#### Detail Table  \n")
+            writer.Write(
                 tabulate(
                     data[
                         [
@@ -326,25 +185,17 @@ def WriteSumz(
     title: str,
 ):
     current_title = f"{title} Categorized By {category} with {numeric_modifier_spesific[0]}: {numeric_modifier_spesific[1]}"
-    html = open(
-        f"../../docs/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.html",
-        "w",
-    )
-    md = open(
-        f"../../markdown/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.md",
-        "w",
-    )
+    html_path = f"../../docs/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.html"
+    md_path = f"../../markdown/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.md"
+    writer = DocsWriter(html_path=html_path, md_path=None)
     WriteIndividualV2(
-        md,
-        html,
+        writer,
         df.query(f"`{numeric_modifier_spesific[0]}` == @numeric_modifier_spesific[1]"),
         current_title,
         category,
         numeric_modifier_continuous,
     )
-    WriteHTML(html)
-    md.close()
-    html.close()
+    writer.Flush()
     print("Finished generating " + current_title)
 
 
@@ -421,17 +272,28 @@ def main():
 
     use_cache = False
 
-    Sumz(zipf, "Zipf", False, use_cache)
-    Sumz(cloudphysics, "CloudPhysics", False, use_cache)
-    Sumz(metacdn, "MetaCDN", False, use_cache)
-    Sumz(wiki, "Wiki", False, use_cache)
-    Sumz(tencentphoto, "TencentPhotos", False, use_cache)
+    args = [
+        (zipf, "Zipf", False, use_cache),
+        (cloudphysics, "CloudPhysics", False, use_cache),
+        (metacdn, "MetaCDN", False, use_cache),
+        (wiki, "Wiki", False, use_cache),
+        (tencentphoto, "TencentPhotos", False, use_cache),
+        (zipf, "Zipf", True, use_cache),
+        (cloudphysics, "CloudPhysics", True, use_cache),
+        (metacdn, "MetaCDN", True, use_cache),
+        (wiki, "Wiki", True, use_cache),
+        (tencentphoto, "TencentPhotos", True, use_cache),
+    ]
 
-    Sumz(zipf, "Zipf", True, use_cache)
-    Sumz(cloudphysics, "CloudPhysics", True, use_cache)
-    Sumz(metacdn, "MetaCDN", True, use_cache)
-    Sumz(wiki, "Wiki", True, use_cache)
-    Sumz(tencentphoto, "TencentPhotos", True, use_cache)
+    processes = []
+    for arg in args:
+        proc = multiprocessing.Process(target=Sumz, args=arg)
+        processes.append(proc)
+        proc.start()
+        print(f"Started process for {args[1]} with ignore_obj_size={args[2]}")
+
+    for proc in processes:
+        proc.join()
 
 
 if __name__ == "__main__":

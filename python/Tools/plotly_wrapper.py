@@ -8,7 +8,9 @@ from plotly.io import templates
 templates.default = "plotly_white"
 
 
-def Line(df: pd.DataFrame, x, y, include_zero: bool = False, **kwargs) -> go.Figure:
+def Line(
+    df: pd.DataFrame, x, y, count=1, include_zero: bool = False, **kwargs
+) -> go.Figure:
     fig = px.line(
         df,
         x=x,
@@ -17,14 +19,14 @@ def Line(df: pd.DataFrame, x, y, include_zero: bool = False, **kwargs) -> go.Fig
     )
     fig.update_layout(
         font=dict(size=32),
-        # height=1000,
-        width=1000,
+        height=750 * count,
+        width=750,
     )
     fig.update_traces(
-        line=dict(width=12),
+        line=dict(width=6),
     )
-    fig.update_xaxes(showgrid=True, nticks=15)
-    fig.update_yaxes(showgrid=True, nticks=15)
+    fig.update_xaxes(showgrid=True, nticks=12)
+    fig.update_yaxes(showgrid=True, nticks=12)
     if include_zero:
         fig.update_xaxes(rangemode="tozero")
         fig.update_yaxes(range=[0, 1])
@@ -35,8 +37,8 @@ def Scatter(df: pd.DataFrame, include_zero: bool = False, **kwargs) -> go.Figure
     fig = px.scatter(df, **kwargs)
     fig.update_layout(
         font=dict(size=32),
-        # height=1000,
-        width=1000,
+        # height=750,
+        width=750,
     )
     fig.update_traces(
         marker_size=36,
@@ -57,7 +59,7 @@ def Box(df: pd.DataFrame, **kwargs) -> go.Figure:
     fig.update_layout(
         font=dict(size=32),
         height=30 * len(df[kwargs.get("y")].unique()),
-        width=1000,
+        width=750,
         showlegend=False,
     )
     fig.update_xaxes(showgrid=True, nticks=10)
