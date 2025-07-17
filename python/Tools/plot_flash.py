@@ -116,7 +116,7 @@ def WriteIndividualV2(
                                 size="byte" in t,
                                 color=category,
                                 category_orders={category: category_order},
-                                labels={"index": "Hour", t: f"{t}/Hour"},
+                                labels={"index": "Hour", t: f"{t} / Hour"},
                             ),
                         )
             writer.Write("#### Inserted + Reinserted  \n")

@@ -24,7 +24,7 @@ def Line(
     )
     fig.update_traces(
         opacity=0.5,
-        line=dict(width=4),
+        line=dict(width=3),
     )
     fig.update_xaxes(showgrid=True, nticks=12)
     fig.update_yaxes(showgrid=True, nticks=18)
