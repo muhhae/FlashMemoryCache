@@ -51,8 +51,13 @@ def WriteIndividualV2(
                 "Overall Miss Ratio",
                 "Flash Miss Ratio",
                 "Write",
-                "Inserted",
                 "Reinserted",
+                "Inserted",
+                "Byte Write",
+                "Byte Reinserted",
+                "Byte Inserted",
+                "Byte Flash Miss",
+                "Byte Flash Read",
             ]:
                 writer.Write(
                     f"#### Effects of {numeric_modifier_continuous} on {y}  \n",
@@ -71,6 +76,7 @@ def WriteIndividualV2(
                         data,
                         x=numeric_modifier_continuous,
                         y=y,
+                        size="Byte" in y,
                         color=category,
                         category_orders={category: category_order},
                         include_zero=True,
@@ -107,6 +113,7 @@ def WriteIndividualV2(
                                 ),
                                 x=None,
                                 y=t,
+                                size="byte" in t,
                                 color=category,
                                 category_orders={category: category_order},
                             ),
@@ -290,7 +297,7 @@ def main():
         proc = multiprocessing.Process(target=Sumz, args=arg)
         processes.append(proc)
         proc.start()
-        print(f"Started process for {args[1]} with ignore_obj_size={args[2]}")
+        pprint(f"Started process for {arg[1]} with ignore_obj_size={arg[2]}")
 
     for proc in processes:
         proc.join()

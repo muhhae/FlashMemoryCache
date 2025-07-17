@@ -9,7 +9,7 @@ templates.default = "plotly_white"
 
 
 def Line(
-    df: pd.DataFrame, x, y, count=1, include_zero: bool = False, **kwargs
+    df: pd.DataFrame, x, y, size=False, count=1, include_zero: bool = False, **kwargs
 ) -> go.Figure:
     fig = px.line(
         df,
@@ -20,13 +20,17 @@ def Line(
     fig.update_layout(
         font=dict(size=32),
         height=750 * count,
-        width=750,
+        width=1000,
     )
     fig.update_traces(
-        line=dict(width=6),
+        opacity=0.5,
+        line=dict(width=4),
     )
     fig.update_xaxes(showgrid=True, nticks=12)
-    fig.update_yaxes(showgrid=True, nticks=12)
+    fig.update_yaxes(showgrid=True, nticks=18)
+    if size:
+        fig.update_layout(yaxis_tickformat="s")
+
     if include_zero:
         fig.update_xaxes(rangemode="tozero")
         fig.update_yaxes(range=[0, 1])
@@ -77,6 +81,7 @@ def VerticalCompositionBar(
     mode: str = "stack",
     y_max=None,
 ) -> go.Figure:
+    df = df.sort_values(by=X)
     fig = go.Figure()
     for Y in Ys:
         fig.add_trace(

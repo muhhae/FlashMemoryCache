@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from pprint import pprint
 from typing import List, cast
 
 import pandas as pd
@@ -34,17 +35,22 @@ def ProcessResultJSON(result: dict, file, algorithm):
         )
         metrics_time["Flash Admission Treshold"] = flash["admission_treshold"]
     result = {
-        "Flash Admission Treshold": flash["admission_treshold"],
+        "Flash Admission Treshold": flash.get("admission_treshold", 0),
         "Algorithm": algorithm,
-        "Inserted": flash["inserted"],
-        "Reinserted": flash["reinserted"],
-        "Write": flash["reinserted"] + flash["inserted"],
-        "Flash Miss Ratio": flash["miss_ratio"],
-        "Overall Miss Ratio": result["miss_ratio"],
-        "Flash Hit": flash["hit"],
-        "Overall Hit": result["hit"],
-        "Flash Request": flash["req"],
-        "Overall Request": result["req"],
+        "Inserted": flash.get("inserted", 0),
+        "Reinserted": flash.get("reinserted", 0),
+        "Write": flash.get("reinserted", 0) + flash.get("inserted", 0),
+        "Byte Inserted": flash.get("byte_inserted", 0),
+        "Byte Reinserted": flash.get("byte_reinserted", 0),
+        "Byte Write": flash.get("byte_reinserted", 0) + flash.get("byte_inserted", 0),
+        "Byte Flash Read": flash.get("byte_read", 0),
+        "Byte Flash Miss": flash.get("byte_miss", 0),
+        "Flash Miss Ratio": flash.get("miss_ratio", 0),
+        "Overall Miss Ratio": result.get("miss_ratio", 0),
+        "Flash Hit": flash.get("hit", 0),
+        "Overall Hit": result.get("hit", 0),
+        "Flash Request": flash.get("req", 0),
+        "Overall Request": result.get("req", 0),
         "Trace": os.path.basename(prefix),
         "JSON File": os.path.basename(file),
         "Cache Size": float(cast(str, desc[0])),
