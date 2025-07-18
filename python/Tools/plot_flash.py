@@ -201,8 +201,14 @@ def WriteSumz(
     title: str,
 ):
     current_title = f"{title} Categorized By {category} with {numeric_modifier_spesific[0]}: {numeric_modifier_spesific[1]}"
-    html_path = f"../../docs/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.html"
-    md_path = f"../../markdown/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.md"
+    html_path = os.path.join(
+        OUTPUT_PATH,
+        f"{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.html",
+    )
+    md_path = os.path.join(
+        OUTPUT_PATH,
+        f"../../markdown/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/{current_title}.md",
+    )
     writer = DocsWriter(html_path=html_path, md_path=None)
     WriteIndividualV2(
         writer,
