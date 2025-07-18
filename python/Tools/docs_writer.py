@@ -39,12 +39,12 @@ class DocsWriter:
 
     def Flush(self):
         if self.md_path is not None:
-            os.makedirs(self.md_path, exist_ok=True)
+            os.makedirs(os.path.dirname(self.md_path), exist_ok=True)
             md_file = open(self.md_path, "w")
             md_file.write(self.md_content)
             md_file.close()
         if self.html_path is not None:
-            os.makedirs(self.html_path, exist_ok=True)
+            os.makedirs(os.path.dirname(self.html_path), exist_ok=True)
             html_file = open(self.html_path, "w")
             md = MD.Markdown(
                 extensions=["extra", "toc"],
