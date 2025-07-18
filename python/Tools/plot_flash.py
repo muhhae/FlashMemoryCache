@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 from typing import Final
 
+from numpy import log
 import pandas as pd
 from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
@@ -17,7 +18,7 @@ from plotly_wrapper import Line, VerticalCompositionBar
 from tabulate import tabulate
 
 OUTPUT_PATH: Final[str] = "../../../FlashMemoryCacheDocs/"
-DATA_PATH: Final[str] = "../../../FlashMemoryCache/"
+DATA_PATH: Final[str] = "../../../FlashMemoryCacheResults/"
 
 
 def CreateFlashWriteComposition(df: pd.DataFrame) -> Figure:
@@ -253,7 +254,7 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
 
 
 def FilterByTraceGroups(trace_groups: list[str]):
-    log_path = os.path.join(DATA_PATH, "FlashMemoryCacheResults/log/")
+    log_path = os.path.join(DATA_PATH, "log")
     files = sorted(glob(os.path.join(log_path, "*.json")), key=sort_key)
 
     trace_list = []
