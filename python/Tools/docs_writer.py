@@ -1,31 +1,32 @@
+import os
 from _plotly_utils.utils import base64
 import markdown as MD
 
-from plotly.graph_objs import Figure
+from plotly.graph_objs import Figure, Treemap
 
 
 class DocsWriter:
     def __init__(
         self, html_path: str | None = None, md_path: str | None = None
     ) -> None:
-        self.html_file = open(html_path, "w") if html_path is not None else None
-        self.md_file = open(md_path, "w") if md_path is not None else None
+        self.html_path = html_path
+        self.md_path = md_path
 
         self.html_content = ""
         self.md_content = ""
         self.counter = 0
 
     def Write(self, content: str):
-        self.html_content += content * (self.html_file is not None)
-        self.md_content += content * (self.html_file is not None)
+        self.html_content += content * (self.html_path is not None)
+        self.md_content += content * (self.html_path is not None)
 
     def WriteFig(self, fig: Figure):
-        if self.md_file is not None:
+        if self.md_path is not None:
             png_bytes = fig.to_image(format="png")
             b64 = base64.b64encode(png_bytes)
             uri = f"data:image/png;base64,{b64.decode('utf-8')}"
             self.md_content += f'<img src="{uri}" alt="Plotly Chart">'
-        if self.html_file is not None:
+        if self.html_path is not None:
             j = fig.to_json()
             self.html_content += f"""
 <div class="chart-wrapper">
@@ -37,15 +38,19 @@ class DocsWriter:
         self.counter += 1
 
     def Flush(self):
-        if self.md_file is not None:
-            self.md_file.write(self.md_content)
-            self.md_file.close()
-        if self.html_file is not None:
+        if self.md_path is not None:
+            os.makedirs(self.md_path, exist_ok=True)
+            md_file = open(self.md_path, "w")
+            md_file.write(self.md_content)
+            md_file.close()
+        if self.html_path is not None:
+            os.makedirs(self.html_path, exist_ok=True)
+            html_file = open(self.html_path, "w")
             md = MD.Markdown(
                 extensions=["extra", "toc"],
             )
             html_body = md.convert(self.html_content)
-            self.html_file.write(f"""
+            html_file.write(f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,4 +77,4 @@ class DocsWriter:
 </body>
 </html>
             """)
-            self.html_file.close()
+            html_file.close()

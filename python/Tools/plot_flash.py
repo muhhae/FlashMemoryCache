@@ -5,6 +5,7 @@ from pprint import pprint
 from glob import glob
 from pathlib import Path
 import sys
+from typing import Final
 
 import pandas as pd
 from common import sort_key
@@ -14,6 +15,9 @@ from pandas.core.frame import itertools
 from plotly.graph_objs import Figure
 from plotly_wrapper import Line, VerticalCompositionBar
 from tabulate import tabulate
+
+OUTPUT_PATH: Final[str] = "../../../FlashMemoryCacheDocs/"
+DATA_PATH: Final[str] = "../../../FlashMemoryCache/"
 
 
 def CreateFlashWriteComposition(df: pd.DataFrame) -> Figure:
@@ -235,15 +239,6 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
         with open(cache, "wb") as c:
             pickle.dump(combined, c)
 
-    os.makedirs(
-        f"../../docs/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/",
-        exist_ok=True,
-    )
-    os.makedirs(
-        f"../../markdown/{'ignore_obj_size' if ignore_obj_size else 'not_ignore_object_size'}/",
-        exist_ok=True,
-    )
-
     modifier = ["DRAM Size", "Flash Admission Treshold"]
     modifier_permutations = list(itertools.permutations(modifier, len(modifier)))
     args = []
@@ -258,7 +253,7 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
 
 
 def FilterByTraceGroups(trace_groups: list[str]):
-    log_path = "../../../FlashMemoryCacheResults/log/"
+    log_path = os.path.join(DATA_PATH, "FlashMemoryCacheResults/log/")
     files = sorted(glob(os.path.join(log_path, "*.json")), key=sort_key)
 
     trace_list = []
