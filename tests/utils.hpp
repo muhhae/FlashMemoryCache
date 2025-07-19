@@ -32,9 +32,7 @@ static nlohmann::json LayeredCacheSimulation(
     std::vector<CustomCache::ChainedCache> Caches;
     for (const auto& a : algorithms) {
         Caches.push_back(
-            CustomCache::ChainedCache(
-                a, cache_size, NULL, "", admission_threshold++, false
-            )
+            CustomCache::ChainedCache(a, cache_size, NULL, "", admission_threshold++, false)
         );
         cache_size *= 10;
     }

@@ -6,38 +6,40 @@
 #include <libCacheSim/evictionAlgo.h>
 #include <libCacheSim/request.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
 #include <functional>
+#include <limits>
+#include <set>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <utility>
 
 #include "additional_data.hpp"
 #include "cache/clock.hpp"
-#include "cache/decayed_clock.hpp"
-#include "cache/dist_clock.hpp"
 #include "cache/fifo.hpp"
 #include "cache/lru.hpp"
 #include "cache/offline_clock.hpp"
 #include "cache/offline_clock_v2.hpp"
 #include "lib/json.hpp"
 
-typedef std::function<cache_t*(
-    const common_cache_params_t ccache_params, const char* cache_specific_params
-)>
+typedef std::function<
+    cache_t*(const common_cache_params_t ccache_params, const char* cache_specific_params)>
     cache_init_func;
 
 cache_init_func AlgoSelector(std::string algorithm) {
+    std::set<std::string> disabled_algo = {"decay_power", "dist-optimal", "ML"};
+    if (disabled_algo.contains(algorithm)) {
+        throw std::invalid_argument(algorithm + " algorithm is currently disabled");
+    }
     std::unordered_map<std::string, cache_init_func> simple_algorithm = {
-        {"decayed_clock", algorithm::DecayedClockInit},
         {"fifo", algorithm::FIFOInit},
         {"offline-clock", algorithm::OfflineClockInit},
         {"offline-clock-v2", algorithm::OfflineClockV2Init},
-        {"dist-optimal", algorithm::DistClockInit},
         {"lru", algorithm::LRUInit},
         {"clock", algorithm::ClockInit},
         {"slru", SLRU_init},
@@ -77,14 +79,13 @@ ChainedCache::ChainedCache(
 )
     : next(next), algorithm(Algorithm), admission_treshold(admission_treshold) {
     self = AlgoSelector(Algorithm)({.cache_size = cache_size}, NULL);
-    auto& additional_cache_data =
-        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(self);
+    auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                      .GetAdditionalCacheData(self);
     if (generate_datasets) {
         additional_cache_data.datasets = std::ofstream(datasets);
         for (size_t i = 0; i < data::datasets_columns.size(); i++) {
-            additional_cache_data.datasets
-                << data::datasets_columns[i]
-                << (i == data::datasets_columns.size() - 1 ? '\n' : ',');
+            additional_cache_data.datasets << data::datasets_columns[i]
+                                           << (i == data::datasets_columns.size() - 1 ? '\n' : ',');
         }
     }
 }
@@ -94,8 +95,7 @@ void ChainedCache::SetupIteration(bool generate_datasets) {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
     additional_cache_data_storage.TransferOwnership(self, tmp);
 
-    auto& tmp_additional_cache_data =
-        additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
     if (isML) {
         throw std::runtime_error("ML is currently disabled");
@@ -124,19 +124,21 @@ void ChainedCache::SetupIteration(bool generate_datasets) {
 }
 void ChainedCache::EndIteration() {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data =
-        additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
     metrics.push_back(tmp_additional_cache_data.metric);
 
     metrics_times.push_back(metrics_time);
     metrics_time.clear();
 
-    for (auto& e : tmp_additional_cache_data.objs_metadata) {
-        e.second.Reset();
-        e.second.lifetime_freq = 0;
-        e.second.last_promotion = 0;
-    }
+    tmp_additional_cache_data.object_in_cache_metadatas.clear();
+    if (tmp_additional_cache_data.object_extra_metadatas)
+        tmp_additional_cache_data.object_extra_metadatas->clear();
+
+    if (tmp_additional_cache_data.object_lifetime_metadatas)
+        tmp_additional_cache_data.object_lifetime_metadatas->clear();
+    if (tmp_additional_cache_data.object_extra_lifetime_metadatas)
+        tmp_additional_cache_data.object_extra_lifetime_metadatas->clear();
 
     additional_cache_data_storage.TransferOwnership(tmp, self);
 
@@ -157,18 +159,91 @@ void ChainedCache::Admit(const request_t* req, const uint64_t freq) {
     if (freq < admission_treshold)
         return;
     if (!tmp->get(tmp, req)) {
-        auto& metric = data::AdditionalCacheDataStorage::GetStorage()
-                           .GetAdditionalCacheData(tmp)
-                           .metric;
-        metric.byte_inserted += req->obj_size;
-        metric.inserted++;
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(tmp).OnInsertion(req);
     }
+}
+void ChainedCache::Admit(const request_t* req) {
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+
+    uint64_t freq = std::numeric_limits<uint64_t>::max();
+    if (tmp_additional_cache_data.object_lifetime_metadatas) {
+        freq = tmp_additional_cache_data.object_lifetime_metadatas.value()[req->obj_id]
+                   .lifetime_freq;
+    }
+    Admit(req, freq);
 }
 void ChainedCache::Admit(const cache_obj_t* obj, const uint64_t freq) {
     request_t req;
     copy_cache_obj_to_request(&req, obj);
     Admit(&req, freq);
 }
+
+bool ChainedCache::LookUpAndTrack(const request_t* req, bool update_cache_state) {
+    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
+    auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
+    tmp_additional_cache_data.OnAccess(req);
+
+    bool hit = tmp->find(tmp, req, false);
+    if (!hit) {
+        tmp_additional_cache_data.metric.byte_miss += req->obj_size;
+        if (update_cache_state) {
+            Admit(req);
+        }
+    } else {
+        tmp_additional_cache_data.metric.byte_read += req->obj_size;
+        tmp_additional_cache_data.metric.hit++;
+        if (update_cache_state) {
+            tmp->get(tmp, req);
+        }
+    }
+    return hit;
+}
+
+bool ChainedCache::Get(const request_t* req) {
+    bool hit = LookUpAndTrack(req, true);
+    if (hit)
+        return true;
+    if (next)
+        return next->Find(req);
+    return false;
+}
+
+bool ChainedCache::Find(const request_t* req) {
+    bool hit = LookUpAndTrack(req, false);
+    if (hit)
+        return true;
+    if (next)
+        return next->Find(req);
+    return false;
+}
+
+void ChainedCache::TrackMetricsTime(uint64_t time) {
+    if (time - prev_time < 3600)
+        return;
+
+    CacheMetrics current_metrics = data::AdditionalCacheDataStorage::GetStorage()
+                                       .GetAdditionalCacheData(tmp)
+                                       .metric;
+    CacheMetrics delta_metrics = {
+        current_metrics.req - prev_metrics.req,
+        current_metrics.hit - prev_metrics.hit,
+        current_metrics.inserted - prev_metrics.inserted,
+        current_metrics.reinserted - prev_metrics.reinserted,
+        current_metrics.byte_read - prev_metrics.byte_read,
+        current_metrics.byte_miss - prev_metrics.byte_miss,
+        current_metrics.byte_reinserted - prev_metrics.byte_reinserted,
+        current_metrics.byte_inserted - prev_metrics.byte_inserted,
+    };
+
+    metrics_time.push_back(delta_metrics);
+    prev_metrics = current_metrics;
+    prev_time = time;
+
+    if (next)
+        next->TrackMetricsTime(time);
+}
+
 void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
     for (size_t i = 0; i < metrics.size(); ++i) {
         nlohmann::json j;
@@ -207,80 +282,12 @@ void ChainedCache::Print(nlohmann::json& output_json, uint64_t depth) {
 }
 void ChainedCache::CleanUp() {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
-    auto& self_additional_cache_data =
-        additional_cache_data_storage.GetAdditionalCacheData(self);
-    self_additional_cache_data.objs_metadata.clear();
+    auto& self_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(self);
     self->cache_free(self);
 
     if (self_additional_cache_data.datasets.is_open())
         self_additional_cache_data.datasets.close();
     if (next)
         next->CleanUp();
-}
-
-void ChainedCache::TrackMetricsTime(uint64_t time) {
-    if (time - prev_time < 3600)
-        return;
-
-    CacheMetrics current_metrics =
-        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(tmp).metric;
-    CacheMetrics delta_metrics = {
-        current_metrics.req - prev_metrics.req,
-        current_metrics.hit - prev_metrics.hit,
-        current_metrics.inserted - prev_metrics.inserted,
-        current_metrics.reinserted - prev_metrics.reinserted,
-        current_metrics.byte_read - prev_metrics.byte_read,
-        current_metrics.byte_miss - prev_metrics.byte_miss,
-        current_metrics.byte_reinserted - prev_metrics.byte_reinserted,
-        current_metrics.byte_inserted - prev_metrics.byte_inserted,
-    };
-
-    metrics_time.push_back(delta_metrics);
-    prev_metrics = current_metrics;
-    prev_time = time;
-
-    if (next)
-        next->TrackMetricsTime(time);
-}
-
-bool ChainedCache::LookUpAndTrack(const request_t* req, bool update_cache_state) {
-    auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
-    auto& tmp_additional_cache_data =
-        additional_cache_data_storage.GetAdditionalCacheData(tmp);
-    auto& data = tmp_additional_cache_data.objs_metadata[req->obj_id];
-    tmp_additional_cache_data.OnAccessTracking(data, req);
-
-    bool hit = tmp->find(tmp, req, false);
-    if (!hit) {
-        tmp_additional_cache_data.metric.byte_miss += req->obj_size;
-        if (update_cache_state) {
-            Admit(req, data.lifetime_freq);
-        }
-    } else {
-        tmp_additional_cache_data.metric.byte_read += req->obj_size;
-        tmp_additional_cache_data.metric.hit++;
-        if (update_cache_state) {
-            tmp->get(tmp, req);
-        }
-    }
-    return hit;
-}
-
-bool ChainedCache::Get(const request_t* req) {
-    bool hit = LookUpAndTrack(req, true);
-    if (hit)
-        return true;
-    if (next)
-        return next->Find(req);
-    return false;
-}
-
-bool ChainedCache::Find(const request_t* req) {
-    bool hit = LookUpAndTrack(req, false);
-    if (hit)
-        return true;
-    if (next)
-        return next->Find(req);
-    return false;
 }
 }  // namespace CustomCache

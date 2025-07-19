@@ -4,27 +4,37 @@
 #include <libCacheSim/evictionAlgo.h>
 
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
+#include <stdexcept>
 
 #include "additional_data.hpp"
 
 namespace algorithm {
 void OfflineClockEvict(cache_t* cache, const request_t* req) {
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
-    auto& additional_cache_data =
-        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+    auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                      .GetAdditionalCacheData(cache);
 
     cache_obj_t* obj_to_evict = params->q_tail;
-    while (obj_to_evict->clock.freq >= 1) {
-        auto& data = additional_cache_data.objs_metadata[obj_to_evict->obj_id];
-        data.last_promotion = data.lifetime_freq;
+    if (!additional_cache_data.object_offline_clock_metadatas ||
+        !additional_cache_data.object_lifetime_metadatas) [[unlikely]] {
+        throw std::runtime_error("Offline Clock and Lifetime metadata need to be initialized");
+    }
 
-        additional_cache_data.BeforeEvaluationTracking(obj_to_evict, req);
-        bool wasted = data.wasted_promotions.contains(data.last_promotion);
+    while (obj_to_evict->clock.freq >= 1) {
+        auto& offline_clock_metadata = additional_cache_data.object_offline_clock_metadatas
+                                           .value()[obj_to_evict->obj_id];
+        auto& lifetime_metadata = additional_cache_data.object_lifetime_metadatas
+                                      .value()[obj_to_evict->obj_id];
+
+        lifetime_metadata.last_promotion = lifetime_metadata.lifetime_freq;
+        bool wasted = offline_clock_metadata.wasted_promotions.contains(
+            lifetime_metadata.last_promotion
+        );
 
         if (additional_cache_data.generate_datasets) {
-            auto features =
-                additional_cache_data.ObjectFeatures(data, cache, req, obj_to_evict);
+            auto features = additional_cache_data.ObjectFeatures(obj_to_evict, cache, req);
             features["wasted"] = wasted;
             for (size_t i = 0; i < data::datasets_columns.size(); i++) {
                 additional_cache_data.datasets
@@ -33,20 +43,23 @@ void OfflineClockEvict(cache_t* cache, const request_t* req) {
             }
         }
 
-        additional_cache_data.BeforeEvictionTracking(obj_to_evict, req);
         if (wasted) {
             break;
         }
-        additional_cache_data.OnPromotionTracking(obj_to_evict, req);
-
+        additional_cache_data.OnPromotion(obj_to_evict, req);
         obj_to_evict->clock.freq -= 1;
         params->n_obj_rewritten += 1;
         params->n_byte_rewritten += obj_to_evict->obj_size;
         move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
         obj_to_evict = params->q_tail;
     }
-    auto& data = additional_cache_data.objs_metadata[obj_to_evict->obj_id];
-    data.wasted_promotions.insert(data.last_promotion);
+    auto& offline_clock_metadata = additional_cache_data.object_offline_clock_metadatas
+                                       .value()[obj_to_evict->obj_id];
+    auto& lifetime_metadata = additional_cache_data.object_lifetime_metadatas
+                                  .value()[obj_to_evict->obj_id];
+    offline_clock_metadata.wasted_promotions.insert(lifetime_metadata.last_promotion);
+    additional_cache_data.OnEviction(obj_to_evict, req);
+
     remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);
 }
@@ -59,6 +72,11 @@ cache_t* OfflineClockInit(
     cache->cache_init = OfflineClockInit;
     cache->evict = OfflineClockEvict;
 
+    auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                      .GetAdditionalCacheData(cache);
+
+    additional_cache_data.object_lifetime_metadatas.emplace();
+    additional_cache_data.object_offline_clock_metadatas.emplace();
     return cache;
 }
 }  // namespace algorithm

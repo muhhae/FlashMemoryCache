@@ -40,6 +40,7 @@ class ChainedCache {
     void EndIteration();
     void Admit(const cache_obj_t* obj, const uint64_t freq);
     void Admit(const request_t* req, const uint64_t freq);
+    void Admit(const request_t* req);
     void Print(nlohmann::json& output_json, uint64_t depth);
     void TrackMetricsTime(uint64_t current_time);
     void CleanUp();

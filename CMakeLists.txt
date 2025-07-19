@@ -57,8 +57,8 @@ add_library(my_cache_sim
   src/cache/clock.cpp
   src/cache/lru.cpp
   src/cache/fifo.cpp
-  src/cache/decayed_clock.cpp
-  src/cache/dist_clock.cpp
+  # src/cache/decayed_clock.cpp
+  # src/cache/dist_clock.cpp
 )
 
 add_executable(cacheSimulator src/main.cpp)

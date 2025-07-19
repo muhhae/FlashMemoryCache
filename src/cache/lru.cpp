@@ -4,6 +4,7 @@
 #include <libCacheSim/evictionAlgo.h>
 
 #include <cstdlib>
+#include <filesystem>
 
 #include "additional_data.hpp"
 
@@ -26,9 +27,11 @@ void LRUEvict(cache_t* cache, const request_t* req) {
         params->q_head = NULL;
     }
 
-    data::AdditionalCacheDataStorage::GetStorage()
-        .GetAdditionalCacheData(cache)
-        .InsertNext(obj_to_evict);
+    auto& additional_data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(
+        cache
+    );
+    additional_data.InsertNext(obj_to_evict);
+    additional_data.OnEviction(obj_to_evict, req);
 
     cache_evict_base(cache, obj_to_evict, true);
 }
@@ -37,17 +40,15 @@ cache_obj_t* LRUFind(cache_t* cache, const request_t* req, const bool update_cac
     LRU_params_t* params = (LRU_params_t*)cache->eviction_params;
     cache_obj_t* cache_obj = cache_find_base(cache, req, update_cache);
     if (cache_obj && likely(update_cache)) {
-        data::AdditionalCacheDataStorage::GetStorage()
-            .GetAdditionalCacheData(cache)
-            .OnPromotionTracking(cache_obj, req);
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
+            cache_obj, req
+        );
         move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
     }
     return cache_obj;
 }
 
-cache_t* LRUInit(
-    const common_cache_params_t ccache_params, const char* cache_specific_params
-) {
+cache_t* LRUInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
     auto cache = LRU_init(ccache_params, cache_specific_params);
 
     cache->cache_init = LRUInit;

@@ -7,26 +7,36 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 
 #include "additional_data.hpp"
 
 namespace algorithm {
 void OfflineClockV2Evict(cache_t* cache, const request_t* req) {
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
-    auto& additional_cache_data =
-        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+    auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                      .GetAdditionalCacheData(cache);
 
     cache_obj_t* obj_to_evict = params->q_tail;
+    if (!additional_cache_data.object_offline_clock_v2_metadatas ||
+        !additional_cache_data.object_lifetime_metadatas) [[unlikely]] {
+        throw std::runtime_error("Offline Clock V2 and Lifetime metadata need to be initialized");
+    }
     while (obj_to_evict->clock.freq >= 1) {
-        auto& data = additional_cache_data.objs_metadata[obj_to_evict->obj_id];
-        if (data.current_access_after_promotion.contains(data.lifetime_freq) &&
-            data.current_access_after_promotion[data.lifetime_freq] >
-                data.final_access_after_promotion[data.lifetime_freq]) {
-            data.final_access_after_promotion[data.lifetime_freq] =
-                data.current_access_after_promotion[data.lifetime_freq];
-        }
+        auto& offline_metadata = additional_cache_data.object_offline_clock_v2_metadatas
+                                     .value()[obj_to_evict->obj_id];
+        auto& lifetime_metadata = additional_cache_data.object_lifetime_metadatas
+                                      .value()[obj_to_evict->obj_id];
 
-        additional_cache_data.BeforeEvaluationTracking(obj_to_evict, req);
+        if (offline_metadata.current_access_after_promotion.contains(
+                lifetime_metadata.lifetime_freq
+            ) &&
+            offline_metadata.current_access_after_promotion[lifetime_metadata.lifetime_freq] >
+                offline_metadata.final_access_after_promotion[lifetime_metadata.lifetime_freq]) {
+            offline_metadata.final_access_after_promotion
+                [lifetime_metadata.lifetime_freq] = offline_metadata.current_access_after_promotion
+                                                        [lifetime_metadata.lifetime_freq];
+        }
 
         // if (data.final_access_after_promotion.contains(data.last_promotion)) {
         //     std::println(
@@ -38,8 +48,12 @@ void OfflineClockV2Evict(cache_t* cache, const request_t* req) {
         // bool wasted = data.final_access_after_promotion.contains(data.lifetime_freq) &&
         //               data.final_access_after_promotion[data.lifetime_freq] < 1;
         bool wasted = false;
-        if (data.final_access_after_promotion.contains(data.lifetime_freq)) {
-            uint64_t future_freq = data.final_access_after_promotion[data.lifetime_freq];
+        if (offline_metadata.final_access_after_promotion.contains(
+                lifetime_metadata.lifetime_freq
+            )) {
+            uint64_t
+                future_freq = offline_metadata
+                                  .final_access_after_promotion[lifetime_metadata.lifetime_freq];
             bool wasted = future_freq < 1;
         }
 
@@ -57,23 +71,19 @@ void OfflineClockV2Evict(cache_t* cache, const request_t* req) {
         //     }
         // }
 
-        additional_cache_data.BeforeEvictionTracking(obj_to_evict, req);
-        data.last_promotion = data.lifetime_freq;
-
+        lifetime_metadata.last_promotion = lifetime_metadata.lifetime_freq;
         if (wasted) {
             break;
         }
-
-        data.current_access_after_promotion[data.lifetime_freq] = 0;
-        additional_cache_data.OnPromotionTracking(obj_to_evict, req);
+        offline_metadata.current_access_after_promotion[lifetime_metadata.lifetime_freq] = 0;
+        additional_cache_data.OnPromotion(obj_to_evict, req);
         obj_to_evict->clock.freq -= 1;
         params->n_obj_rewritten += 1;
         params->n_byte_rewritten += obj_to_evict->obj_size;
         move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
         obj_to_evict = params->q_tail;
     }
-    auto& data = additional_cache_data.objs_metadata[obj_to_evict->obj_id];
-
+    additional_cache_data.OnEviction(obj_to_evict, req);
     remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);
 }
@@ -86,6 +96,11 @@ cache_t* OfflineClockV2Init(
     cache->cache_init = OfflineClockV2Init;
     cache->evict = OfflineClockV2Evict;
 
+    auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                      .GetAdditionalCacheData(cache);
+
+    additional_cache_data.object_lifetime_metadatas.emplace();
+    additional_cache_data.object_offline_clock_v2_metadatas.emplace();
     return cache;
 }
 }  // namespace algorithm

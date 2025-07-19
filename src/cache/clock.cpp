@@ -16,9 +16,9 @@ void ClockEvict(cache_t* cache, const request_t* req) {
         params->n_obj_rewritten += 1;
         params->n_byte_rewritten += obj_to_evict->obj_size;
 
-        data::AdditionalCacheDataStorage::GetStorage()
-            .GetAdditionalCacheData(cache)
-            .OnPromotionTracking(obj_to_evict, req);
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
+            obj_to_evict, req
+        );
 
         move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
         obj_to_evict = params->q_tail;
@@ -28,9 +28,7 @@ void ClockEvict(cache_t* cache, const request_t* req) {
     cache_evict_base(cache, obj_to_evict, true);
 }
 
-cache_t* ClockInit(
-    const common_cache_params_t ccache_params, const char* cache_specific_params
-) {
+cache_t* ClockInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
     cache->cache_init = ClockInit;
     cache->evict = ClockEvict;
