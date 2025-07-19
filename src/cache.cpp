@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include "cache/additional_data.hpp"
+#include "additional_data.hpp"
 #include "cache/clock.hpp"
 #include "cache/decayed_clock.hpp"
 #include "cache/dist_clock.hpp"

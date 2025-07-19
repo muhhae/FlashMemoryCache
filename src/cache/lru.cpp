@@ -5,7 +5,7 @@
 
 #include <cstdlib>
 
-#include "cache/additional_data.hpp"
+#include "additional_data.hpp"
 
 namespace algorithm {
 void LRUEvict(cache_t* cache, const request_t* req) {

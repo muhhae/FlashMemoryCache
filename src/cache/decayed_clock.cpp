@@ -3,7 +3,7 @@
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
 
-#include "cache/additional_data.hpp"
+#include "additional_data.hpp"
 
 namespace algorithm {
 void DecayedClockEvict(cache_t* cache, const request_t* req) {

@@ -5,7 +5,7 @@
 #include <regex.h>
 #include <sys/types.h>
 
-#include "cache/additional_data.hpp"
+#include "additional_data.hpp"
 
 namespace algorithm {
 void ClockEvict(cache_t* cache, const request_t* req) {

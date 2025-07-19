@@ -50,8 +50,8 @@ enable_testing()
 
 add_library(my_cache_sim
   src/simulator.cpp
+  src/additional_data.cpp
   src/cache.cpp
-  src/cache/additional_data.cpp
   src/cache/offline_clock.cpp
   src/cache/offline_clock_v2.cpp
   src/cache/clock.cpp

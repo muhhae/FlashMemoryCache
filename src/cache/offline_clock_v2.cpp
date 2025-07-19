@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-#include "cache/additional_data.hpp"
+#include "additional_data.hpp"
 
 namespace algorithm {
 void OfflineClockV2Evict(cache_t* cache, const request_t* req) {

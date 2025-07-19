@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "cache/additional_data.hpp"
+#include "additional_data.hpp"
 
 namespace algorithm {
 void OfflineClockEvict(cache_t* cache, const request_t* req) {
