@@ -13,6 +13,7 @@
 #include <ctime>
 #include <filesystem>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <set>
 #include <stdexcept>
@@ -166,7 +167,7 @@ void ChainedCache::Admit(const request_t* req) {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
     auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
-    uint64_t freq = std::numeric_limits<uint64_t>::max();
+    uint64_t freq = 1;
     if (tmp_additional_cache_data.object_lifetime_metadatas) {
         freq = tmp_additional_cache_data.object_lifetime_metadatas.value()[req->obj_id]
                    .lifetime_freq;

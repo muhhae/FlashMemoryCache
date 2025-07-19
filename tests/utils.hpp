@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <vector>
 
+#include "additional_data.hpp"
 #include "cache.hpp"
 #include "lib/json.hpp"
 #include "simulator.hpp"
@@ -30,11 +31,19 @@ static nlohmann::json LayeredCacheSimulation(
     auto req = new_request();
 
     std::vector<CustomCache::ChainedCache> Caches;
+    int counter = 0;
     for (const auto& a : algorithms) {
         Caches.push_back(
             CustomCache::ChainedCache(a, cache_size, NULL, "", admission_threshold++, false)
         );
+        if (counter == 0 && admission_threshold > 1) {
+            auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                              .GetAdditionalCacheData(Caches.back().self);
+            additional_cache_data.object_lifetime_metadatas.emplace();
+        }
+
         cache_size *= 10;
+        counter++;
     }
     for (size_t i = 0; i < Caches.size() - 1; ++i) {
         Caches[i].next = &Caches[i + 1];

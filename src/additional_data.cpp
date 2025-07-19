@@ -132,7 +132,7 @@ void AdditionalCacheData::InsertNext(cache_obj_t* obj) {
     if (!next) {
         return;
     }
-    next->Admit(obj, object_in_cache_metadatas[obj->obj_id]->cache_freq);
+    next->Admit(obj, object_in_cache_metadatas[obj->obj_id]->cache_freq + 1);
 }
 
 void RunningMeanData::Track(const float X) {

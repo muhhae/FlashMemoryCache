@@ -16,6 +16,7 @@
 #include <iostream>
 #include <string>
 
+#include "additional_data.hpp"
 #include "cache.hpp"
 #include "lib/cache_size.h"
 #include "lib/json.hpp"
@@ -48,26 +49,18 @@ void RunExperiment(options o) {
         reader_t* reader = open_trace(p.c_str(), trace_type, &reader_init_param);
         int64_t wss_obj = 0;
         int64_t wss_byte = 0;
-        auto approximate_request_count =
-            cal_working_set_size(reader, &wss_obj, &wss_byte);
+        auto approximate_request_count = cal_working_set_size(reader, &wss_obj, &wss_byte);
         close_reader(reader);
         int64_t wss = o.ignore_obj_size ? wss_obj : wss_byte;
 
         for (const auto& fcs : o.fixed_cache_sizes) {
             o.dist_optimal_treshold = o.ignore_obj_size ? fcs : fcs / wss_byte * wss_obj;
-            std::string desc = "[" + std::to_string(fcs) +
-                               (o.ignore_obj_size ? "" : "MiB") +
+            std::string desc = "[" + std::to_string(fcs) + (o.ignore_obj_size ? "" : "MiB") +
                                (o.desc != "" ? "," : "") + o.desc + "]";
             uint64_t cache_size = o.ignore_obj_size ? fcs : fcs * MiB;
             tasks.emplace_back(
                 std::async(
-                    std::launch::async,
-                    Simulate,
-                    cache_size,
-                    p,
-                    o,
-                    desc,
-                    approximate_request_count
+                    std::launch::async, Simulate, cache_size, p, o, desc, approximate_request_count
                 )
             );
         }
@@ -82,13 +75,7 @@ void RunExperiment(options o) {
             uint64_t cache_size = wss * rcs;
             tasks.emplace_back(
                 std::async(
-                    std::launch::async,
-                    Simulate,
-                    cache_size,
-                    p,
-                    o,
-                    desc,
-                    approximate_request_count
+                    std::launch::async, Simulate, cache_size, p, o, desc, approximate_request_count
                 )
             );
         }
@@ -161,27 +148,28 @@ void Simulate(
         base_path = base_path.substr(0, pos);
     }
 
-    std::filesystem::path output_path =
-        o.output_directory / "log" / (base_path + desc + ".json");
-    std::filesystem::path dataset_path =
-        o.output_directory / "datasets" / (base_path + desc + ".csv");
+    std::filesystem::path output_path = o.output_directory / "log" / (base_path + desc + ".json");
+    std::filesystem::path dataset_path = o.output_directory / "datasets" /
+                                         (base_path + desc + ".csv");
 
     reader_t* reader = SetupReader(o, trace_path);
     request_t* req = new_request();
 
     CustomCache::ChainedCache Flash = CustomCache::ChainedCache(
-        o.algorithm,
-        cache_size,
-        NULL,
-        dataset_path,
-        o.flash_admission_treshold,
-        o.generate_datasets
+        o.algorithm, cache_size, NULL, dataset_path, o.flash_admission_treshold, o.generate_datasets
     );
+
     CustomCache::ChainedCache DRAM = CustomCache::ChainedCache(
         "lru", cache_size * o.dram_size, &Flash, dataset_path, 0, o.generate_datasets
     );
 
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
+    if (!o.dram_enabled) {
+        auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                          .GetAdditionalCacheData(Cache->self);
+        additional_cache_data.object_lifetime_metadatas.emplace();
+    }
+
     uint64_t req_counter = 0;
     uint64_t req_limit = o.req_limit * approximate_request_count;
 
