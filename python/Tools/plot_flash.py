@@ -247,7 +247,7 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
             pickle.dump(combined, c)
 
     modifier = ["DRAM Size", "Flash Admission Treshold"]
-    modifier_permutations = list(itertools.permutations(modifier, len(modifier)))
+    modifier_permutations = list(itertools.permutations(modifier, 2))
     args = []
     for a, b in modifier_permutations:
         for i in combined[a].unique():
