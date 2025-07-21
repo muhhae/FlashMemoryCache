@@ -51,7 +51,7 @@ while IFS= read -r link; do
     size=$(stat --format="%s" "$file")
 
     gb=$(( (size + 1024*1024*1024 - 1) / (1024*1024*1024) ))
-    min_dram=$(( gb*2+1 ))
+    min_dram=$(( gb+1 ))
 
     for cache_size in "${relative_cache_sizes[@]}"; do
         if $ignore_obj_size; then
