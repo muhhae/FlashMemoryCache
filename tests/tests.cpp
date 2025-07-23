@@ -790,8 +790,9 @@ TEST(SimulatorTEST, DoubleLayer_GDSF_ADMISSION_3) {
     );
     ASSERT_EQ(results, expected);
 }
-
-TEST(SimulatorTEST, SingleLayerWithAdmission_FIFO) {
+#undef SINGLE_LAYER_ADMISSIOn
+#ifdef SINGLE_LAYER_ADMISSION
+SINGLE_LAYER_ADMISSIONTEST(SimulatorTEST, SingleLayerWithAdmission_FIFO) {
     nlohmann::json results = LayeredCacheSimulation({"fifo"}, 4);
     nlohmann::json expected = nlohmann::json::parse(
         R"(
@@ -947,3 +948,4 @@ TEST(SimulatorTEST, SingleLayerWithAdmission_GDSF) {
     );
     ASSERT_EQ(results, expected);
 }
+#endif  // SINGLE_LAYER_ADMISSION

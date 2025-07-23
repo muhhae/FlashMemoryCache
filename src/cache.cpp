@@ -6,16 +6,12 @@
 #include <libCacheSim/evictionAlgo.h>
 #include <libCacheSim/request.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
 #include <functional>
-#include <iostream>
-#include <limits>
-#include <print>
 #include <set>
 #include <stdexcept>
 #include <string>
