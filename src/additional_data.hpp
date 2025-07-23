@@ -112,7 +112,7 @@ class AdditionalCacheData {
    public:
     AdditionalCacheData() = default;
 
-    void InsertNext(cache_obj_t* obj);
+    void InsertNext(const cache_obj_t* obj);
     void OnAccess(const request_t* req);
     void OnPromotion(const cache_obj_t* obj_promoted, const request_t* req);
     void OnEviction(const cache_obj_t* obj_evicted, const request_t* req);
@@ -125,6 +125,7 @@ class AdditionalCacheData {
    public:
     CustomCache::ChainedCache* next;
 
+    bool lifetime_freq_for_threshold = false;
     bool generate_datasets;
     std::ofstream datasets;
 
@@ -133,9 +134,8 @@ class AdditionalCacheData {
     uint64_t dist_optimal_treshold = std::numeric_limits<uint64_t>::max();
 
     // Temporary metadata, only live until object evicted
-    std::unordered_map<obj_id_t, std::unique_ptr<ObjectInCacheMetadata>> object_in_cache_metadatas;
-    std::optional<std::unordered_map<obj_id_t, std::unique_ptr<ObjectExtraMetadata>>>
-        object_extra_metadatas;
+    std::unordered_map<obj_id_t, ObjectInCacheMetadata> object_in_cache_metadatas;
+    std::optional<std::unordered_map<obj_id_t, ObjectExtraMetadata>> object_extra_metadatas;
 
     // Lifetime metadata, live until iteration end
     std::optional<std::unordered_map<obj_id_t, ObjectLifetimeMetadata>> object_lifetime_metadatas;

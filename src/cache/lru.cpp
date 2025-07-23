@@ -4,7 +4,6 @@
 #include <libCacheSim/evictionAlgo.h>
 
 #include <cstdlib>
-#include <filesystem>
 
 #include "additional_data.hpp"
 
@@ -14,10 +13,6 @@ void LRUEvict(cache_t* cache, const request_t* req) {
     cache_obj_t* obj_to_evict = params->q_tail;
     DEBUG_ASSERT(params->q_tail != NULL);
 
-    // we can simply call remove_obj_from_list here, but for the best performance,
-    // we chose to do it manually
-    // remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
-
     params->q_tail = params->q_tail->queue.prev;
     if (likely(params->q_tail != NULL)) {
         params->q_tail->queue.next = NULL;
@@ -26,12 +21,9 @@ void LRUEvict(cache_t* cache, const request_t* req) {
         DEBUG_ASSERT(cache->n_obj == 1);
         params->q_head = NULL;
     }
-
-    auto& additional_data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(
-        cache
+    data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnEviction(
+        obj_to_evict, req
     );
-    additional_data.InsertNext(obj_to_evict);
-    additional_data.OnEviction(obj_to_evict, req);
 
     cache_evict_base(cache, obj_to_evict, true);
 }

@@ -62,6 +62,6 @@ class ChainedCache {
     bool isML = false;
 
    private:
-    bool LookUpAndTrack(const request_t* req, bool update_cache_state);
+    bool LookUp(const request_t* req, bool update_cache_state);
 };
 }  // namespace CustomCache

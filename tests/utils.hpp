@@ -13,7 +13,8 @@
 
 static nlohmann::json LayeredCacheSimulation(
     std::vector<std::string> algorithms,
-    uint64_t admission_threshold = 0,
+    uint64_t admission_threshold = 1,
+    bool lifetime_freq_for_threshold = false,
     uint64_t cache_size = 100,
     bool ignore_obj_size = true,
     std::string trace = "../trace/cloudPhysicsIO.oracleGeneral.bin",
@@ -34,13 +35,22 @@ static nlohmann::json LayeredCacheSimulation(
     int counter = 0;
     for (const auto& a : algorithms) {
         Caches.push_back(
-            CustomCache::ChainedCache(a, cache_size, NULL, "", admission_threshold++, false)
+            CustomCache::ChainedCache(
+                a,
+                cache_size,
+                NULL,
+                "",
+                admission_threshold * (counter != 0 || algorithms.size() == 1),
+                false
+            )
         );
-        if (counter == 0 && admission_threshold > 1) {
-            auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
-                                              .GetAdditionalCacheData(Caches.back().self);
+        auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                          .GetAdditionalCacheData(Caches.back().self);
+        if ((algorithms.size() == 1 && admission_threshold > 1) ||
+            (counter == 0 && lifetime_freq_for_threshold)) {
             additional_cache_data.object_lifetime_metadatas.emplace();
         }
+        additional_cache_data.lifetime_freq_for_threshold = lifetime_freq_for_threshold;
 
         cache_size *= 10;
         counter++;

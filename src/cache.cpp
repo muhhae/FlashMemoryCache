@@ -15,6 +15,7 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <print>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -133,14 +134,19 @@ void ChainedCache::EndIteration() {
     metrics_time.clear();
 
     tmp_additional_cache_data.object_in_cache_metadatas.clear();
-    if (tmp_additional_cache_data.object_extra_metadatas)
+    if (tmp_additional_cache_data.object_extra_metadatas) {
         tmp_additional_cache_data.object_extra_metadatas->clear();
-
-    if (tmp_additional_cache_data.object_lifetime_metadatas)
-        tmp_additional_cache_data.object_lifetime_metadatas->clear();
-    if (tmp_additional_cache_data.object_extra_lifetime_metadatas)
-        tmp_additional_cache_data.object_extra_lifetime_metadatas->clear();
-
+    }
+    if (tmp_additional_cache_data.object_lifetime_metadatas) {
+        for (auto& [k, v] : tmp_additional_cache_data.object_lifetime_metadatas.value()) {
+            v = {};
+        }
+    }
+    if (tmp_additional_cache_data.object_extra_lifetime_metadatas) {
+        for (auto& [k, v] : tmp_additional_cache_data.object_extra_lifetime_metadatas.value()) {
+            v = {};
+        }
+    }
     additional_cache_data_storage.TransferOwnership(tmp, self);
 
     if (isML) {
@@ -167,7 +173,7 @@ void ChainedCache::Admit(const request_t* req) {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
     auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
 
-    uint64_t freq = 1;
+    uint64_t freq = 0;
     if (tmp_additional_cache_data.object_lifetime_metadatas) {
         freq = tmp_additional_cache_data.object_lifetime_metadatas.value()[req->obj_id]
                    .lifetime_freq;
@@ -180,10 +186,9 @@ void ChainedCache::Admit(const cache_obj_t* obj, const uint64_t freq) {
     Admit(&req, freq);
 }
 
-bool ChainedCache::LookUpAndTrack(const request_t* req, bool update_cache_state) {
+bool ChainedCache::LookUp(const request_t* req, bool update_cache_state) {
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
     auto& tmp_additional_cache_data = additional_cache_data_storage.GetAdditionalCacheData(tmp);
-    tmp_additional_cache_data.OnAccess(req);
 
     bool hit = tmp->find(tmp, req, false);
     if (!hit) {
@@ -198,11 +203,12 @@ bool ChainedCache::LookUpAndTrack(const request_t* req, bool update_cache_state)
             tmp->get(tmp, req);
         }
     }
+    tmp_additional_cache_data.OnAccess(req);
     return hit;
 }
 
 bool ChainedCache::Get(const request_t* req) {
-    bool hit = LookUpAndTrack(req, true);
+    bool hit = LookUp(req, true);
     if (hit)
         return true;
     if (next)
@@ -211,7 +217,7 @@ bool ChainedCache::Get(const request_t* req) {
 }
 
 bool ChainedCache::Find(const request_t* req) {
-    bool hit = LookUpAndTrack(req, false);
+    bool hit = LookUp(req, false);
     if (hit)
         return true;
     if (next)

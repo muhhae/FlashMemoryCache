@@ -164,10 +164,13 @@ void Simulate(
     );
 
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
-    if (!o.dram_enabled) {
+    if (!o.dram_enabled || o.lifetime_freq_treshold) {
         auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
                                           .GetAdditionalCacheData(Cache->self);
         additional_cache_data.object_lifetime_metadatas.emplace();
+        if (o.lifetime_freq_treshold) {
+            additional_cache_data.lifetime_freq_for_threshold = true;
+        }
     }
 
     uint64_t req_counter = 0;

@@ -23,6 +23,7 @@ struct options {
     bool id_num = false;
     bool ignore_obj_size = false;
     bool generate_datasets = false;
+    bool lifetime_freq_treshold = false;
 
     uint64_t max_iteration;
     std::filesystem::path output_directory;

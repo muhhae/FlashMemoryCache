@@ -1,15 +1,15 @@
-: [ OFFLINE-CLOCK v1 and v2 JQ  ]; cd build && cmake .. && make && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}" && ./cacheSimulator -a offline-clock-v2 -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}"
-: [ OFFLINE-CLOCK v2 ]; cd build && cmake .. && make && ./cacheSimulator -a offline-clock-v2 -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin
---
 : [ BUILD ]; cd build && cmake .. && make
 : [ CLEAN BUILD ]; rm -rf build && mkdir build && cd build && cmake .. && make
 ---
-: [ BUILD AND TEST ]; cd build && cmake .. && make && ctest --output-on-failure
+: [ BUILD AND TEST ]; cd build && cmake .. && make && ctest --output-on-failure --stop-on-failure
 : [ CLEAN BUILD AND TEST ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest --output-on-failure
 ---
 : [ BUILD AND TEST VERBOSE ]; cd build && cmake .. && make && ctest -V
 : [ CLEAN BUILD AND TEST VERBOSE ]; rm -rf build && mkdir build && cd build && cmake .. && make && ctest -V
 ---
+: [ OFFLINE-CLOCK v1 and v2 JQ  ]; cd build && cmake .. && make && ./cacheSimulator -a offline-clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}" && ./cacheSimulator -a offline-clock-v2 -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}" && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin | jq ".results[-1].metrics[] | {hit, reinserted, algorithm}"
+: [ OFFLINE-CLOCK v2 ]; cd build && cmake .. && make && ./cacheSimulator -a offline-clock-v2 -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin
+--
 : [ CLOCK ignore-obj-size ]; cd build && ./cacheSimulator -a clock -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin
 : [ CLOCK ]; cd build && ./cacheSimulator -a clock -r 0.1 ../trace/cloudPhysicsIO.oracleGeneral.bin
 : [ FIFO ignore-obj-size ]; cd build && ./cacheSimulator -a fifo -r 0.1 --ignore-obj-size ../trace/cloudPhysicsIO.oracleGeneral.bin
