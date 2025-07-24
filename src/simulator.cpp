@@ -29,8 +29,6 @@ void RunExperiment(options o) {
     std::filesystem::create_directories(o.output_directory / "log");
     if (o.generate_datasets)
         std::filesystem::create_directories(o.output_directory / "datasets");
-
-    std::vector<std::future<void>> tasks;
     for (const auto& p : o.trace_paths) {
         reader_init_param_t reader_init_param = {
             .ignore_obj_size = o.ignore_obj_size,
@@ -58,11 +56,7 @@ void RunExperiment(options o) {
             std::string desc = "[" + std::to_string(fcs) + (o.ignore_obj_size ? "" : "MiB") +
                                (o.desc != "" ? "," : "") + o.desc + "]";
             uint64_t cache_size = o.ignore_obj_size ? fcs : fcs * MiB;
-            tasks.emplace_back(
-                std::async(
-                    std::launch::async, Simulate, cache_size, p, o, desc, approximate_request_count
-                )
-            );
+            Simulate(cache_size, p, o, desc, approximate_request_count);
         }
         for (const auto& rcs : o.relative_cache_sizes) {
             o.dist_optimal_treshold = rcs * wss_obj;
@@ -73,16 +67,8 @@ void RunExperiment(options o) {
 
             std::string desc = "[" + s + (o.desc != "" ? "," : "") + o.desc + "]";
             uint64_t cache_size = wss * rcs;
-            tasks.emplace_back(
-                std::async(
-                    std::launch::async, Simulate, cache_size, p, o, desc, approximate_request_count
-                )
-            );
+            Simulate(cache_size, p, o, desc, approximate_request_count);
         }
-    }
-
-    for (auto& t : tasks) {
-        t.get();
     }
 }
 
