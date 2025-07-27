@@ -32,8 +32,6 @@ if [ -z "$traces_dir" ] || [ -z "$out_dir" ] || [ -z "$traces_txt" ] || [ -z "$a
     usage
 fi
 
-echo "" > $task_out
-
 while IFS= read -r link; do
     if [ -z "$link" ] || [[ "$link" == \#* ]]; then
         continue
