@@ -14,7 +14,7 @@ from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import DocsWriter
 from pandas.core.frame import itertools
 from plotly.graph_objs import Figure
-from plotly_wrapper import Line, VerticalCompositionBar
+from plotly_wrapper import Line, Scatter, VerticalCompositionBar
 from tabulate import tabulate
 
 OUTPUT_PATH: Final[str] = "../../../FlashMemoryCacheDocs/figures/"
@@ -127,6 +127,30 @@ def WriteIndividualV2(
                                 },
                             ),
                         )
+            writer.Write(
+                "#### Overall Miss Ratio and Write  \n",
+            )
+            for n in sorted(data[numeric_modifier_continuous].unique()):
+                writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
+                writer.WriteFig(
+                    Scatter(
+                        data,
+                        x="Write",
+                        y="Overall Miss Ratio",
+                        color=category,
+                        category_orders={category: category_order},
+                    ),
+                )
+                writer.WriteFig(
+                    Scatter(
+                        data,
+                        x="Write",
+                        y="Overall Miss Ratio",
+                        color=category,
+                        category_orders={category: category_order},
+                        include_zero=True,
+                    ),
+                )
             writer.Write("#### Inserted + Reinserted  \n")
             for n in sorted(data[numeric_modifier_continuous].unique()):
                 writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
