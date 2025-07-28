@@ -1,8 +1,9 @@
 import json
+from logging import disable
 import os
 from pathlib import Path
 from pprint import pprint
-from typing import List, cast
+from typing import Any, List, cast
 
 import pandas as pd
 from common import extract_desc
@@ -10,6 +11,7 @@ from common import extract_desc
 
 def ProcessResultJSON(result: dict, file, algorithm):
     prefix, desc = extract_desc(file)
+    add_desc: dict[str, Any] = desc[-1] if isinstance(desc[-1], dict) else dict()
     metrics = result["metrics"]
     dram = None
     flash = None
@@ -27,14 +29,15 @@ def ProcessResultJSON(result: dict, file, algorithm):
         )
         metrics_time["Algorithm"] = algorithm
         metrics_time["DRAM Size"] = (
-            float(desc[-1]["dram_size"])
-            if isinstance(desc[-1], dict) and "dram_size" in desc[-1]
+            float(add_desc["dram_size"])
+            if "dram_size" in add_desc
             else 0.01
             if dram is not None
             else 0
         )
         metrics_time["Flash Admission Treshold"] = flash["admission_treshold"]
     result = {
+        "Admission Threshold Method": add_desc["threshold"],
         "Flash Admission Treshold": flash.get("admission_treshold", 0),
         "Algorithm": algorithm,
         "Inserted": flash.get("inserted", 0),
@@ -58,8 +61,8 @@ def ProcessResultJSON(result: dict, file, algorithm):
         "DRAM Miss Ratio": dram["miss_ratio"] if dram is not None else 0,
         "DRAM Hit": dram["hit"] if dram is not None else 0,
         "DRAM Request": dram["req"] if dram is not None else 0,
-        "DRAM Size": float(desc[-1]["dram_size"])
-        if isinstance(desc[-1], dict) and "dram_size" in desc[-1]
+        "DRAM Size": float(add_desc["dram_size"])
+        if "dram_size" in add_desc
         else 0.01
         if dram is not None
         else 0,

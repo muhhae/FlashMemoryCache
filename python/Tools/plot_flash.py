@@ -8,6 +8,7 @@ import sys
 from typing import Final
 
 import pandas as pd
+from pandas.core.apply import com
 from common import sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import DocsWriter
@@ -248,20 +249,23 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
     modifier = ["DRAM Size", "Flash Admission Treshold"]
     modifier_permutations = list(itertools.permutations(modifier, 2))
     args = []
-    for dram_algo in combined["DRAM Algorithm"].unique():
-        df = combined.query("`DRAM Algorithm` == @dram_algo")
-        for a, b in modifier_permutations:
-            for i in combined[a].unique():
-                args.append(
-                    (
-                        df,
-                        ignore_obj_size,
-                        "Algorithm",
-                        b,
-                        (a, i),
-                        dram_algo + "/" + title,
+    for threshold_method in combined["Admission Threshold Method"].unique():
+        for dram_algo in combined["DRAM Algorithm"].unique():
+            df = combined.query(
+                "`DRAM Algorithm` == @dram_algo and `Admission Threshold Method` == @threshold_method"
+            )
+            for a, b in modifier_permutations:
+                for i in df[a].unique():
+                    args.append(
+                        (
+                            df,
+                            ignore_obj_size,
+                            "Algorithm",
+                            b,
+                            (a, i),
+                            f"threshold_method={threshold_method}/dram={dram_algo}/{title}",
+                        )
                     )
-                )
 
     max_core = int(sys.argv[1]) if len(sys.argv) > 1 else None
     pprint("Generating figures with " + str(max_core) + " cores")
