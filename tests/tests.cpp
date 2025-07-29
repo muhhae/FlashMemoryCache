@@ -790,28 +790,27 @@ TEST(SimulatorTEST, DoubleLayer_GDSF_ADMISSION_3) {
     );
     ASSERT_EQ(results, expected);
 }
-#undef SINGLE_LAYER_ADMISSIOn
-#ifdef SINGLE_LAYER_ADMISSION
-SINGLE_LAYER_ADMISSIONTEST(SimulatorTEST, SingleLayerWithAdmission_FIFO) {
+
+TEST(SimulatorTEST, SingleLayerWithAdmission_FIFO) {
     nlohmann::json results = LayeredCacheSimulation({"fifo"}, 4);
     nlohmann::json expected = nlohmann::json::parse(
         R"(
 {
-  "hit": 12506,
+  "hit": 12589,
   "iteration": 1,
   "metrics": [
     {
       "admission_treshold": 4,
       "algorithm": "fifo",
-      "hit": 12506,
-      "inserted": 15381,
+      "hit": 12589,
+      "inserted": 7039,
       "layer": 0,
-      "miss_ratio": 0.8901749332583954,
+      "miss_ratio": 0.8894460446817479,
       "reinserted": 0,
       "req": 113872
     }
   ],
-  "miss_ratio": 0.8901749332583954,
+  "miss_ratio": 0.8894460446817479,
   "req": 113872
 }
 )"
@@ -823,21 +822,21 @@ TEST(SimulatorTEST, SingleLayerWithAdmission_LRU) {
     nlohmann::json expected = nlohmann::json::parse(
         R"(
 {
-  "hit": 13843,
+  "hit": 13543,
   "iteration": 1,
   "metrics": [
     {
       "admission_treshold": 4,
       "algorithm": "lru",
-      "hit": 13843,
-      "inserted": 14044,
+      "hit": 13543,
+      "inserted": 6085,
       "layer": 0,
-      "miss_ratio": 0.8784336799213152,
-      "reinserted": 13843,
+      "miss_ratio": 0.8810682169453421,
+      "reinserted": 13543,
       "req": 113872
     }
   ],
-  "miss_ratio": 0.8784336799213152,
+  "miss_ratio": 0.8810682169453421,
   "req": 113872
 }
 )"
@@ -849,21 +848,21 @@ TEST(SimulatorTEST, SingleLayerWithAdmission_CLOCK) {
     nlohmann::json expected = nlohmann::json::parse(
         R"(
 {
-  "hit": 13790,
+  "hit": 13532,
   "iteration": 1,
   "metrics": [
     {
       "admission_treshold": 4,
       "algorithm": "clock",
-      "hit": 13790,
-      "inserted": 14097,
+      "hit": 13532,
+      "inserted": 6096,
       "layer": 0,
-      "miss_ratio": 0.8788991147955599,
-      "reinserted": 3743,
+      "miss_ratio": 0.8811648166362231,
+      "reinserted": 2541,
       "req": 113872
     }
   ],
-  "miss_ratio": 0.8788991147955599,
+  "miss_ratio": 0.8811648166362231,
   "req": 113872
 }
 )"
@@ -875,21 +874,21 @@ TEST(SimulatorTEST, SingleLayerWithAdmission_OFFLINE_CLOCK) {
     nlohmann::json expected = nlohmann::json::parse(
         R"(
 {
-  "hit": 13930,
+  "hit": 13606,
   "iteration": 1,
   "metrics": [
     {
       "admission_treshold": 4,
       "algorithm": "offline-clock",
-      "hit": 13930,
-      "inserted": 13957,
+      "hit": 13606,
+      "inserted": 6022,
       "layer": 0,
-      "miss_ratio": 0.8776696641843473,
-      "reinserted": 1987,
+      "miss_ratio": 0.8805149641702965,
+      "reinserted": 1358,
       "req": 113872
     }
   ],
-  "miss_ratio": 0.8776696641843473,
+  "miss_ratio": 0.8805149641702965,
   "req": 113872
 }
 )"
@@ -901,21 +900,21 @@ TEST(SimulatorTEST, SingleLayerWithAdmission_SLRU) {
     nlohmann::json expected = nlohmann::json::parse(
         R"(
 {
-  "hit": 13492,
+  "hit": 13573,
   "iteration": 1,
   "metrics": [
     {
       "admission_treshold": 4,
       "algorithm": "slru",
-      "hit": 13492,
-      "inserted": 14395,
+      "hit": 13573,
+      "inserted": 6055,
       "layer": 0,
-      "miss_ratio": 0.8815160882394267,
+      "miss_ratio": 0.8808047632429394,
       "reinserted": 0,
       "req": 113872
     }
   ],
-  "miss_ratio": 0.8815160882394267,
+  "miss_ratio": 0.8808047632429394,
   "req": 113872
 }
 )"
@@ -927,25 +926,24 @@ TEST(SimulatorTEST, SingleLayerWithAdmission_GDSF) {
     nlohmann::json expected = nlohmann::json::parse(
         R"(
 {
-  "hit": 13978,
+  "hit": 13710,
   "iteration": 1,
   "metrics": [
     {
       "admission_treshold": 4,
       "algorithm": "gdsf",
-      "hit": 13978,
-      "inserted": 13909,
+      "hit": 13710,
+      "inserted": 5918,
       "layer": 0,
-      "miss_ratio": 0.8772481382605031,
+      "miss_ratio": 0.8796016580019671,
       "reinserted": 0,
       "req": 113872
     }
   ],
-  "miss_ratio": 0.8772481382605031,
+  "miss_ratio": 0.8796016580019671,
   "req": 113872
 }
 )"
     );
     ASSERT_EQ(results, expected);
 }
-#endif  // SINGLE_LAYER_ADMISSION
