@@ -1,0 +1,21 @@
+---
+config:
+  theme: redux
+  fontFamily: '"JetBrainsMono", "monospace"'
+  displayMode: compact
+  flowchart:
+    htmlLabels: true
+    curve: 'basis'
+---
+flowchart LR
+    ReadTrace(Read trace) --> ReqValid{Request is Valid}
+
+    ReqValid -- NO --> END
+    ReqValid -- YES --> CacheGet(Cache Get)
+
+    CacheGet --> Found{Found}
+    Found -- no --> miss
+    miss --> CacheHasSpace(Cache Has Space?)
+    CacheHasSpace -- YES --> Insert(Insert To Cache)
+    CacheHasSpace -- NO --> EvictCache(Evict From Cache) --> Insert
+    EvictCache --> OnEviction(On Eviction)
