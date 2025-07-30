@@ -134,7 +134,7 @@ class AdditionalCacheData {
     uint64_t dist_optimal_treshold = std::numeric_limits<uint64_t>::max();
 
     // Temporary metadata, only live until object evicted
-    std::unordered_map<obj_id_t, ObjectInCacheMetadata> object_in_cache_metadatas;
+    std::optional<std::unordered_map<obj_id_t, ObjectInCacheMetadata>> object_in_cache_metadatas;
     std::optional<std::unordered_map<obj_id_t, ObjectExtraMetadata>> object_extra_metadatas;
 
     // Lifetime metadata, live until iteration end

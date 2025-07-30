@@ -14,8 +14,8 @@ namespace data {
 
 void AdditionalCacheData::OnAccess(const request_t* req) {
     metric.req++;
-    if (object_in_cache_metadatas.contains(req->obj_id)) {
-        auto& object_in_cache_metadata = object_in_cache_metadatas[req->obj_id];
+    if (object_in_cache_metadatas && object_in_cache_metadatas->contains(req->obj_id)) {
+        auto& object_in_cache_metadata = object_in_cache_metadatas.value()[req->obj_id];
         object_in_cache_metadata.cache_freq++;
         if (extra_metadata) [[unlikely]] {
             if (object_in_cache_metadata.cache_freq > extra_metadata->max_cache_freq) {
@@ -88,7 +88,8 @@ void AdditionalCacheData::OnAccess(const request_t* req) {
 void AdditionalCacheData::OnPromotion(const cache_obj_t* obj_promoted, const request_t* req) {
     metric.reinserted++;
     metric.byte_reinserted += obj_promoted->obj_size;
-    if (!object_in_cache_metadatas.contains(obj_promoted->obj_id)) [[unlikely]] {
+    if (object_in_cache_metadatas && !object_in_cache_metadatas->contains(obj_promoted->obj_id))
+        [[unlikely]] {
         throw std::runtime_error(
             "Somehow, object_in_cache_metadata is not initialized [func OnPromotion]"
         );
@@ -110,7 +111,9 @@ void AdditionalCacheData::OnPromotion(const cache_obj_t* obj_promoted, const req
 }
 void AdditionalCacheData::OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
     InsertNext(obj_evicted);
-    object_in_cache_metadatas.erase(obj_evicted->obj_id);
+    if (object_in_cache_metadatas) {
+        object_in_cache_metadatas->erase(obj_evicted->obj_id);
+    }
     if (object_extra_metadatas) {
         object_extra_metadatas->erase(obj_evicted->obj_id);
     }
@@ -119,7 +122,9 @@ void AdditionalCacheData::OnInsertion(const request_t* req) {
     metric.byte_inserted += req->obj_size;
     metric.inserted++;
 
-    object_in_cache_metadatas.emplace(req->obj_id, ObjectInCacheMetadata());
+    if (object_in_cache_metadatas) {
+        object_in_cache_metadatas->emplace(req->obj_id, ObjectInCacheMetadata());
+    }
     if (object_extra_metadatas) {
         object_extra_metadatas.value().emplace(req->obj_id, ObjectExtraMetadata());
     }
@@ -129,17 +134,13 @@ void AdditionalCacheData::InsertNext(const cache_obj_t* obj) {
     if (!next) {
         return;
     }
-    if (lifetime_freq_for_threshold) {
-        if (!object_lifetime_metadatas) [[unlikely]] {
-            throw std::runtime_error(
-                "lifetime_freq_for_threshold is `true` but object_lifetime_metadatas is not "
-                "initialized"
-            );
-        }
-        next->Admit(obj, object_lifetime_metadatas.value()[obj->obj_id].lifetime_freq);
-        return;
+    if (!object_in_cache_metadatas && !object_lifetime_metadatas) {
+        return next->Admit(obj, 0);
     }
-    next->Admit(obj, object_in_cache_metadatas[obj->obj_id].cache_freq);
+    if (lifetime_freq_for_threshold) {
+        return next->Admit(obj, object_lifetime_metadatas.value()[obj->obj_id].lifetime_freq);
+    }
+    next->Admit(obj, object_in_cache_metadatas.value()[obj->obj_id].cache_freq);
 }
 
 void RunningMeanData::Track(const float X) {
@@ -163,12 +164,12 @@ float RunningMeanData::Normalize(const float X) {
 std::unordered_map<std::string, float> AdditionalCacheData::ObjectFeatures(
     const cache_obj_t* obj_to_evict, const cache_t* cache, const request_t* current_req
 ) {
-    if (!object_extra_metadatas || !object_offline_clock_metadatas || !object_lifetime_metadatas ||
-        !object_extra_lifetime_metadatas || !extra_metadata) {
+    if (!object_in_cache_metadatas || !object_extra_metadatas || !object_offline_clock_metadatas ||
+        !object_lifetime_metadatas || !object_extra_lifetime_metadatas || !extra_metadata) {
         throw std::runtime_error("All object_metadatas need to be initialized");
     }
 
-    auto& obj_in_cache_metadata = object_in_cache_metadatas[obj_to_evict->obj_id];
+    auto& obj_in_cache_metadata = object_in_cache_metadatas.value()[obj_to_evict->obj_id];
     auto& obj_extra_metadata = object_extra_metadatas.value()[obj_to_evict->obj_id];
     auto& obj_lifetime_metadata = object_lifetime_metadatas.value()[obj_to_evict->obj_id];
     auto& obj_extra_lifetime_metadata = object_extra_lifetime_metadatas

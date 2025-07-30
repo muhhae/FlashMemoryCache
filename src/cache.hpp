@@ -24,6 +24,12 @@ struct CacheMetrics {
 };
 
 namespace CustomCache {
+struct object_metadatas_enabled {
+    bool in_cache;
+    bool lifetime;
+    bool extra;
+    bool extra_lifetime;
+};
 class ChainedCache {
    public:
     ChainedCache(
@@ -32,7 +38,9 @@ class ChainedCache {
         ChainedCache* next,
         std::filesystem::path datasets,
         uint64_t admission_treshold,
-        bool generate_datasets
+        bool generate_datasets,
+        bool lifetime_freq_for_threshold,
+        object_metadatas_enabled object_metadatas_enabled
     );
     bool Get(const request_t* req);
     bool Find(const request_t* req);

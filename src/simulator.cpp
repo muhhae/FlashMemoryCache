@@ -141,23 +141,39 @@ void Simulate(
     reader_t* reader = SetupReader(o, trace_path);
     request_t* req = new_request();
 
-    CustomCache::ChainedCache Flash = CustomCache::ChainedCache(
-        o.algorithm, cache_size, NULL, dataset_path, o.flash_admission_treshold, o.generate_datasets
-    );
-
-    CustomCache::ChainedCache DRAM = CustomCache::ChainedCache(
-        "lru", cache_size * o.dram_size, &Flash, dataset_path, 0, o.generate_datasets
-    );
-
-    CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
-    if (!o.dram_enabled || o.lifetime_freq_treshold) {
-        auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
-                                          .GetAdditionalCacheData(Cache->self);
-        additional_cache_data.object_lifetime_metadatas.emplace();
+    CustomCache::object_metadatas_enabled dram_object_metadatas_enabled = {};
+    CustomCache::object_metadatas_enabled flash_object_metadatas_enabled = {};
+    if (o.flash_admission_treshold > 0) {
         if (o.lifetime_freq_treshold) {
-            additional_cache_data.lifetime_freq_for_threshold = true;
+            dram_object_metadatas_enabled.lifetime = true;
+        } else {
+            dram_object_metadatas_enabled.in_cache = true;
+        }
+        if (!o.dram_enabled) {
+            flash_object_metadatas_enabled.lifetime = true;
         }
     }
+    CustomCache::ChainedCache Flash = CustomCache::ChainedCache(
+        o.algorithm,
+        cache_size,
+        NULL,
+        dataset_path,
+        o.flash_admission_treshold,
+        o.generate_datasets,
+        o.lifetime_freq_treshold,
+        flash_object_metadatas_enabled
+    );
+    CustomCache::ChainedCache DRAM = CustomCache::ChainedCache(
+        "lru",
+        cache_size * o.dram_size,
+        &Flash,
+        dataset_path,
+        0,
+        o.generate_datasets,
+        o.lifetime_freq_treshold,
+        dram_object_metadatas_enabled
+    );
+    CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
 
     uint64_t req_counter = 0;
     uint64_t req_limit = o.req_limit * approximate_request_count;

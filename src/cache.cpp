@@ -73,12 +73,21 @@ ChainedCache::ChainedCache(
     ChainedCache* next,
     std::filesystem::path datasets,
     uint64_t admission_treshold,
-    bool generate_datasets
+    bool generate_datasets,
+    bool lifetime_freq_for_threshold,
+    object_metadatas_enabled object_metadatas_enabled
 )
     : next(next), algorithm(Algorithm), admission_treshold(admission_treshold) {
     self = AlgoSelector(Algorithm)({.cache_size = cache_size}, NULL);
     auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
                                       .GetAdditionalCacheData(self);
+    if (object_metadatas_enabled.in_cache) {
+        additional_cache_data.object_in_cache_metadatas.emplace();
+    }
+    if (object_metadatas_enabled.lifetime) {
+        additional_cache_data.object_lifetime_metadatas.emplace();
+    }
+    additional_cache_data.lifetime_freq_for_threshold = lifetime_freq_for_threshold;
     if (generate_datasets) {
         additional_cache_data.datasets = std::ofstream(datasets);
         for (size_t i = 0; i < data::datasets_columns.size(); i++) {
@@ -129,7 +138,9 @@ void ChainedCache::EndIteration() {
     metrics_times.push_back(metrics_time);
     metrics_time.clear();
 
-    tmp_additional_cache_data.object_in_cache_metadatas.clear();
+    if (tmp_additional_cache_data.object_in_cache_metadatas) {
+        tmp_additional_cache_data.object_in_cache_metadatas->clear();
+    }
     if (tmp_additional_cache_data.object_extra_metadatas) {
         tmp_additional_cache_data.object_extra_metadatas->clear();
     }

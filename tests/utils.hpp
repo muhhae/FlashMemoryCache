@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <vector>
 
-#include "additional_data.hpp"
 #include "cache.hpp"
 #include "lib/json.hpp"
 #include "simulator.hpp"
@@ -34,6 +33,14 @@ static nlohmann::json LayeredCacheSimulation(
     std::vector<CustomCache::ChainedCache> Caches;
     int counter = 0;
     for (const auto& a : algorithms) {
+        CustomCache::object_metadatas_enabled enabled = {};
+        if (counter == 0 && admission_threshold > 0) {
+            if (lifetime_freq_for_threshold || algorithms.size() == 1) {
+                enabled.lifetime = true;
+            } else {
+                enabled.in_cache = true;
+            }
+        }
         Caches.push_back(
             CustomCache::ChainedCache(
                 a,
@@ -41,17 +48,11 @@ static nlohmann::json LayeredCacheSimulation(
                 NULL,
                 "",
                 admission_threshold * (counter != 0 || algorithms.size() == 1),
-                false
+                false,
+                lifetime_freq_for_threshold,
+                enabled
             )
         );
-        auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
-                                          .GetAdditionalCacheData(Caches.back().self);
-        if ((algorithms.size() == 1 && admission_threshold > 1) ||
-            (counter == 0 && lifetime_freq_for_threshold)) {
-            additional_cache_data.object_lifetime_metadatas.emplace();
-        }
-        additional_cache_data.lifetime_freq_for_threshold = lifetime_freq_for_threshold;
-
         cache_size *= 10;
         counter++;
     }
