@@ -37,7 +37,7 @@ def ProcessResultJSON(result: dict, file, algorithm):
         )
         metrics_time["Flash Admission Treshold"] = flash["admission_treshold"]
     result = {
-        "Admission Threshold Method": add_desc["threshold"],
+        "Admission Threshold Method": add_desc.get("threshold", "lifetime"),
         "Flash Admission Treshold": flash.get("admission_treshold", 0),
         "Algorithm": algorithm,
         "Inserted": flash.get("inserted", 0),
