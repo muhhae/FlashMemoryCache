@@ -127,14 +127,15 @@ def WriteIndividualV2(
                                 },
                             ),
                         )
-            writer.Write(
-                "#### Overall Miss Ratio and Write  \n",
-            )
             for n in sorted(data[numeric_modifier_continuous].unique()):
-                writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
+                writer.Write(f"#### {numeric_modifier_continuous}: {n}  \n")
+                writer.Write(
+                    "##### Overall Miss Ratio and Write  \n",
+                )
+                df = data.query(f"`{numeric_modifier_continuous}` == @n")
                 writer.WriteFig(
                     Scatter(
-                        data,
+                        df,
                         x="Write",
                         y="Overall Miss Ratio",
                         color=category,
@@ -143,7 +144,7 @@ def WriteIndividualV2(
                 )
                 writer.WriteFig(
                     Scatter(
-                        data,
+                        df,
                         x="Write",
                         y="Overall Miss Ratio",
                         color=category,
@@ -151,12 +152,10 @@ def WriteIndividualV2(
                         include_zero=True,
                     ),
                 )
-            writer.Write("#### Inserted + Reinserted  \n")
-            for n in sorted(data[numeric_modifier_continuous].unique()):
-                writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
+                writer.Write("#### Inserted + Reinserted  \n")
                 writer.WriteFig(
                     VerticalCompositionBar(
-                        data.query(f"`{numeric_modifier_continuous}` == @n"),
+                        df,
                         X=category,
                         Ys=[
                             "Inserted",
@@ -168,9 +167,7 @@ def WriteIndividualV2(
                         mode="stack",
                     ),
                 )
-            writer.Write("#### Flash Hit and DRAM Hit  \n")
-            for n in sorted(data[numeric_modifier_continuous].unique()):
-                writer.Write(f"##### {numeric_modifier_continuous}: {n}  \n")
+                writer.Write("##### Flash Hit and DRAM Hit  \n")
                 writer.WriteFig(
                     VerticalCompositionBar(
                         data.query(f"`{numeric_modifier_continuous}` == @n"),
@@ -185,35 +182,18 @@ def WriteIndividualV2(
                         mode="stack",
                     ),
                 )
-
-            data = data.sort_values(by=category)
-            writer.Write("#### Detail Table  \n")
-            writer.Write(
-                tabulate(
-                    data[
-                        [
-                            "Algorithm",
-                            "Flash Admission Treshold",
-                            "Overall Request",
-                            "Flash Request",
-                            "DRAM Request",
-                            "Overall Miss Ratio",
-                            "Flash Miss Ratio",
-                            "DRAM Miss Ratio",
-                            "Overall Hit",
-                            "Flash Hit",
-                            "DRAM Hit",
-                            "Write",
-                            "JSON File",
-                        ]
-                    ],
-                    headers="keys",
-                    tablefmt="html",
-                    showindex="never",
-                    intfmt=",",
+                df = df.sort_values(by=category)
+                writer.Write("##### Detail Table  \n")
+                writer.Write(
+                    tabulate(
+                        df,
+                        headers="keys",
+                        tablefmt="html",
+                        showindex="never",
+                        intfmt=",",
+                    )
+                    + "  \n\n",
                 )
-                + "  \n\n",
-            )
 
 
 def WriteSumz(
