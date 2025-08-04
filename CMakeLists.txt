@@ -68,7 +68,7 @@ target_include_directories(cacheSimulator PRIVATE src .)
 target_include_directories(my_cache_sim PRIVATE src .)
 target_include_directories(run_tests PRIVATE src .)
 
-target_link_libraries(my_cache_sim PRIVATE cachesim_libs onnxruntime)
+target_link_libraries(my_cache_sim PRIVATE cachesim_libs)
 target_link_libraries(cacheSimulator PRIVATE my_cache_sim)
 target_link_libraries(run_tests PRIVATE my_cache_sim gtest_main)
 
