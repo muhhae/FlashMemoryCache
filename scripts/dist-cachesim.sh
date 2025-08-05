@@ -49,7 +49,8 @@ while IFS= read -r link; do
     size=$(stat --format="%s" "$file")
 
     gb=$(( (size + 1024*1024*1024 - 1) / (1024*1024*1024) ))
-    min_dram=$(( gb/3+1 ))
+    # min_dram=$(( gb/3+1 ))
+    min_dram=1
     priority=$(( 100/min_dram + 1 ))
 
     for cache_size in "${relative_cache_sizes[@]}"; do
