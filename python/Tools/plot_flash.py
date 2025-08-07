@@ -132,10 +132,10 @@ def WriteIndividualV2(
                 writer.Write(
                     "##### Overall Miss Ratio and Write  \n",
                 )
-                df = data.query(f"`{numeric_modifier_continuous}` == @n")
+                tmp = data.query(f"`{numeric_modifier_continuous}` == @n")
                 writer.WriteFig(
                     Scatter(
-                        df,
+                        tmp,
                         x="Write",
                         y="Overall Miss Ratio",
                         color=category,
@@ -144,7 +144,7 @@ def WriteIndividualV2(
                 )
                 writer.WriteFig(
                     Scatter(
-                        df,
+                        tmp,
                         x="Write",
                         y="Overall Miss Ratio",
                         color=category,
@@ -155,7 +155,7 @@ def WriteIndividualV2(
                 writer.Write("#### Inserted + Reinserted  \n")
                 writer.WriteFig(
                     VerticalCompositionBar(
-                        df,
+                        tmp,
                         X=category,
                         Ys=[
                             "Inserted",
@@ -182,11 +182,11 @@ def WriteIndividualV2(
                         mode="stack",
                     ),
                 )
-                df = df.sort_values(by=category)
+                tmp = tmp.sort_values(by=category)
                 writer.Write("##### Detail Table  \n")
                 writer.Write(
                     tabulate(
-                        df,
+                        tmp,
                         headers="keys",
                         tablefmt="html",
                         showindex="never",
