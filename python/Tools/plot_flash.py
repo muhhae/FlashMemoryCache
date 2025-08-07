@@ -253,23 +253,20 @@ def Sumz(files: list[str], title: str, ignore_obj_size: bool = True, use_cache=T
     modifier = ["DRAM Size", "Flash Admission Treshold"]
     modifier_permutations = list(itertools.permutations(modifier, 2))
     args = []
-    for threshold_method in combined["Admission Threshold Method"].unique():
-        for dram_algo in combined["DRAM Algorithm"].unique():
-            df = combined.query(
-                "`DRAM Algorithm` == @dram_algo and `Admission Threshold Method` == @threshold_method"
-            )
-            for a, b in modifier_permutations:
-                for i in df[a].unique():
-                    args.append(
-                        (
-                            df,
-                            ignore_obj_size,
-                            "Algorithm",
-                            b,
-                            (a, i),
-                            f"threshold_method={threshold_method}/dram={dram_algo}/{title}",
-                        )
+    group_cols = ["Admission Threshold Method", "DRAM Algorithm", "Admissioner"]
+    for (threshold_method, dram_algo, admissioner), df in combined.groupby(group_cols):
+        for a, b in modifier_permutations:
+            for i in df[a].unique():
+                args.append(
+                    (
+                        df,
+                        ignore_obj_size,
+                        "Algorithm",
+                        b,
+                        (a, i),
+                        f"threshold_method={threshold_method}/dram={dram_algo}/admissioner={admissioner}/{title}",
                     )
+                )
 
     max_core = int(sys.argv[1]) if len(sys.argv) > 1 else None
     pprint("Generating figures with " + str(max_core) + " cores")
