@@ -1,5 +1,6 @@
 #include "simulator.hpp"
 
+#include <libCacheSim/admissionAlgo.h>
 #include <libCacheSim/cache.h>
 #include <libCacheSim/enum.h>
 #include <libCacheSim/evictionAlgo.h>
@@ -174,6 +175,10 @@ void Simulate(
         dram_object_metadatas_enabled
     );
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
+
+    if (o.bloomfilter) {
+        Flash.self->admissioner = create_bloomfilter_admissioner(NULL);
+    }
 
     uint64_t req_counter = 0;
     uint64_t req_limit = o.req_limit * approximate_request_count;

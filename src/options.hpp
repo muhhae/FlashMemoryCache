@@ -24,6 +24,7 @@ struct options {
     bool ignore_obj_size = false;
     bool generate_datasets = false;
     bool lifetime_freq_treshold = false;
+    bool bloomfilter = false;
 
     uint64_t max_iteration;
     std::filesystem::path output_directory;
