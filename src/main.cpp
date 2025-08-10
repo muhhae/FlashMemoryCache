@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
             o.flash_admission_treshold,
             "Min. freq an object has before admitted into Flash"
         )
-        ->default_val(1);
+        ->default_val(0);
     cache
         ->add_option("-p, --decay-power", o.decay_power, "Decaying rate of clock and lifetime freq")
         ->default_val(0.001);
