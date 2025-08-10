@@ -29,10 +29,10 @@ if("${ZSTD_LIBRARIES}" STREQUAL "")
   message(FATAL_ERROR "zstd not found")
 endif()
 
-find_library(ONNXRUNTIME_LIB onnxruntime)
-find_path(onnxruntimeInclude onnxruntime)
-message(STATUS "ONNX runtime found? ${onnxruntime} ${libCacheSimInclude}")
-include_directories(onnxruntimeInclude)
+# find_library(ONNXRUNTIME_LIB onnxruntime)
+# find_path(onnxruntimeInclude onnxruntime)
+# message(STATUS "ONNX runtime found? ${onnxruntime} ${libCacheSimInclude}")
+# include_directories(onnxruntimeInclude)
 
 add_library(cachesim_libs INTERFACE)
 target_include_directories(cachesim_libs INTERFACE "/usr/local/include")
@@ -45,6 +45,7 @@ target_link_libraries(cachesim_libs INTERFACE
 )
 
 add_subdirectory(external/googletest)
+add_subdirectory(external/accumulators)
 
 enable_testing()
 
