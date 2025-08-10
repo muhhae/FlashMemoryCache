@@ -7,6 +7,8 @@
 #include <libCacheSim/reader.h>
 #include <sys/types.h>
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -23,8 +25,10 @@
 #include "lib/json.hpp"
 
 void RunExperiment(options o) {
-    if (o.max_iteration < 2 &&
-        (o.algorithm == "offline-clock" || o.algorithm == "offline-clock-v2"))
+    std::array<std::string, 3> offline_algo = {
+        "offline-clock", "offline-clock-v2", "offline-q-clock"
+    };
+    if (o.max_iteration < 2 && std::ranges::contains(offline_algo, o.algorithm))
         o.max_iteration = 2;
 
     std::filesystem::create_directories(o.output_directory / "log");
@@ -122,7 +126,7 @@ size_t get_unordered_map_memory_usage(const std::unordered_map<K, V>& map) {
 void Simulate(
     const uint64_t cache_size,
     const std::filesystem::path trace_path,
-    const options o,
+    options o,
     const std::string desc,
     const int64_t approximate_request_count
 ) {
@@ -175,10 +179,21 @@ void Simulate(
         dram_object_metadatas_enabled
     );
     CustomCache::ChainedCache* Cache = o.dram_enabled ? &DRAM : &Flash;
-
     if (o.bloomfilter) {
         Flash.self->admissioner = create_bloomfilter_admissioner(NULL);
     }
+
+    auto& DRAM_data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(
+        DRAM.self
+    );
+    auto& Flash_data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(
+        Flash.self
+    );
+
+    if (DRAM_data.SetParamsCallback)
+        DRAM_data.SetParamsCallback(DRAM_data, o.cache_params);
+    if (Flash_data.SetParamsCallback)
+        Flash_data.SetParamsCallback(Flash_data, o.cache_params);
 
     uint64_t req_counter = 0;
     uint64_t req_limit = o.req_limit * approximate_request_count;
@@ -190,7 +205,9 @@ void Simulate(
                 break;
             req_counter++;
             Cache->Get(req);
-            Cache->TrackMetricsTime(req->clock_time);
+            if (o.timeline) {
+                Cache->TrackMetricsTime(req->clock_time);
+            }
         }
         Cache->EndIteration();
         reset_reader(reader);

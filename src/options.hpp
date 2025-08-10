@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 struct options {
@@ -25,10 +26,12 @@ struct options {
     bool generate_datasets = false;
     bool lifetime_freq_treshold = false;
     bool bloomfilter = false;
+    bool timeline = false;
 
     uint64_t max_iteration;
     std::filesystem::path output_directory;
     std::string ml_model;
     std::string input_type;
     std::string desc;
+    std::unordered_map<std::string, std::string> cache_params;
 };

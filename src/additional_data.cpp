@@ -17,6 +17,7 @@ void AdditionalCacheData::OnAccess(const request_t* req) {
     if (object_in_cache_metadatas && object_in_cache_metadatas->contains(req->obj_id)) {
         auto& object_in_cache_metadata = object_in_cache_metadatas.value()[req->obj_id];
         object_in_cache_metadata.cache_freq++;
+        object_in_cache_metadata.last_access = req->clock_time;
         if (extra_metadata) [[unlikely]] {
             if (object_in_cache_metadata.cache_freq > extra_metadata->max_cache_freq) {
                 extra_metadata->max_cache_freq = object_in_cache_metadata.cache_freq;
@@ -84,6 +85,8 @@ void AdditionalCacheData::OnAccess(const request_t* req) {
             object_extra_lifetime_metadata.lifetime_freq_decayed_vtime++;
         }
     }
+    if (OnAccessCallback)
+        OnAccessCallback(*this, req);
 }
 void AdditionalCacheData::OnPromotion(const cache_obj_t* obj_promoted, const request_t* req) {
     metric.reinserted++;
@@ -108,6 +111,8 @@ void AdditionalCacheData::OnPromotion(const cache_obj_t* obj_promoted, const req
         auto& object_lifetime_metadata = object_lifetime_metadatas.value()[obj_promoted->obj_id];
         object_lifetime_metadata.last_promotion = object_lifetime_metadata.lifetime_freq;
     }
+    if (OnPromotionCallback)
+        OnPromotionCallback(*this, req, obj_promoted);
 }
 void AdditionalCacheData::OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
     InsertNext(obj_evicted);
@@ -117,6 +122,8 @@ void AdditionalCacheData::OnEviction(const cache_obj_t* obj_evicted, const reque
     if (object_extra_metadatas) {
         object_extra_metadatas->erase(obj_evicted->obj_id);
     }
+    if (OnEvictionCallback)
+        OnEvictionCallback(*this, req, obj_evicted);
 }
 void AdditionalCacheData::OnInsertion(const request_t* req) {
     metric.byte_inserted += req->obj_size;
@@ -126,8 +133,10 @@ void AdditionalCacheData::OnInsertion(const request_t* req) {
         object_in_cache_metadatas->emplace(req->obj_id, ObjectInCacheMetadata());
     }
     if (object_extra_metadatas) {
-        object_extra_metadatas.value().emplace(req->obj_id, ObjectExtraMetadata());
+        object_extra_metadatas->emplace(req->obj_id, ObjectExtraMetadata());
     }
+    if (OnInsertCallback)
+        OnInsertCallback(*this, req);
 }
 
 void AdditionalCacheData::InsertNext(const cache_obj_t* obj) {

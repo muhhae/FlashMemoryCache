@@ -93,6 +93,7 @@ int main(int argc, char** argv) {
         )
         ->default_val(false);
     cache->add_flag("--bloomfilter", o.bloomfilter);
+    cache->add_option("--cache-params", o.cache_params);
 
     CLI11_PARSE(app, argc, argv);
 

@@ -7,8 +7,10 @@
 #include <libCacheSim/request.h>
 #include <sys/types.h>
 
+#include <any>
 #include <cstdint>
 #include <fstream>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -65,6 +67,7 @@ class RunningMeanData {
 
 struct ObjectInCacheMetadata {
     uint64_t cache_freq = 0;
+    uint64_t last_access = 0;
 };
 struct ObjectLifetimeMetadata {
     uint64_t lifetime_freq = 0;
@@ -112,7 +115,6 @@ class AdditionalCacheData {
    public:
     AdditionalCacheData() = default;
 
-    void InsertNext(const cache_obj_t* obj);
     void OnAccess(const request_t* req);
     void OnPromotion(const cache_obj_t* obj_promoted, const request_t* req);
     void OnEviction(const cache_obj_t* obj_evicted, const request_t* req);
@@ -123,6 +125,20 @@ class AdditionalCacheData {
     );
 
    public:
+    std::function<
+        void(AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params)>
+        SetParamsCallback;
+    std::function<void(AdditionalCacheData& data)> OnIterationStartCallback;
+    std::function<void(AdditionalCacheData& data)> OnIterationEndCallback;
+    std::function<void(AdditionalCacheData& data, const request_t* req)> OnAccessCallback;
+    std::function<void(AdditionalCacheData& data, const request_t* req)> OnInsertCallback;
+    std::function<void(AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj)>
+        OnPromotionCallback;
+    std::function<void(AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj)>
+        OnEvictionCallback;
+
+    std::any CacheSpecificData;
+
     CustomCache::ChainedCache* next;
 
     bool lifetime_freq_for_threshold = false;
@@ -150,6 +166,9 @@ class AdditionalCacheData {
 
     CacheMetrics metric = {};
     std::optional<CacheExtraMetadata> extra_metadata;
+
+   private:
+    void InsertNext(const cache_obj_t* obj);
 };
 class AdditionalCacheDataStorage {
    public:

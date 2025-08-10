@@ -19,10 +19,12 @@
 
 #include "additional_data.hpp"
 #include "cache/clock.hpp"
+#include "cache/decayed_clock.hpp"
 #include "cache/fifo.hpp"
 #include "cache/lru.hpp"
 #include "cache/offline_clock.hpp"
 #include "cache/offline_clock_v2.hpp"
+#include "cache/offline_q_clock.hpp"
 #include "lib/json.hpp"
 
 typedef std::function<
@@ -30,12 +32,14 @@ typedef std::function<
     cache_init_func;
 
 cache_init_func AlgoSelector(std::string algorithm) {
-    std::set<std::string> disabled_algo = {"decay_power", "dist-optimal", "ML"};
+    std::set<std::string> disabled_algo = {"dist-optimal", "ML"};
     if (disabled_algo.contains(algorithm)) {
         throw std::invalid_argument(algorithm + " algorithm is currently disabled");
     }
     std::unordered_map<std::string, cache_init_func> simple_algorithm = {
         {"fifo", algorithm::FIFOInit},
+        {"decay", algorithm::DecayedClockInit},
+        {"offline-q-clock", algorithm::OfflineQClockInit},
         {"offline-clock", algorithm::OfflineClockInit},
         {"offline-clock-v2", algorithm::OfflineClockV2Init},
         {"lru", algorithm::LRUInit},
@@ -154,6 +158,10 @@ void ChainedCache::EndIteration() {
             v = {};
         }
     }
+
+    if (tmp_additional_cache_data.OnIterationEndCallback)
+        tmp_additional_cache_data.OnIterationEndCallback(tmp_additional_cache_data);
+
     additional_cache_data_storage.TransferOwnership(tmp, self);
 
     if (isML) {
