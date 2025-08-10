@@ -58,7 +58,7 @@ add_library(my_cache_sim
   src/cache/lru.cpp
   src/cache/fifo.cpp
   src/cache/ripq.cpp
-  src/cache/decayed_clock.cpp
+  # src/cache/decayed_clock.cpp
   src/cache/offline_q_clock.cpp
   src/cache/offline_qtime_clock.cpp
   # src/cache/dist_clock.cpp
