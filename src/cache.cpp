@@ -19,7 +19,6 @@
 
 #include "additional_data.hpp"
 #include "cache/clock.hpp"
-#include "cache/decayed_clock.hpp"
 #include "cache/fifo.hpp"
 #include "cache/lru.hpp"
 #include "cache/offline_clock.hpp"
@@ -39,7 +38,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
     }
     std::unordered_map<std::string, cache_init_func> simple_algorithm = {
         {"fifo", algorithm::FIFOInit},
-        {"decay", algorithm::DecayedClockInit},
+        // {"decay", algorithm::DecayedClockInit},
         {"offline-q-clock", algorithm::OfflineQClockInit},
         {"offline-qtime-clock", algorithm::OfflineQTimeClockInit},
         {"offline-clock", algorithm::OfflineClockInit},
