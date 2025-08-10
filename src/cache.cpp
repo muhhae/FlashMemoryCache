@@ -25,6 +25,8 @@
 #include "cache/offline_clock_v2.hpp"
 #include "cache/offline_q_clock.hpp"
 #include "cache/offline_qtime_clock.hpp"
+#include "cache/q_clock.hpp"
+#include "cache/qtime_clock.hpp"
 #include "lib/json.hpp"
 
 typedef std::function<
@@ -41,6 +43,8 @@ cache_init_func AlgoSelector(std::string algorithm) {
         // {"decay", algorithm::DecayedClockInit},
         {"offline-q-clock", algorithm::OfflineQClockInit},
         {"offline-qtime-clock", algorithm::OfflineQTimeClockInit},
+        {"q-clock", algorithm::QClockInit},
+        {"qtime-clock", algorithm::QTimeClockInit},
         {"offline-clock", algorithm::OfflineClockInit},
         {"offline-clock-v2", algorithm::OfflineClockV2Init},
         {"lru", algorithm::LRUInit},

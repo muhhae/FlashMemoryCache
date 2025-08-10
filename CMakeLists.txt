@@ -45,7 +45,6 @@ target_link_libraries(cachesim_libs INTERFACE
 )
 
 add_subdirectory(external/googletest)
-add_subdirectory(external/accumulators)
 
 enable_testing()
 
@@ -62,6 +61,8 @@ add_library(my_cache_sim
   # src/cache/decayed_clock.cpp
   src/cache/offline_q_clock.cpp
   src/cache/offline_qtime_clock.cpp
+  src/cache/q_clock.cpp
+  src/cache/qtime_clock.cpp
   # src/cache/dist_clock.cpp
 )
 
