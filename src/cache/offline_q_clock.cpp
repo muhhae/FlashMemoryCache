@@ -46,7 +46,7 @@ class OfflineQClockData {
 void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
     auto* cache_data = std::any_cast<OfflineQClockData>(&data.CacheSpecificData);
     assert(cache_data);
-    cache_data->metadatas.insert({req->obj_id, {}});
+    cache_data->metadatas.emplace(req->obj_id, OfflineQClockMetadata());
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
     auto* cache_data = std::any_cast<OfflineQClockData>(&data.CacheSpecificData);
@@ -62,6 +62,7 @@ void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
 void OnIterationEnd(data::AdditionalCacheData& data) {
     auto* cache_data = std::any_cast<OfflineQClockData>(&data.CacheSpecificData);
     assert(cache_data);
+    cache_data->metadatas.clear();
     cache_data->settle();
 }
 void SetParams(
