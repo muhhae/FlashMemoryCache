@@ -57,7 +57,9 @@ add_library(my_cache_sim
   src/cache/clock.cpp
   src/cache/lru.cpp
   src/cache/fifo.cpp
-  # src/cache/decayed_clock.cpp
+  src/cache/ripq.cpp
+  src/cache/decayed_clock.cpp
+  src/cache/offline_q_clock.cpp
   # src/cache/dist_clock.cpp
 )
 
@@ -74,3 +76,8 @@ target_link_libraries(run_tests PRIVATE my_cache_sim gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(run_tests)
+
+# Experimentation
+add_executable(ripq playgrounds/ripq.cpp)
+target_include_directories(ripq PRIVATE src .)
+target_link_libraries(ripq PRIVATE my_cache_sim)
