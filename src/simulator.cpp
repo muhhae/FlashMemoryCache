@@ -15,7 +15,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <future>
 #include <iostream>
 #include <string>
 
@@ -25,8 +24,8 @@
 #include "lib/json.hpp"
 
 void RunExperiment(options o) {
-    std::array<std::string, 3> offline_algo = {
-        "offline-clock", "offline-clock-v2", "offline-q-clock"
+    std::array<std::string, 4> offline_algo = {
+        "offline-clock", "offline-clock-v2", "offline-q-clock", "offline-qtime-clock"
     };
     if (o.max_iteration < 2 && std::ranges::contains(offline_algo, o.algorithm))
         o.max_iteration = 2;
