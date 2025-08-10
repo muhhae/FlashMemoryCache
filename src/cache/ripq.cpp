@@ -3,7 +3,6 @@
 #include <libCacheSim/request.h>
 
 #include <cstdint>
-#include <print>
 
 namespace RIPQ {
 

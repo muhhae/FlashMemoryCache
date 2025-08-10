@@ -8,10 +8,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <list>
-#include <memory>
-#include <print>
-#include <unordered_map>
 #include <vector>
 
 namespace RIPQ {
