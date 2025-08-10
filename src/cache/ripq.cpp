@@ -2,54 +2,38 @@
 
 #include <libCacheSim/request.h>
 
-#include <algorithm>
-#include <memory>
-#include <stdexcept>
+#include <cstdint>
+#include <print>
 
 namespace RIPQ {
 
+RIPQ::RIPQ(const uint64_t cache_size, const uint16_t n_section, const uint64_t block_size) {
+    const uint64_t n_block = cache_size / block_size;
+    blocks.reserve(n_block);
+    for (size_t i = 0; i < n_block; i++) {
+        blocks.emplace_back(Block(block_size));
+    }
+    uint64_t ip = n_block - 1;
+    const uint64_t gap = n_block / n_section;
+    sections.reserve(n_section);
+    for (size_t i = 0; i < n_section; i++) {
+        sections.emplace_back(Section(float(i) / n_section, float(i + 1) / n_section, ip));
+        ip -= gap;
+    }
+}
+
 void RIPQ::insert(const request_t* req, float priority) {
-    auto it = std::find_if(sections.begin(), sections.end(), [=](const Section& section) {
-        return section.in_range(priority);
-    });
-    if (it == sections.end()) [[unlikely]] {
-        throw std::runtime_error("Invalid priority value");
+    auto obj = RIPQ_obj_metadata{
+        .size = static_cast<uint64_t>(req->obj_size),
+    };
+    for (const auto& section : sections) {
+        if (section.in_range(priority)) {
+            break;
+        }
     }
-    it->insert(req);
-    update_range();
 }
-void RIPQ::increase(const request_t* req, float priority) {
-    auto it = std::find_if(sections.begin(), sections.end(), [=](const Section& section) {
-        return section.in_range(priority);
-    });
-    if (it == sections.end()) [[unlikely]] {
-        throw std::runtime_error("Invalid priority value");
-    }
-    it->virtual_insert(req);
-}
+
+void RIPQ::increase(const request_t* req, float priority) {}
 void RIPQ::delete_min() {}
-void RIPQ::update_range() {}
 
-void Section::insert(const request_t* req) {
-    if (!active_block->can_insert(req)) {
-        sealed_blocks.push_front(std::move(active_block));
-        sealed_virtual_blocks.push_front(std::move(active_virtual_block));
-        active_block = std::make_shared<Block>(block_size);
-        active_virtual_block = std::make_shared<Block>(block_size);
-    }
-    active_block->insert(req);
-}
-void Section::virtual_insert(const request_t* req) { active_virtual_block->insert(req); }
-
-bool Block::can_insert(const request_t* req) {
-    if (req->obj_size > max_capacity) [[unlikely]] {
-        throw std::runtime_error("Object is bigger than max block capacity");
-    }
-    sealed = used_capacity + req->obj_size > max_capacity;
-    return !sealed;
-}
-void Block::insert(const request_t* req) {
-    bucket[req->obj_id] = std::make_unique<cache_obj_t>(create_cache_obj_from_request(req));
-    used_capacity += req->obj_size;
-}
 }  // namespace RIPQ
