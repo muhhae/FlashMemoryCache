@@ -1,6 +1,7 @@
 #!/bin/bash
 
 relative_cache_sizes=(0.005 0.01 0.1 0.25 0.5)
+relative_cache_sizes=(0.01)
 
 usage() {
     echo "Usage: bash $0 -r t[r]aces_txt -d traces_[d]ir -o [o]ut_dir -a [a]dd_desc -t [t]ask_out -g al[g]orithm -p add_[p]aram -i [i]ignore_obj_size -f [f]orce_replace"
@@ -32,12 +33,12 @@ if [ -z "$traces_dir" ] || [ -z "$out_dir" ] || [ -z "$traces_txt" ] || [ -z "$a
     usage
 fi
 
-while IFS= read -r link; do
-    if [ -z "$link" ] || [[ "$link" == \#* ]]; then
+while IFS= read -r path; do
+    if [ -z "$path" ] || [[ "$path" == \#* ]]; then
         continue
     fi
 
-    filename=$(basename $link)
+    filename="${path//\//%2F}"
     file="$traces_dir/$filename"
 
     if [ ! -f "$file" ]; then
@@ -49,8 +50,7 @@ while IFS= read -r link; do
     size=$(stat --format="%s" "$file")
 
     gb=$(( (size + 1024*1024*1024 - 1) / (1024*1024*1024) ))
-    # min_dram=$(( gb/3+1 ))
-    min_dram=1
+    min_dram=$(( gb/4+1 ))
     priority=$(( 100/gb + 1 ))
 
     for cache_size in "${relative_cache_sizes[@]}"; do
