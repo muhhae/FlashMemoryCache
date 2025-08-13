@@ -38,14 +38,15 @@ while IFS= read -r path; do
         continue
     fi
 
-    filename="${path//\//%2F}"
     file="$traces_dir/$filename"
+
 
     if [ ! -f "$file" ]; then
         echo "File '$file' does not exist."
         continue
     fi
 
+    filename="${path//\//%2F}"
     basename="${filename%%.oracleGeneral*}"
     size=$(stat --format="%s" "$file")
 
