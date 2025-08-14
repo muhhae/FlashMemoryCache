@@ -47,7 +47,7 @@ while IFS= read -r path; do
 
     base="${path%%.oracleGeneral*}"
 
-    desc_name=${path//\//%2F}
+    desc_name=${base//\//%2F}
     desc="$add_desc,path=$desc_name"
 
     basename=$(basename "$base")
