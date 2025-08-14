@@ -9,7 +9,7 @@ from typing import Final
 
 import pandas as pd
 from pandas.core.apply import com
-from common import sort_key
+from common import extract_desc, sort_key
 from data_reader_json import GetOfflineClockResult, GetOtherResult
 from docs_writer import DocsWriter
 from pandas.core.frame import itertools
@@ -300,17 +300,25 @@ def main():
 
     use_cache = False
 
+    zipf = [x for x in zipf if "dram=none" in x]
+    cloudphysics = [x for x in cloudphysics if "dram=none" in x]
+    metacdn = [x for x in metacdn if "dram=none" in x]
+
+    zipf = [x for x in zipf if "admissioner" not in x]
+    cloudphysics = [x for x in cloudphysics if "admissioner" not in x]
+    metacdn = [x for x in metacdn if "admissioner" not in x]
+
     args = [
         (zipf, "Zipf", False, use_cache),
         (cloudphysics, "CloudPhysics", False, use_cache),
         (metacdn, "MetaCDN", False, use_cache),
-        (wiki, "Wiki", False, use_cache),
-        (tencentphoto, "TencentPhotos", False, use_cache),
-        (zipf, "Zipf", True, use_cache),
-        (cloudphysics, "CloudPhysics", True, use_cache),
-        (metacdn, "MetaCDN", True, use_cache),
-        (wiki, "Wiki", True, use_cache),
-        (tencentphoto, "TencentPhotos", True, use_cache),
+        # (wiki, "Wiki", False, use_cache),
+        # (tencentphoto, "TencentPhotos", False, use_cache),
+        # (zipf, "Zipf", True, use_cache),
+        # (cloudphysics, "CloudPhysics", True, use_cache),
+        # (metacdn, "MetaCDN", True, use_cache),
+        # (wiki, "Wiki", True, use_cache),
+        # (tencentphoto, "TencentPhotos", True, use_cache),
     ]
 
     processes = []

@@ -1,28 +1,23 @@
-#include "cache/decayed_clock.hpp"
-
 #include <config.h>
 #include <libCacheSim/cache.h>
 #include <libCacheSim/evictionAlgo.h>
 #include <libCacheSim/request.h>
 
-#include <cstdint>
-
 #include "additional_data.hpp"
 
 namespace algorithm {
-float CalculateDecayedFreq(
-    const cache_obj_t* obj, const request_t* req, const data::AdditionalCacheData& data
+bool CheckStat(
+    const data::AdditionalCacheData& data, const cache_obj_t* obj, const request_t* req
 ) {
-    uint64_t time;
-    return 1;
+    return true;
 }
-void DecayedClockEvict(cache_t* cache, const request_t* req) {
+void StatClockEvict(cache_t* cache, const request_t* req) {
     auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
                                       .GetAdditionalCacheData(cache);
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
     while (obj_to_evict->clock.freq >= 1) {
-        if (CalculateDecayedFreq(obj_to_evict, req, additional_cache_data) < 1) {
+        if (!CheckStat(additional_cache_data, obj_to_evict, req)) {
             break;
         }
         additional_cache_data.OnPromotion(obj_to_evict, req);
@@ -37,12 +32,12 @@ void DecayedClockEvict(cache_t* cache, const request_t* req) {
     cache_evict_base(cache, obj_to_evict, true);
 }
 
-cache_t* DecayedClockInit(
+cache_t* StatClockInit(
     const common_cache_params_t ccache_params, const char* cache_specific_params
 ) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
-    cache->cache_init = DecayedClockInit;
-    cache->evict = DecayedClockEvict;
+    cache->cache_init = StatClockInit;
+    cache->evict = StatClockEvict;
 
     auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
                                       .GetAdditionalCacheData(cache);

@@ -10,12 +10,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/cacheSimulator", // <--- IMPORTANT: Path to your test program
             "args": [
-                "../trace/zipf_1_0.oracleGeneral", 
+                "../trace/cloudPhysicsIO.oracleGeneral.bin", 
                 "-a",                              
-                "offline-clock",                   
-                "--dram",                          
-                "-s",                              
-                "1",                               
+                "offline-q-clock",                   
+                "-i 2",
                 "-r",                              
                 "0.1",                             
                 "--ignore-obj-size"                
