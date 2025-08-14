@@ -48,8 +48,9 @@ while IFS= read -r path; do
 
     filename="${path//\//%2F}"
     basename="${filename%%.oracleGeneral*}"
-    size=$(stat --format="%s" "$file")
+    add_desc="$add_desc,path=$basename"
 
+    size=$(stat --format="%s" "$file")
     gb=$(( (size + 1024*1024*1024 - 1) / (1024*1024*1024) ))
     min_dram=$(( gb/4+1 ))
     priority=$(( 100/gb + 1 ))
