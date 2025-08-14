@@ -60,7 +60,6 @@ while IFS= read -r path; do
     for cache_size in "${relative_cache_sizes[@]}"; do
         if $ignore_obj_size; then
             output_path="$out_dir/log/$basename[$cache_size,ignore_obj_size,$algorithm$desc].json"
-            echo $output_path
             if [ ! -s "$output_path" ] || $force_replace; then
                 echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $param -o $out_dir -r $cache_size --ignore-obj-size -d ignore_obj_size,$algorithm$desc" >> $task_out
             fi
