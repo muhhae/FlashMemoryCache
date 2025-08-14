@@ -38,7 +38,7 @@ while IFS= read -r path; do
         continue
     fi
 
-    file="$traces_dir/$filename"
+    file="$traces_dir/$path"
 
 
     if [ ! -f "$file" ]; then
