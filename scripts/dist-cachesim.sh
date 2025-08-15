@@ -61,12 +61,12 @@ while IFS= read -r path; do
         if $ignore_obj_size; then
             output_path="$out_dir/log/$basename[$cache_size,ignore_obj_size,$algorithm$desc].json"
             if [ ! -s "$output_path" ] || $force_replace; then
-                echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $param -o $out_dir -r $cache_size --ignore-obj-size -d ignore_obj_size,$algorithm$desc" >> $task_out
+                echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size --ignore-obj-size -d ignore_obj_size,$algorithm$desc" >> $task_out
             fi
         else
             output_path="$out_dir/log/$basename[$cache_size,$algorithm$desc].json"
             if [ ! -s "$output_path" ] || $force_replace; then
-                echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $param -o $out_dir -r $cache_size -d $algorithm$desc" >> $task_out
+                echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size -d $algorithm$desc" >> $task_out
             fi
         fi
     done
