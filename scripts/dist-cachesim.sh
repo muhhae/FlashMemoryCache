@@ -1,8 +1,5 @@
 #!/bin/bash
 
-relative_cache_sizes=(0.005 0.01 0.1 0.25 0.5)
-relative_cache_sizes=(0.01)
-
 usage() {
     echo "Usage: bash $0 -r t[r]aces_txt -d traces_[d]ir -o [o]ut_dir -a [a]dd_desc -t [t]ask_out -g al[g]orithm -p add_[p]aram -i [i]ignore_obj_size -f [f]orce_replace"
     exit 1
@@ -57,17 +54,15 @@ while IFS= read -r path; do
     min_dram=$(( gb/4+1 ))
     priority=$(( 100/gb + 1 ))
 
-    for cache_size in "${relative_cache_sizes[@]}"; do
-        if $ignore_obj_size; then
-            output_path="$out_dir/log/$basename[$cache_size,ignore_obj_size,$algorithm$desc].json"
-            if [ ! -s "$output_path" ] || $force_replace; then
-                echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size --ignore-obj-size -d ignore_obj_size,$algorithm$desc" >> $task_out
-            fi
-        else
-            output_path="$out_dir/log/$basename[$cache_size,$algorithm$desc].json"
-            if [ ! -s "$output_path" ] || $force_replace; then
-                echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -r $cache_size -d $algorithm$desc" >> $task_out
-            fi
+    if $ignore_obj_size; then
+        output_path="$out_dir/log/$basename[$cache_size,ignore_obj_size,$algorithm$desc].json"
+        if [ ! -s "$output_path" ] || $force_replace; then
+            echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir --ignore-obj-size -d ignore_obj_size,$algorithm$desc" >> $task_out
         fi
-    done
+    else
+        output_path="$out_dir/log/$basename[$cache_size,$algorithm$desc].json"
+        if [ ! -s "$output_path" ] || $force_replace; then
+            echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -a $algorithm $add_param -o $out_dir -d $algorithm$desc" >> $task_out
+        fi
+    fi
 done < "$traces_txt"
