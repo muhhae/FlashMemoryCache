@@ -30,7 +30,7 @@ void RunExperiment(options o) {
     if (o.max_iteration < 2 && std::ranges::contains(offline_algo, o.algorithm))
         o.max_iteration = 2;
 
-    std::filesystem::create_directories(o.output_directory / "outputs");
+    std::filesystem::create_directories(o.output_directory / "log");
     if (o.generate_datasets)
         std::filesystem::create_directories(o.output_directory / "datasets");
     for (const auto& p : o.trace_paths) {
@@ -138,8 +138,7 @@ void Simulate(
         base_path = base_path.substr(0, pos);
     }
 
-    std::filesystem::path output_path = o.output_directory / "outputs" /
-                                        (base_path + desc + ".json");
+    std::filesystem::path output_path = o.output_directory / "log" / (base_path + desc + ".json");
     std::filesystem::path dataset_path = o.output_directory / "datasets" /
                                          (base_path + desc + ".csv");
 
