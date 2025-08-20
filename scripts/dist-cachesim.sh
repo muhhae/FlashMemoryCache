@@ -50,11 +50,13 @@ while IFS= read -r path; do
 
     basename=$(basename "$base")
 
-    if gdbmtool "cache.gdbm" fetch "$file" >/dev/null 2>&1; then
-        size=$(gdbmtool "cache.gdbm" fetch "$file")
+    value=$(echo "fetch $file" | gdbmtool cache.gdbm 2>/dev/null)
+
+    if [ -n "$value" ]; then
+        size="$value"
     else
         size=$(stat --format="%s" "$file")
-        gdbmtool "cache.gdbm" store "$file" "$size"
+        echo "store $file $size" | gdbmtool cache.gdbm
     fi
 
 
