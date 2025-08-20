@@ -50,7 +50,14 @@ while IFS= read -r path; do
 
     basename=$(basename "$base")
 
-    size=$(stat --format="%s" "$file")
+    if gdbmtool "cache.gdbm" exists "$file"; then
+        size=$(gdbmtool "cache.gdbm" fetch "$file")
+    else
+        size=$(stat --format="%s" "$file")
+        gdbmtool "cache.gdbm" store "$file" "$size"
+    fi
+
+
     gb=$(( (size + 1024*1024*1024 - 1) / (1024*1024*1024) ))
     min_dram=$(( gb/4+1 ))
     priority=$(( 100/gb + 1 ))
