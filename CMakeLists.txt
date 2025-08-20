@@ -65,6 +65,7 @@ add_library(my_cache_sim
   src/cache/qor_clock.cpp
   src/cache/qand_clock.cpp
   src/cache/qtime_clock.cpp
+  src/cache/qtime_excl_clock.cpp
   # src/cache/dist_clock.cpp
 )
 
