@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 usage() {
     echo "Usage: bash $0 -r t[r]aces_txt -d traces_[d]ir -o [o]ut_dir -a [a]dd_desc -t [t]ask_out -g al[g]orithm -p add_[p]aram -i [i]ignore_obj_size -f [f]orce_replace -s cache_[s]ize"
