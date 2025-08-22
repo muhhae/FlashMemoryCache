@@ -24,7 +24,7 @@ class QORClockData {
     QORClockData(float p = 0.1) : time_quantile(1 - p), freq_quantile(p) {}
     void Track(uint64_t new_time, uint64_t new_freq) {
         time_quantile.add(new_time);
-        freq_quantile.add(new_time);
+        freq_quantile.add(new_freq);
     }
     bool NotPromoted(uint64_t time, uint64_t freq) {
         return time > time_quantile.get() || freq < freq_quantile.get();
