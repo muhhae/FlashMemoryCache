@@ -1,0 +1,20 @@
+---
+config:
+  theme: redux
+  fontFamily: '"JetBrainsMono", "monospace"'
+  displayMode: compact
+  flowchart:
+    htmlLabels: true
+    curve: 'basis'
+---
+flowchart LR
+    OnEviction(evicting...) --> ClockFreq{freq > 0}
+
+    ClockFreq -- NO --> Evicted
+    ClockFreq -- YES --> CheckInterval(Check Interval)
+
+    CheckInterval -- NO --> CheckThreshold(freq: X > Threshold  time: X < Threshold)
+    CheckInterval -- YES --> TrackValue(P2: Track New Value) --> CheckThreshold
+
+    CheckThreshold -- NO --> Evicted
+    CheckThreshold -- YES --> Promoted
