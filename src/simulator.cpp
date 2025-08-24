@@ -189,11 +189,14 @@ void Simulate(
         Flash.self
     );
 
-    if (DRAM_data.SetParamsCallback)
+    if (DRAM_data.SetParamsCallback) {
+        o.cache_params["cache_size"] = std::to_string(DRAM.self->cache_size);
         DRAM_data.SetParamsCallback(DRAM_data, o.cache_params);
-    if (Flash_data.SetParamsCallback)
+    }
+    if (Flash_data.SetParamsCallback) {
+        o.cache_params["cache_size"] = std::to_string(Flash.self->cache_size);
         Flash_data.SetParamsCallback(Flash_data, o.cache_params);
-
+    }
     uint64_t req_counter = 0;
     uint64_t req_limit = o.req_limit * approximate_request_count;
 

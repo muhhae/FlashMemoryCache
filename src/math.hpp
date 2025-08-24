@@ -84,9 +84,10 @@ class P2Quantile {
         return q[2];
     }
 
-   private:
-    double p;
     size_t count = 0;
+    double p;
+
+   private:
     std::vector<double> buffer;
     double q[5] = {};
     double n[5] = {};
