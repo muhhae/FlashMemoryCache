@@ -26,7 +26,7 @@ struct QAutoMetadata {
 };
 class QAutoData {
    public:
-    QAutoData(uint64_t cache_size, float precision = 16, float threshold = 0.01)
+    QAutoData(uint64_t cache_size, float precision = 16, float threshold = 0.1)
         : miss_threshold(threshold) {
         float p = 1 / precision;
         time_quantiles.reserve(precision);
@@ -34,11 +34,9 @@ class QAutoData {
         for (size_t i = 0; i < precision; i++) {
             time_quantiles.emplace_back(1 - p * i);
             freq_quantiles.emplace_back(p * i);
-            // std::cout << "[time] p: " << time_quantiles[i].p << "\n";
-            // std::cout << "[freq] p: " << freq_quantiles[i].p << "\n";
         }
         index = precision / 2;
-        interval = cache_size / (precision * 10);
+        interval = cache_size / 10;
     }
     void Adjust() {
         if (current_promotion < interval / 10 && current_req < interval) {
@@ -46,21 +44,19 @@ class QAutoData {
         }
         float current_miss_ratio = (float)current_miss / current_req;
         float relative_miss_ratio = current_miss_ratio / prev_miss_ratio - 1;
+        if (prev_miss_ratio == 0) {
+            relative_miss_ratio = 0;
+        }
         if (abs(relative_miss_ratio) > miss_threshold) {
             direction = relative_miss_ratio / abs(relative_miss_ratio) * -1;
+            index += direction;
+            index = std::clamp(index, static_cast<size_t>(0), time_quantiles.size() - 1);
         }
-        index += direction;
-        index = std::clamp(index, static_cast<size_t>(0), time_quantiles.size() - 1);
 
         prev_miss_ratio = current_miss_ratio;
         current_promotion = 0;
         current_req = 0;
         current_miss = 0;
-
-        // std::cout << "adjusted\n";
-        // std::cout << "index: " << index << "\n";
-        // std::cout << "[time] p: " << time_quantiles[index].p << "\n";
-        // std::cout << "[freq] p: " << freq_quantiles[index].p << "\n";
     }
     void Track(uint64_t new_time, uint64_t new_freq) {
         for (size_t i = 0; i < time_quantiles.size(); i++) {
@@ -92,6 +88,7 @@ void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.emplace(req->obj_id, QAutoMetadata());
+    cache_data->current_miss++;
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
@@ -105,8 +102,6 @@ void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
     if (cache_data->metadatas.contains(req->obj_id)) {
         cache_data->metadatas.at(req->obj_id).last_access_time = req->clock_time;
         cache_data->metadatas.at(req->obj_id).freq++;
-    } else {
-        cache_data->current_miss++;
     }
     cache_data->Adjust();
 }
