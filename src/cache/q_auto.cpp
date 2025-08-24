@@ -34,8 +34,8 @@ class QAutoData {
         for (size_t i = 0; i < precision; i++) {
             time_quantiles.emplace_back(1 - p * i);
             freq_quantiles.emplace_back(p * i);
-            std::cout << "[time] p: " << time_quantiles[i].p << "\n";
-            std::cout << "[freq] p: " << freq_quantiles[i].p << "\n";
+            // std::cout << "[time] p: " << time_quantiles[i].p << "\n";
+            // std::cout << "[freq] p: " << freq_quantiles[i].p << "\n";
         }
         index = precision / 2;
         interval = cache_size / (precision * 10);
@@ -57,10 +57,10 @@ class QAutoData {
         current_req = 0;
         current_miss = 0;
 
-        std::cout << "adjusted\n";
-        std::cout << "index: " << index << "\n";
-        std::cout << "[time] p: " << time_quantiles[index].p << "\n";
-        std::cout << "[freq] p: " << freq_quantiles[index].p << "\n";
+        // std::cout << "adjusted\n";
+        // std::cout << "index: " << index << "\n";
+        // std::cout << "[time] p: " << time_quantiles[index].p << "\n";
+        // std::cout << "[freq] p: " << freq_quantiles[index].p << "\n";
     }
     void Track(uint64_t new_time, uint64_t new_freq) {
         for (size_t i = 0; i < time_quantiles.size(); i++) {
