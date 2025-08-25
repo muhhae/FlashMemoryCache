@@ -56,14 +56,15 @@ while IFS= read -r path; do
     priority=$(( 100/gb + 1 ))
 
     if $ignore_obj_size; then
-        output_path="$out_dir/log/$basename[$cache_size,ignore_obj_size,$algorithm$desc].json"
-        if [ ! -s "$output_path" ] || $force_replace; then
-            echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -r $cache_size -a $algorithm $add_param -o $out_dir --ignore-obj-size -d ignore_obj_size,$algorithm$desc" >> $task_out
-        fi
+        out_name="$basename[$cache_size,ignore_obj_size,$algorithm$desc].json"
     else
-        output_path="$out_dir/log/$basename[$cache_size,$algorithm$desc].json"
-        if [ ! -s "$output_path" ] || $force_replace; then
-            echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -r $cache_size -a $algorithm $add_param -o $out_dir -d $algorithm$desc" >> $task_out
-        fi
+        out_name="$basename[$cache_size,$algorithm$desc].json"
     fi
+    hash=$(echo -n "$out_name" | sha1sum | cut -c1-2)
+    output_dir=$out_dir/$hash
+    output_path=$out_dir/$out_name
+    if [ ! -s "$output_path" ] || $force_replace; then
+        echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -r $cache_size -a $algorithm $add_param -o $output_dir -d $algorithm$desc" >> $task_out
+    fi
+
 done < "$traces_txt"
