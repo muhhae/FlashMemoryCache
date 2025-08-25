@@ -5,11 +5,14 @@
 #include <sys/types.h>
 
 #include <algorithm>
+#include <boost/accumulators/numeric/functional_fwd.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <list>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -26,37 +29,15 @@ struct QAutoMetadata {
 };
 class QAutoData {
    public:
-    QAutoData(uint64_t cache_size, float precision = 16, float threshold = 0.1)
-        : miss_threshold(threshold) {
+    QAutoData(uint64_t ghost_q_size, float precision = 16) : ghost_q_size(ghost_q_size) {
+        time_quantiles.reserve(precision + 1);
+        freq_quantiles.reserve(precision + 1);
         float p = 1 / precision;
-        time_quantiles.reserve(precision);
-        freq_quantiles.reserve(precision);
-        for (size_t i = 0; i < precision; i++) {
+        for (size_t i = 0; i <= precision; i++) {
             time_quantiles.emplace_back(1 - p * i);
             freq_quantiles.emplace_back(p * i);
         }
         index = precision / 2;
-        interval = cache_size / 10;
-    }
-    void Adjust() {
-        if (current_promotion < interval / 10 && current_req < interval) {
-            return;
-        }
-        float current_miss_ratio = (float)current_miss / current_req;
-        float relative_miss_ratio = current_miss_ratio / prev_miss_ratio - 1;
-        if (prev_miss_ratio == 0) {
-            relative_miss_ratio = 0;
-        }
-        if (abs(relative_miss_ratio) > miss_threshold) {
-            direction = relative_miss_ratio / abs(relative_miss_ratio) * -1;
-            index += direction;
-            index = std::clamp(index, static_cast<size_t>(0), time_quantiles.size() - 1);
-        }
-
-        prev_miss_ratio = current_miss_ratio;
-        current_promotion = 0;
-        current_req = 0;
-        current_miss = 0;
     }
     void Track(uint64_t new_time, uint64_t new_freq) {
         for (size_t i = 0; i < time_quantiles.size(); i++) {
@@ -64,31 +45,44 @@ class QAutoData {
             freq_quantiles[i].add(new_freq);
         }
     }
-    bool NotPromoted(uint64_t time, uint64_t freq) {
-        return time > time_quantiles[index].get() && freq < freq_quantiles[index].get();
+    bool IsPromoted(obj_id_t obj_id, const request_t* req) {
+        auto obj_last_access = metadatas.at(obj_id).last_access_time;
+        auto time = req->clock_time - obj_last_access;
+        auto freq = metadatas.at(obj_id).freq;
+
+        Track(time, freq);
+        bool promoted = time < time_quantiles[index].get() || freq > freq_quantiles[index].get();
+
+        if (!promoted) {
+            if (ghost_q.size() >= ghost_q_size) {
+                ghost_q.pop_back();
+                if (index < time_quantiles.size() - 1) {
+                    index++;
+                }
+            }
+            ghost_q.push_front(obj_id);
+        }
+        return promoted;
     }
     std::unordered_map<obj_id_t, QAutoMetadata> metadatas;
-    uint64_t current_promotion = 0;
-    uint64_t current_miss = 0;
-    uint64_t current_req = 0;
+    std::list<obj_id_t> ghost_q;
+    uint64_t index;
 
    private:
     std::vector<P2Quantile> time_quantiles;
     std::vector<P2Quantile> freq_quantiles;
-
-    float miss_threshold = 0;
-
-    uint64_t index = 0;
-    int8_t direction = 1;
-
-    uint64_t interval = 0;
-    float prev_miss_ratio = 1;
+    uint64_t ghost_q_size;
 };
 void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.emplace(req->obj_id, QAutoMetadata());
-    cache_data->current_miss++;
+    if (std::ranges::contains(cache_data->ghost_q, req->obj_id)) {
+        std::erase(cache_data->ghost_q, req->obj_id);
+        if (cache_data->index > 0) {
+            cache_data->index--;
+        }
+    }
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
@@ -98,12 +92,10 @@ void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cac
 void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
     assert(cache_data);
-    cache_data->current_req++;
     if (cache_data->metadatas.contains(req->obj_id)) {
         cache_data->metadatas.at(req->obj_id).last_access_time = req->clock_time;
         cache_data->metadatas.at(req->obj_id).freq++;
     }
-    cache_data->Adjust();
 }
 void OnIterationEnd(data::AdditionalCacheData& data) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
@@ -113,31 +105,18 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
 void SetParams(
     data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
 ) {
+    assert(params.contains("cache_size"));
+    uint64_t cache_size = std::stof(params.at("cache_size"));
     uint64_t precision = 16;
+
     if (params.contains("precision")) {
         precision = std::stof(params.at("precision"));
     }
-    float threshold = 0.1;
-    if (params.contains("threshold")) {
-        threshold = std::stof(params.at("threshold"));
+    float ghost_q_size = 0.1;
+    if (params.contains("ghost_size")) {
+        ghost_q_size = std::stof(params.at("ghost_size"));
     }
-    assert(params.contains("cache_size"));
-    uint64_t cache_size = std::stof(params.at("cache_size"));
-    data.CacheSpecificData.emplace<QAuto::QAutoData>(cache_size, precision, threshold);
-}
-
-bool NotPromoted(data::AdditionalCacheData& data, obj_id_t id, uint64_t current_time) {
-    auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
-    assert(cache_data);
-
-    cache_data->current_promotion += 1;
-    cache_data->Adjust();
-
-    auto obj_last_access = cache_data->metadatas.at(id).last_access_time;
-    auto time = current_time - obj_last_access;
-    auto freq = cache_data->metadatas.at(id).freq;
-    cache_data->Track(time, freq);
-    return cache_data->NotPromoted(time, freq);
+    data.CacheSpecificData.emplace<QAuto::QAutoData>(ghost_q_size * cache_size, precision);
 }
 
 void QAutoEvict(cache_t* cache, const request_t* req) {
@@ -145,8 +124,10 @@ void QAutoEvict(cache_t* cache, const request_t* req) {
                                       .GetAdditionalCacheData(cache);
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
+    auto* cache_data = std::any_cast<QAutoData>(&additional_cache_data.CacheSpecificData);
+
     while (obj_to_evict->clock.freq >= 1) {
-        if (NotPromoted(additional_cache_data, obj_to_evict->obj_id, req->clock_time)) {
+        if (!cache_data->IsPromoted(obj_to_evict->obj_id, req)) {
             break;
         }
         additional_cache_data.OnPromotion(obj_to_evict, req);
