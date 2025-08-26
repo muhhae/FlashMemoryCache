@@ -31,6 +31,7 @@
 #include "cache/qor_clock.hpp"
 #include "cache/qtime_clock.hpp"
 #include "cache/qtime_excl_clock.hpp"
+#include "cache/t_auto.hpp"
 #include "lib/json.hpp"
 
 typedef std::function<
@@ -51,6 +52,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"qor-clock", algorithm::QORClockInit},
         {"qand-clock", algorithm::QANDClockInit},
         {"qauto", algorithm::QAutoInit},
+        {"tauto", algorithm::TAutoInit},
         {"qtime-clock", algorithm::QTimeClockInit},
         {"qtime-excl-clock", algorithm::QTimeExclClockInit},
         {"offline-clock", algorithm::OfflineClockInit},

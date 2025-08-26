@@ -108,7 +108,6 @@ void SetParams(
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
     uint64_t precision = 16;
-
     if (params.contains("precision")) {
         precision = std::stof(params.at("precision"));
     }
