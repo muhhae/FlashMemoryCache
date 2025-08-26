@@ -37,8 +37,8 @@ class TAutoData {
         auto time = req->clock_time - obj_last_access;
         auto freq = metadatas.at(obj_id).freq;
 
-        std::print("Time: {} \tThreshold: {}\n", time, time_threshold);
-        std::print("Freq: {} \tThreshold: {}\n", freq, freq_threshold);
+        // std::print("Time: {} \tThreshold: {}\n", time, time_threshold);
+        // std::print("Freq: {} \tThreshold: {}\n", freq, freq_threshold);
 
         bool time_promoted = time < time_threshold;
         bool freq_promoted = freq > freq_threshold;
