@@ -4,8 +4,6 @@
 #include <libCacheSim/request.h>
 #include <sys/types.h>
 
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics_fwd.hpp>
 #include <cassert>
 #include <cstdint>
 #include <string>

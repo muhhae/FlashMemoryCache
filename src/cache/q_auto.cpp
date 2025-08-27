@@ -5,14 +5,11 @@
 #include <sys/types.h>
 
 #include <algorithm>
-#include <boost/accumulators/numeric/functional_fwd.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
-#include <iostream>
 #include <list>
-#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>

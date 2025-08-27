@@ -8,8 +8,6 @@
 #include <boost/accumulators/numeric/functional_fwd.hpp>
 #include <cassert>
 #include <cstdint>
-#include <iostream>
-#include <limits>
 #include <list>
 #include <string>
 #include <unordered_map>
