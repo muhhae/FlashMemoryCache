@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <iostream>
 #include <list>
 #include <string>
 #include <unordered_map>
@@ -25,7 +24,7 @@ struct TimeAutoMetadata {
 class TimeAutoData {
    public:
     TimeAutoData(uint64_t ghost_q_size, uint64_t initial_minutes = 5, uint64_t step = 1)
-        : ghost_q_size(ghost_q_size), step(step), time_threshold(5 * 60) {}
+        : ghost_q_size(ghost_q_size), step(step), time_threshold(initial_minutes * 60) {}
     bool IsPromoted(const cache_obj_t* obj, const request_t* req) {
         auto metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq > 0) {
@@ -111,7 +110,7 @@ void SetParams(
     }
     uint64_t initial_minutes = 5;
     if (params.contains("initial_minutes")) {
-        step = std::stof(params.at("initial_minutes"));
+        initial_minutes = std::stof(params.at("initial_minutes"));
     }
     float ghost_q_size = 0.1;
     if (params.contains("ghost_size")) {
