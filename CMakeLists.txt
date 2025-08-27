@@ -64,6 +64,7 @@ add_library(my_cache_sim
   src/cache/q_clock.cpp
   src/cache/q_auto.cpp
   src/cache/t_auto.cpp
+  src/cache/time_auto.cpp
   src/cache/qor_clock.cpp
   src/cache/qand_clock.cpp
   src/cache/qtime_clock.cpp

@@ -1,0 +1,163 @@
+#include <config.h>
+#include <libCacheSim/cache.h>
+#include <libCacheSim/evictionAlgo.h>
+#include <libCacheSim/request.h>
+#include <sys/types.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <iostream>
+#include <list>
+#include <string>
+#include <unordered_map>
+
+#include "additional_data.hpp"
+#include "math.hpp"
+
+namespace algorithm {
+namespace TimeAuto {
+
+struct TimeAutoMetadata {
+    bool reinserted = false;
+    uint64_t last_access_time = 0;
+};
+class TimeAutoData {
+   public:
+    TimeAutoData(uint64_t ghost_q_size, uint64_t initial_minutes = 5, uint64_t step = 1)
+        : ghost_q_size(ghost_q_size), step(step), time_threshold(5 * 60) {}
+    bool IsPromoted(const cache_obj_t* obj, const request_t* req) {
+        auto metadata = metadatas.at(obj->obj_id);
+        if (obj->clock.freq > 0) {
+            metadata.reinserted = false;
+            return true;
+        }
+        if (metadata.reinserted) {
+            return false;
+        }
+
+        auto time_last_access = metadata.last_access_time;
+        auto time = req->clock_time - time_last_access;
+        bool promoted = time < time_threshold;
+
+        // std::cout << "time: " << time << std::endl;
+        // std::cout << "step: " << step << std::endl;
+        // std::cout << "threshold: " << time_threshold << std::endl;
+        // std::cout << "has been reinserted: " << metadata.reinserted << std::endl;
+        // std::cout << "promoted: " << promoted << std::endl;
+        // std::cout << std::endl;
+
+        if (!promoted) {
+            if (time_ghost_q.size() >= ghost_q_size) {
+                time_ghost_q.pop_back();
+            }
+            time_ghost_q.push_front(obj->obj_id);
+        }
+        metadatas[obj->obj_id].reinserted = promoted;
+        return promoted;
+    }
+    void OnMiss(const request_t* req) {
+        if (std::ranges::contains(time_ghost_q, req->obj_id)) {
+            std::erase(time_ghost_q, req->obj_id);
+            step = step > 0 ? step + 1 : 1;
+            time_threshold += step * (time_threshold <= UINT64_MAX - step);
+        }
+    }
+    void OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
+        auto metadata = metadatas.at(obj_evicted->obj_id);
+        if (metadata.reinserted) {
+            step = step < 0 ? step - 1 : -1;
+            time_threshold += step * (time_threshold >= abs(step));
+        }
+        metadatas.erase(obj_evicted->obj_id);
+    }
+    std::unordered_map<obj_id_t, TimeAutoMetadata> metadatas;
+    std::list<obj_id_t> time_ghost_q;
+
+   private:
+    uint64_t time_threshold;
+    uint64_t ghost_q_size;
+    int64_t step = 1;
+};
+void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
+    auto* cache_data = std::any_cast<TimeAutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    cache_data->metadatas.emplace(req->obj_id, TimeAutoMetadata());
+    cache_data->OnMiss(req);
+}
+void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
+    auto* cache_data = std::any_cast<TimeAutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    cache_data->OnEviction(obj, req);
+}
+void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
+    auto* cache_data = std::any_cast<TimeAutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    cache_data->metadatas.at(req->obj_id).last_access_time = req->clock_time;
+}
+void OnIterationEnd(data::AdditionalCacheData& data) {
+    auto* cache_data = std::any_cast<TimeAutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    cache_data->metadatas.clear();
+}
+void SetParams(
+    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
+) {
+    assert(params.contains("cache_size"));
+    uint64_t cache_size = std::stof(params.at("cache_size"));
+    uint64_t step = 1;
+    if (params.contains("step")) {
+        step = std::stof(params.at("step"));
+    }
+    uint64_t initial_minutes = 5;
+    if (params.contains("initial_minutes")) {
+        step = std::stof(params.at("initial_minutes"));
+    }
+    float ghost_q_size = 0.1;
+    if (params.contains("ghost_size")) {
+        ghost_q_size = std::stof(params.at("ghost_size"));
+    }
+    data.CacheSpecificData.emplace<TimeAuto::TimeAutoData>(
+        ghost_q_size * cache_size, initial_minutes, step
+    );
+}
+
+void TimeAutoEvict(cache_t* cache, const request_t* req) {
+    auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                      .GetAdditionalCacheData(cache);
+    Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
+    cache_obj_t* obj_to_evict = params->q_tail;
+    auto* cache_data = std::any_cast<TimeAutoData>(&additional_cache_data.CacheSpecificData);
+
+    while (cache_data->IsPromoted(obj_to_evict, req)) {
+        additional_cache_data.OnPromotion(obj_to_evict, req);
+        obj_to_evict->clock.freq -= 1;
+        params->n_obj_rewritten += 1;
+        params->n_byte_rewritten += obj_to_evict->obj_size;
+        move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
+        obj_to_evict = params->q_tail;
+    }
+    additional_cache_data.OnEviction(obj_to_evict, req);
+    remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
+    cache_evict_base(cache, obj_to_evict, true);
+}
+}  // namespace TimeAuto
+
+cache_t* TimeAutoInit(
+    const common_cache_params_t ccache_params, const char* cache_specific_params
+) {
+    auto cache = Clock_init(ccache_params, cache_specific_params);
+    cache->cache_init = TimeAutoInit;
+    cache->evict = TimeAuto::TimeAutoEvict;
+
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+
+    data.OnAccessCallback = TimeAuto::OnAccess;
+    data.OnEvictionCallback = TimeAuto::OnEviction;
+    data.OnInsertCallback = TimeAuto::OnInsert;
+    data.OnIterationEndCallback = TimeAuto::OnIterationEnd;
+    data.SetParamsCallback = TimeAuto::SetParams;
+
+    return cache;
+}
+}  // namespace algorithm
