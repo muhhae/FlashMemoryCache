@@ -5,7 +5,6 @@
 #include <sys/types.h>
 
 #include <algorithm>
-#include <boost/accumulators/numeric/functional_fwd.hpp>
 #include <cassert>
 #include <cstdint>
 #include <list>
