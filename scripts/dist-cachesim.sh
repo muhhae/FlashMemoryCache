@@ -64,10 +64,12 @@ while IFS= read -r path; do
     output_dir=$out_dir/$hash
     output_path=$output_dir/$out_name
 
-    echo "Output Path: $output_path"
-    echo "Output Dir: $output_dir"
-
     if [ ! -s "$output_path" ] || $force_replace; then
+
+        echo "Output Path: $output_path"
+        echo "Output Dir: $output_dir"
+        echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -r $cache_size -a $algorithm $add_param -o $output_dir -d $algorithm$desc"
+
         echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -r $cache_size -a $algorithm $add_param -o $output_dir -d $algorithm$desc" >> $task_out
     fi
 
