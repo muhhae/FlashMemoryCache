@@ -31,6 +31,7 @@
 #include "cache/qor_clock.hpp"
 #include "cache/qtime_clock.hpp"
 #include "cache/qtime_excl_clock.hpp"
+#include "cache/t2_auto.hpp"
 #include "cache/t_auto.hpp"
 #include "cache/time2_auto.hpp"
 #include "cache/time_auto.hpp"
@@ -55,6 +56,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"qand-clock", algorithm::QANDClockInit},
         {"qauto", algorithm::QAutoInit},
         {"tauto", algorithm::TAutoInit},
+        {"t2auto", algorithm::T2AutoInit},
         {"time-auto", algorithm::TimeAutoInit},
         {"time2-auto", algorithm::Time2AutoInit},
         {"qtime-clock", algorithm::QTimeClockInit},
