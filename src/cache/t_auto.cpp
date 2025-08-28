@@ -41,14 +41,18 @@ class TAutoData {
 
         if (!freq_promoted) {
             if (freq_ghost_q.size() >= ghost_q_size / 2) {
+                freq_ghost_set.erase(freq_ghost_q.back());
                 freq_ghost_q.pop_back();
             }
+            freq_ghost_set.emplace(obj_id);
             freq_ghost_q.push_front(obj_id);
         }
         if (!time_promoted) {
             if (time_ghost_q.size() >= ghost_q_size / 2) {
+                time_ghost_set.erase(time_ghost_q.back());
                 time_ghost_q.pop_back();
             }
+            time_ghost_set.emplace(obj_id);
             time_ghost_q.push_front(obj_id);
         }
         bool promoted = time_promoted && freq_promoted;
@@ -58,12 +62,14 @@ class TAutoData {
         return promoted;
     }
     void OnMiss(const request_t* req) {
-        if (std::ranges::contains(freq_ghost_q, req->obj_id)) {
+        if (freq_ghost_set.contains(req->obj_id)) {
             std::erase(freq_ghost_q, req->obj_id);
+            freq_ghost_set.erase(req->obj_id);
             freq_threshold -= step * (freq_threshold >= step);
         }
-        if (std::ranges::contains(time_ghost_q, req->obj_id)) {
+        if (time_ghost_set.contains(req->obj_id)) {
             std::erase(time_ghost_q, req->obj_id);
+            time_ghost_set.erase(req->obj_id);
             time_threshold += step * (time_threshold <= UINT64_MAX - step);
         }
     }
@@ -80,6 +86,8 @@ class TAutoData {
     std::unordered_map<obj_id_t, TAutoMetadata> metadatas;
     std::list<obj_id_t> freq_ghost_q;
     std::list<obj_id_t> time_ghost_q;
+    std::unordered_set<obj_id_t> freq_ghost_set;
+    std::unordered_set<obj_id_t> time_ghost_set;
 
    private:
     uint64_t freq_threshold = 0;
