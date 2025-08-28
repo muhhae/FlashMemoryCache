@@ -63,6 +63,10 @@ while IFS= read -r path; do
     hash=$(echo -n "$out_name" | sha1sum | cut -c1-2)
     output_dir=$out_dir/$hash
     output_path=$output_dir/$out_name
+
+    echo "Output Path: $output_path"
+    echo "Output Dir: $output_dir"
+
     if [ ! -s "$output_path" ] || $force_replace; then
         echo "shell:$priority:$min_dram:1:~/FlashMemoryCache/build/cacheSimulator $file -r $cache_size -a $algorithm $add_param -o $output_dir -d $algorithm$desc" >> $task_out
     fi
