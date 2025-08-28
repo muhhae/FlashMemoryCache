@@ -4,10 +4,8 @@
 #include <libCacheSim/request.h>
 #include <sys/types.h>
 
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <iostream>
 #include <list>
 #include <string>
 #include <unordered_map>
@@ -40,25 +38,21 @@ class Time2AutoData {
         auto time = req->clock_time - time_last_access;
         bool promoted = time < time_threshold;
 
-        // std::cout << "time: " << time << std::endl;
-        // std::cout << "step: " << step << std::endl;
-        // std::cout << "threshold: " << time_threshold << std::endl;
-        // std::cout << "has been reinserted: " << metadata.reinserted << std::endl;
-        // std::cout << "promoted: " << promoted << std::endl;
-        // std::cout << std::endl;
-
         if (!promoted) {
             if (time_ghost_q.size() >= ghost_q_size) {
+                time_ghost_set.erase(time_ghost_q.back());
                 time_ghost_q.pop_back();
             }
+            time_ghost_set.emplace(obj->obj_id);
             time_ghost_q.push_front(obj->obj_id);
         }
         metadatas[obj->obj_id].reinserted = promoted;
         return promoted;
     }
     void OnMiss(const request_t* req) {
-        if (std::ranges::contains(time_ghost_q, req->obj_id)) {
+        if (time_ghost_set.contains(req->obj_id)) {
             std::erase(time_ghost_q, req->obj_id);
+            time_ghost_set.erase(req->obj_id);
             step = step > 0 ? step + 1 : 1;
             time_threshold += step * (time_threshold <= UINT64_MAX - step);
         }
@@ -73,6 +67,7 @@ class Time2AutoData {
     }
     std::unordered_map<obj_id_t, Time2AutoMetadata> metadatas;
     std::list<obj_id_t> time_ghost_q;
+    std::unordered_set<obj_id_t> time_ghost_set;
 
    private:
     uint64_t time_threshold;
