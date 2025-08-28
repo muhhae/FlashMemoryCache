@@ -23,7 +23,7 @@ struct Time2AutoMetadata {
 class Time2AutoData {
    public:
     Time2AutoData(uint64_t ghost_q_size, uint64_t initial_minutes = 5, uint64_t step = 1)
-        : ghost_q_size(ghost_q_size), step(step), time_threshold(5 * 60) {}
+        : ghost_size(ghost_q_size), step(step), time_threshold(5 * 60) {}
     bool IsPromoted(const cache_obj_t* obj, const request_t* req) {
         auto metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq == 0) {
@@ -39,20 +39,21 @@ class Time2AutoData {
         bool promoted = time < time_threshold;
 
         if (!promoted) {
-            if (time_ghost_q.size() >= ghost_q_size) {
-                time_ghost_set.erase(time_ghost_q.back());
-                time_ghost_q.pop_back();
+            if (ghost_q.size() >= ghost_size) {
+                ghost_map.erase(ghost_q.back());
+                ghost_q.pop_back();
             }
-            time_ghost_set.emplace(obj->obj_id);
-            time_ghost_q.push_front(obj->obj_id);
+            ghost_q.push_front(obj->obj_id);
+            ghost_map[obj->obj_id] = ghost_q.begin();
         }
         metadatas[obj->obj_id].reinserted = promoted;
         return promoted;
     }
     void OnMiss(const request_t* req) {
-        if (time_ghost_set.contains(req->obj_id)) {
-            std::erase(time_ghost_q, req->obj_id);
-            time_ghost_set.erase(req->obj_id);
+        auto it = ghost_map.find(req->obj_id);
+        if (it != ghost_map.end()) {
+            ghost_q.erase(it->second);
+            ghost_map.erase(it);
             step = step > 0 ? step + 1 : 1;
             time_threshold += step * (time_threshold <= UINT64_MAX - step);
         }
@@ -66,12 +67,13 @@ class Time2AutoData {
         metadatas.erase(obj_evicted->obj_id);
     }
     std::unordered_map<obj_id_t, Time2AutoMetadata> metadatas;
-    std::list<obj_id_t> time_ghost_q;
-    std::unordered_set<obj_id_t> time_ghost_set;
+
+    std::list<obj_id_t> ghost_q;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
 
    private:
     uint64_t time_threshold;
-    uint64_t ghost_q_size;
+    uint64_t ghost_size;
     int64_t step = 1;
 };
 void OnInsert(data::AdditionalCacheData& data, const request_t* req) {

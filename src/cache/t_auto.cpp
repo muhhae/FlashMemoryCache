@@ -41,19 +41,19 @@ class TAutoData {
 
         if (!freq_promoted) {
             if (freq_ghost_q.size() >= ghost_q_size / 2) {
-                freq_ghost_set.erase(freq_ghost_q.back());
+                freq_ghost_map.erase(freq_ghost_q.back());
                 freq_ghost_q.pop_back();
             }
-            freq_ghost_set.emplace(obj_id);
             freq_ghost_q.push_front(obj_id);
+            freq_ghost_map[obj_id] = freq_ghost_q.begin();
         }
         if (!time_promoted) {
             if (time_ghost_q.size() >= ghost_q_size / 2) {
-                time_ghost_set.erase(time_ghost_q.back());
+                time_ghost_map.erase(time_ghost_q.back());
                 time_ghost_q.pop_back();
             }
-            time_ghost_set.emplace(obj_id);
             time_ghost_q.push_front(obj_id);
+            time_ghost_map[obj_id] = time_ghost_q.begin();
         }
         bool promoted = time_promoted && freq_promoted;
         metadatas[obj_id].reinserted = promoted;
@@ -62,14 +62,16 @@ class TAutoData {
         return promoted;
     }
     void OnMiss(const request_t* req) {
-        if (freq_ghost_set.contains(req->obj_id)) {
-            std::erase(freq_ghost_q, req->obj_id);
-            freq_ghost_set.erase(req->obj_id);
+        auto freq_it = freq_ghost_map.find(req->obj_id);
+        if (freq_it != freq_ghost_map.end()) {
+            freq_ghost_q.erase(freq_it->second);
+            freq_ghost_map.erase(req->obj_id);
             freq_threshold -= step * (freq_threshold >= step);
         }
-        if (time_ghost_set.contains(req->obj_id)) {
-            std::erase(time_ghost_q, req->obj_id);
-            time_ghost_set.erase(req->obj_id);
+        auto time_it = time_ghost_map.find(req->obj_id);
+        if (time_it != freq_ghost_map.end()) {
+            time_ghost_q.erase(time_it->second);
+            time_ghost_map.erase(req->obj_id);
             time_threshold += step * (time_threshold <= UINT64_MAX - step);
         }
     }
@@ -86,8 +88,8 @@ class TAutoData {
     std::unordered_map<obj_id_t, TAutoMetadata> metadatas;
     std::list<obj_id_t> freq_ghost_q;
     std::list<obj_id_t> time_ghost_q;
-    std::unordered_set<obj_id_t> freq_ghost_set;
-    std::unordered_set<obj_id_t> time_ghost_set;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> freq_ghost_map;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> time_ghost_map;
 
    private:
     uint64_t freq_threshold = 0;
