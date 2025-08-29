@@ -31,6 +31,10 @@ if [ -z "$traces_dir" ] || [ -z "$out_dir" ] || [ -z "$traces_txt" ] || [ -z "$a
     usage
 fi
 
+if $ignore_obj_size; then
+    add_param="--ignore_obj_size $add_param"
+fi
+
 while IFS= read -r path; do
     if [ -z "$path" ] || [[ "$path" == \#* ]]; then
         continue
@@ -57,7 +61,6 @@ while IFS= read -r path; do
 
     if $ignore_obj_size; then
         out_name="$basename[$cache_size,ignore_obj_size,$algorithm$desc].json"
-        add_param="--ignore_obj_size $add_param"
     else
         out_name="$basename[$cache_size,$algorithm$desc].json"
     fi
