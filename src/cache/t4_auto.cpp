@@ -1,0 +1,176 @@
+#include <config.h>
+#include <libCacheSim/cache.h>
+#include <libCacheSim/evictionAlgo.h>
+#include <libCacheSim/request.h>
+#include <sys/types.h>
+
+#include <cassert>
+#include <cstdint>
+#include <list>
+#include <string>
+#include <unordered_map>
+
+#include "additional_data.hpp"
+#include "math.hpp"
+
+namespace algorithm {
+namespace T4Auto {
+
+struct T4AutoMetadata {
+    uint64_t last_access_time = 0;
+    uint64_t freq = 0;
+    bool freq_promoted = 0;
+    bool time_promoted = 0;
+};
+class T4AutoData {
+   public:
+    T4AutoData(uint64_t ghost_q_size, uint64_t step = 1)
+        : ghost_q_size(std::max((uint64_t)1, ghost_q_size)),
+          time_step(step * 45),
+          freq_step(step) {}
+    bool IsPromoted(cache_obj_t* obj, const request_t* req) {
+        auto& metadata = metadatas.at(obj->obj_id);
+        if (obj->clock.freq <= 0) {
+            if (metadata.freq_promoted) {
+                freq_threshold += freq_step * (freq_threshold <= UINT16_MAX - freq_step);
+            }
+            if (metadata.time_promoted) {
+                time_threshold -= time_step * (time_threshold >= time_step);
+            }
+            return false;
+        }
+
+        auto obj_last_access = metadata.last_access_time;
+        auto time = req->clock_time - obj_last_access;
+        auto freq = metadatas.at(obj->obj_id).freq;
+
+        metadata.time_promoted = time < time_threshold;
+        metadata.freq_promoted = freq > freq_threshold;
+
+        if (!metadata.freq_promoted) {
+            if (freq_ghost_q.size() >= ghost_q_size / 2) {
+                freq_ghost_map.erase(freq_ghost_q.back());
+                freq_ghost_q.pop_back();
+            }
+            freq_ghost_q.push_front(obj->obj_id);
+            freq_ghost_map[obj->obj_id] = freq_ghost_q.begin();
+        }
+        if (!metadata.time_promoted) {
+            if (time_ghost_q.size() >= ghost_q_size / 2) {
+                time_ghost_map.erase(time_ghost_q.back());
+                time_ghost_q.pop_back();
+            }
+            time_ghost_q.push_front(obj->obj_id);
+            time_ghost_map[obj->obj_id] = time_ghost_q.begin();
+        }
+        bool promoted = metadata.time_promoted || metadata.freq_promoted;
+        return promoted;
+    }
+    void OnMiss(const request_t* req) {
+        auto freq_it = freq_ghost_map.find(req->obj_id);
+        if (freq_it != freq_ghost_map.end()) {
+            freq_ghost_q.erase(freq_it->second);
+            freq_ghost_map.erase(freq_it);
+            freq_threshold -= freq_step * (freq_threshold >= freq_step);
+        }
+        auto time_it = time_ghost_map.find(req->obj_id);
+        if (time_it != freq_ghost_map.end()) {
+            time_ghost_q.erase(time_it->second);
+            time_ghost_map.erase(time_it);
+            time_threshold += time_step * (time_threshold <= UINT64_MAX - time_step);
+        }
+    }
+    void OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
+        metadatas.erase(obj_evicted->obj_id);
+    }
+    std::unordered_map<obj_id_t, T4AutoMetadata> metadatas;
+    std::list<obj_id_t> freq_ghost_q;
+    std::list<obj_id_t> time_ghost_q;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> freq_ghost_map;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> time_ghost_map;
+
+   private:
+    uint64_t freq_threshold = 0;
+    uint64_t time_threshold = 60 * 5;
+    uint64_t ghost_q_size;
+
+    int64_t time_step = 60;
+    int64_t freq_step = 4;
+};
+void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
+    auto* cache_data = std::any_cast<T4AutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    cache_data->metadatas.emplace(req->obj_id, T4AutoMetadata());
+    cache_data->OnMiss(req);
+}
+void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
+    auto* cache_data = std::any_cast<T4AutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    cache_data->OnEviction(obj, req);
+}
+void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
+    auto* cache_data = std::any_cast<T4AutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    if (cache_data->metadatas.contains(req->obj_id)) {
+        cache_data->metadatas.at(req->obj_id).last_access_time = req->clock_time;
+        cache_data->metadatas.at(req->obj_id).freq++;
+    }
+}
+void OnIterationEnd(data::AdditionalCacheData& data) {
+    auto* cache_data = std::any_cast<T4AutoData>(&data.CacheSpecificData);
+    assert(cache_data);
+    cache_data->metadatas.clear();
+}
+void SetParams(
+    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
+) {
+    assert(params.contains("cache_size"));
+    uint64_t cache_size = std::stof(params.at("cache_size"));
+    uint64_t step = 1;
+    if (params.contains("step")) {
+        step = std::stof(params.at("step"));
+    }
+    float ghost_q_size = 0.1;
+    if (params.contains("ghost_size")) {
+        ghost_q_size = std::stof(params.at("ghost_size"));
+    }
+    data.CacheSpecificData.emplace<T4Auto::T4AutoData>(ghost_q_size * cache_size, step);
+}
+
+void T4AutoEvict(cache_t* cache, const request_t* req) {
+    auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
+                                      .GetAdditionalCacheData(cache);
+    Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
+    cache_obj_t* obj_to_evict = params->q_tail;
+    auto* cache_data = std::any_cast<T4AutoData>(&additional_cache_data.CacheSpecificData);
+
+    while (cache_data->IsPromoted(obj_to_evict, req)) {
+        additional_cache_data.OnPromotion(obj_to_evict, req);
+        obj_to_evict->clock.freq -= 1;
+        params->n_obj_rewritten += 1;
+        params->n_byte_rewritten += obj_to_evict->obj_size;
+        move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
+        obj_to_evict = params->q_tail;
+    }
+    additional_cache_data.OnEviction(obj_to_evict, req);
+    remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
+    cache_evict_base(cache, obj_to_evict, true);
+}
+}  // namespace T4Auto
+
+cache_t* T4AutoInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
+    auto cache = Clock_init(ccache_params, cache_specific_params);
+    cache->cache_init = T4AutoInit;
+    cache->evict = T4Auto::T4AutoEvict;
+
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
+
+    data.OnAccessCallback = T4Auto::OnAccess;
+    data.OnEvictionCallback = T4Auto::OnEviction;
+    data.OnInsertCallback = T4Auto::OnInsert;
+    data.OnIterationEndCallback = T4Auto::OnIterationEnd;
+    data.SetParamsCallback = T4Auto::SetParams;
+
+    return cache;
+}
+}  // namespace algorithm
