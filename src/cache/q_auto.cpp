@@ -52,17 +52,26 @@ class QAutoData {
 
         if (!promoted) {
             if (ghost_q.size() >= ghost_q_size) {
+                ghost_map.erase(ghost_q.back());
                 ghost_q.pop_back();
-                if (index < time_quantiles.size() - 1) {
-                    index++;
-                }
+                index += (index < time_quantiles.size() - 1);
             }
             ghost_q.push_front(obj_id);
+            ghost_map[obj_id] = ghost_q.begin();
         }
         return promoted;
     }
+    void OnMiss(const request_t* req) {
+        auto it = ghost_map.find(req->obj_id);
+        if (it != ghost_map.end()) {
+            ghost_q.erase(it->second);
+            ghost_map.erase(it);
+            index -= index > 0;
+        }
+    }
     std::unordered_map<obj_id_t, QAutoMetadata> metadatas;
     std::list<obj_id_t> ghost_q;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
     uint64_t index;
 
    private:
@@ -74,12 +83,7 @@ void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.emplace(req->obj_id, QAutoMetadata());
-    if (std::ranges::contains(cache_data->ghost_q, req->obj_id)) {
-        std::erase(cache_data->ghost_q, req->obj_id);
-        if (cache_data->index > 0) {
-            cache_data->index--;
-        }
-    }
+    cache_data->OnMiss(req);
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
     auto* cache_data = std::any_cast<QAutoData>(&data.CacheSpecificData);
