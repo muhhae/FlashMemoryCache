@@ -32,7 +32,7 @@ if [ -z "$traces_dir" ] || [ -z "$out_dir" ] || [ -z "$traces_txt" ] || [ -z "$a
 fi
 
 if $ignore_obj_size; then
-    add_param="--ignore_obj_size $add_param"
+    add_param="--ignore-obj-size $add_param"
 fi
 
 while IFS= read -r path; do
