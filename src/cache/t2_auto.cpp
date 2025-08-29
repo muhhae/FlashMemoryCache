@@ -25,7 +25,8 @@ struct T2AutoMetadata {
 };
 class T2AutoData {
    public:
-    T2AutoData(uint64_t ghost_q_size, uint64_t step = 1) : ghost_q_size(ghost_q_size) {}
+    T2AutoData(uint64_t ghost_q_size, uint64_t step = 1)
+        : ghost_q_size(std::max((uint64_t)1, ghost_q_size)) {}
     bool IsPromoted(obj_id_t obj_id, const request_t* req) {
         auto obj_last_access = metadatas.at(obj_id).last_access_time;
 

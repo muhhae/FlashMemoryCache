@@ -26,7 +26,8 @@ struct QAutoMetadata {
 };
 class QAutoData {
    public:
-    QAutoData(uint64_t ghost_q_size, float precision = 16) : ghost_q_size(ghost_q_size) {
+    QAutoData(uint64_t ghost_q_size, float precision = 16)
+        : ghost_q_size(std::max((uint64_t)1, ghost_q_size)) {
         time_quantiles.reserve(precision + 1);
         freq_quantiles.reserve(precision + 1);
         float p = 1 / precision;

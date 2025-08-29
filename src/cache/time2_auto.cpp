@@ -23,7 +23,7 @@ struct Time2AutoMetadata {
 class Time2AutoData {
    public:
     Time2AutoData(uint64_t ghost_q_size, uint64_t initial_minutes = 5, uint64_t step = 1)
-        : ghost_size(ghost_q_size), step(step), time_threshold(5 * 60) {}
+        : ghost_size(std::max((uint64_t)1, ghost_q_size)), step(step), time_threshold(5 * 60) {}
     bool IsPromoted(const cache_obj_t* obj, const request_t* req) {
         auto metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq == 0) {
