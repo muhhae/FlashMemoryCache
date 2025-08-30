@@ -46,38 +46,23 @@ class T3AutoData {
 
         metadata.time_promoted = time < time_threshold;
         metadata.freq_promoted = freq > freq_threshold;
-
-        if (!metadata.freq_promoted) {
-            if (freq_ghost_q.size() >= ghost_q_size / 2) {
-                freq_ghost_map.erase(freq_ghost_q.back());
-                freq_ghost_q.pop_back();
-            }
-            freq_ghost_q.push_front(obj->obj_id);
-            freq_ghost_map[obj->obj_id] = freq_ghost_q.begin();
-        }
-        if (!metadata.time_promoted) {
-            if (time_ghost_q.size() >= ghost_q_size / 2) {
-                time_ghost_map.erase(time_ghost_q.back());
-                time_ghost_q.pop_back();
-            }
-            time_ghost_q.push_front(obj->obj_id);
-            time_ghost_map[obj->obj_id] = time_ghost_q.begin();
-        }
         bool promoted = metadata.time_promoted || metadata.freq_promoted;
+        if (!promoted) {
+            if (ghost_q.size() >= ghost_q_size) {
+                ghost_map.erase(ghost_q.back());
+                ghost_q.pop_back();
+            }
+            ghost_q.push_front(obj->obj_id);
+            ghost_map[obj->obj_id] = ghost_q.begin();
+        }
+        return promoted;
         return promoted;
     }
     void OnMiss(const request_t* req) {
-        auto freq_it = freq_ghost_map.find(req->obj_id);
-        if (freq_it != freq_ghost_map.end()) {
-            freq_ghost_q.erase(freq_it->second);
-            freq_ghost_map.erase(freq_it);
+        auto it = ghost_map.find(req->obj_id);
+        if (it != ghost_map.end()) {
             freq_step = freq_step < 0 ? freq_step - 1 : -1;
             freq_threshold += freq_step * (freq_threshold >= abs(freq_step));
-        }
-        auto time_it = time_ghost_map.find(req->obj_id);
-        if (time_it != freq_ghost_map.end()) {
-            time_ghost_q.erase(time_it->second);
-            time_ghost_map.erase(time_it);
             time_step = time_step > 0 ? time_step + 1 : 1;
             time_threshold += time_step * (time_threshold <= UINT64_MAX - time_step);
         }
@@ -86,10 +71,8 @@ class T3AutoData {
         metadatas.erase(obj_evicted->obj_id);
     }
     std::unordered_map<obj_id_t, T3AutoMetadata> metadatas;
-    std::list<obj_id_t> freq_ghost_q;
-    std::list<obj_id_t> time_ghost_q;
-    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> freq_ghost_map;
-    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> time_ghost_map;
+    std::list<obj_id_t> ghost_q;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
 
    private:
     uint64_t freq_threshold = 0;

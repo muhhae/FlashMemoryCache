@@ -32,7 +32,7 @@ class T4AutoData {
         auto& metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq <= 0) {
             if (metadata.freq_promoted) {
-                freq_threshold += freq_step * (freq_threshold <= UINT16_MAX - freq_step);
+                freq_threshold += freq_step * (freq_threshold <= UINT64_MAX - freq_step);
             }
             if (metadata.time_promoted) {
                 time_threshold -= time_step * (time_threshold >= time_step);
@@ -46,37 +46,24 @@ class T4AutoData {
 
         metadata.time_promoted = time < time_threshold;
         metadata.freq_promoted = freq > freq_threshold;
-
-        if (!metadata.freq_promoted) {
-            if (freq_ghost_q.size() >= ghost_q_size / 2) {
-                freq_ghost_map.erase(freq_ghost_q.back());
-                freq_ghost_q.pop_back();
-            }
-            freq_ghost_q.push_front(obj->obj_id);
-            freq_ghost_map[obj->obj_id] = freq_ghost_q.begin();
-        }
-        if (!metadata.time_promoted) {
-            if (time_ghost_q.size() >= ghost_q_size / 2) {
-                time_ghost_map.erase(time_ghost_q.back());
-                time_ghost_q.pop_back();
-            }
-            time_ghost_q.push_front(obj->obj_id);
-            time_ghost_map[obj->obj_id] = time_ghost_q.begin();
-        }
         bool promoted = metadata.time_promoted || metadata.freq_promoted;
+
+        if (!promoted) {
+            if (ghost_q.size() >= ghost_q_size) {
+                ghost_map.erase(ghost_q.back());
+                ghost_q.pop_back();
+            }
+            ghost_q.push_front(obj->obj_id);
+            ghost_map[obj->obj_id] = ghost_q.begin();
+        }
         return promoted;
     }
     void OnMiss(const request_t* req) {
-        auto freq_it = freq_ghost_map.find(req->obj_id);
-        if (freq_it != freq_ghost_map.end()) {
-            freq_ghost_q.erase(freq_it->second);
-            freq_ghost_map.erase(freq_it);
+        auto it = ghost_map.find(req->obj_id);
+        if (it != ghost_map.end()) {
+            ghost_q.erase(it->second);
+            ghost_map.erase(it);
             freq_threshold -= freq_step * (freq_threshold >= freq_step);
-        }
-        auto time_it = time_ghost_map.find(req->obj_id);
-        if (time_it != freq_ghost_map.end()) {
-            time_ghost_q.erase(time_it->second);
-            time_ghost_map.erase(time_it);
             time_threshold += time_step * (time_threshold <= UINT64_MAX - time_step);
         }
     }
@@ -84,9 +71,9 @@ class T4AutoData {
         metadatas.erase(obj_evicted->obj_id);
     }
     std::unordered_map<obj_id_t, T4AutoMetadata> metadatas;
-    std::list<obj_id_t> freq_ghost_q;
+    std::list<obj_id_t> ghost_q;
     std::list<obj_id_t> time_ghost_q;
-    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> freq_ghost_map;
+    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
     std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> time_ghost_map;
 
    private:
