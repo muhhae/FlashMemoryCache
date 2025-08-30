@@ -14,25 +14,22 @@
 #include "math.hpp"
 
 namespace algorithm {
-namespace Time2Auto {
+namespace Time3Auto {
 
-struct Time2AutoMetadata {
+struct Time3AutoMetadata {
     bool reinserted = false;
     uint64_t last_access_time = 0;
 };
-class Time2AutoData {
+class Time3AutoData {
    public:
-    Time2AutoData(uint64_t ghost_q_size, uint64_t initial_minutes = 5, uint64_t step = 1)
+    Time3AutoData(uint64_t ghost_q_size, uint64_t initial_minutes = 5, uint64_t step = 1)
         : ghost_size(std::max((uint64_t)1, ghost_q_size)),
-          step(step),
+          step(step * 30),
           time_threshold(initial_minutes * 60) {}
     bool IsPromoted(const cache_obj_t* obj, const request_t* req) {
         auto metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq == 0) {
-            if (metadata.reinserted) {
-                step = step < 0 ? step - 1 : -1;
-                time_threshold += step * (time_threshold >= abs(step));
-            }
+            time_threshold -= step * (metadata.reinserted && time_threshold >= step);
             return false;
         }
 
@@ -56,15 +53,13 @@ class Time2AutoData {
         if (it != ghost_map.end()) {
             ghost_q.erase(it->second);
             ghost_map.erase(it);
-            step = step > 0 ? step + 1 : 1;
             time_threshold += step * (time_threshold <= UINT64_MAX - step);
         }
     }
     void OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
-        auto metadata = metadatas.at(obj_evicted->obj_id);
         metadatas.erase(obj_evicted->obj_id);
     }
-    std::unordered_map<obj_id_t, Time2AutoMetadata> metadatas;
+    std::unordered_map<obj_id_t, Time3AutoMetadata> metadatas;
 
     std::list<obj_id_t> ghost_q;
     std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
@@ -72,26 +67,26 @@ class Time2AutoData {
    private:
     uint64_t time_threshold;
     uint64_t ghost_size;
-    int64_t step = 1;
+    int64_t step = 30;
 };
 void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
-    auto* cache_data = std::any_cast<Time2AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<Time3AutoData>(&data.CacheSpecificData);
     assert(cache_data);
-    cache_data->metadatas.emplace(req->obj_id, Time2AutoMetadata());
+    cache_data->metadatas.emplace(req->obj_id, Time3AutoMetadata());
     cache_data->OnMiss(req);
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
-    auto* cache_data = std::any_cast<Time2AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<Time3AutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->OnEviction(obj, req);
 }
 void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
-    auto* cache_data = std::any_cast<Time2AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<Time3AutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.at(req->obj_id).last_access_time = req->clock_time;
 }
 void OnIterationEnd(data::AdditionalCacheData& data) {
-    auto* cache_data = std::any_cast<Time2AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<Time3AutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.clear();
 }
@@ -112,17 +107,17 @@ void SetParams(
     if (params.contains("ghost_size")) {
         ghost_q_size = std::stof(params.at("ghost_size"));
     }
-    data.CacheSpecificData.emplace<Time2Auto::Time2AutoData>(
+    data.CacheSpecificData.emplace<Time3Auto::Time3AutoData>(
         ghost_q_size * cache_size, initial_minutes, step
     );
 }
 
-void Time2AutoEvict(cache_t* cache, const request_t* req) {
+void Time3AutoEvict(cache_t* cache, const request_t* req) {
     auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
                                       .GetAdditionalCacheData(cache);
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
-    auto* cache_data = std::any_cast<Time2AutoData>(&additional_cache_data.CacheSpecificData);
+    auto* cache_data = std::any_cast<Time3AutoData>(&additional_cache_data.CacheSpecificData);
 
     while (cache_data->IsPromoted(obj_to_evict, req)) {
         additional_cache_data.OnPromotion(obj_to_evict, req);
@@ -136,22 +131,22 @@ void Time2AutoEvict(cache_t* cache, const request_t* req) {
     remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);
 }
-}  // namespace Time2Auto
+}  // namespace Time3Auto
 
-cache_t* Time2AutoInit(
+cache_t* Time3AutoInit(
     const common_cache_params_t ccache_params, const char* cache_specific_params
 ) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
-    cache->cache_init = Time2AutoInit;
-    cache->evict = Time2Auto::Time2AutoEvict;
+    cache->cache_init = Time3AutoInit;
+    cache->evict = Time3Auto::Time3AutoEvict;
 
     auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
 
-    data.OnAccessCallback = Time2Auto::OnAccess;
-    data.OnEvictionCallback = Time2Auto::OnEviction;
-    data.OnInsertCallback = Time2Auto::OnInsert;
-    data.OnIterationEndCallback = Time2Auto::OnIterationEnd;
-    data.SetParamsCallback = Time2Auto::SetParams;
+    data.OnAccessCallback = Time3Auto::OnAccess;
+    data.OnEvictionCallback = Time3Auto::OnEviction;
+    data.OnInsertCallback = Time3Auto::OnInsert;
+    data.OnIterationEndCallback = Time3Auto::OnIterationEnd;
+    data.SetParamsCallback = Time3Auto::SetParams;
 
     return cache;
 }
