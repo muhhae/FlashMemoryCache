@@ -26,6 +26,7 @@
 #include "cache/offline_q_clock.hpp"
 #include "cache/offline_qtime_clock.hpp"
 #include "cache/q2_auto.hpp"
+#include "cache/q3_auto.hpp"
 #include "cache/q_auto.hpp"
 #include "cache/q_clock.hpp"
 #include "cache/qand_clock.hpp"
@@ -35,6 +36,7 @@
 #include "cache/t2_auto.hpp"
 #include "cache/t3_auto.hpp"
 #include "cache/t4_auto.hpp"
+#include "cache/t5_auto.hpp"
 #include "cache/t_auto.hpp"
 #include "cache/time2_auto.hpp"
 #include "cache/time3_auto.hpp"
@@ -60,10 +62,12 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"qand-clock", algorithm::QANDClockInit},
         {"qauto", algorithm::QAutoInit},
         {"q2auto", algorithm::Q2AutoInit},
+        {"q3auto", algorithm::Q3AutoInit},
         {"tauto", algorithm::TAutoInit},
         {"t2auto", algorithm::T2AutoInit},
         {"t3auto", algorithm::T3AutoInit},
         {"t4auto", algorithm::T4AutoInit},
+        {"t5auto", algorithm::T5AutoInit},
         {"time-auto", algorithm::TimeAutoInit},
         {"time2-auto", algorithm::Time2AutoInit},
         {"time3-auto", algorithm::Time3AutoInit},
