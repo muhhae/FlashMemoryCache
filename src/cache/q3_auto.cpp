@@ -58,9 +58,7 @@ class Q3AutoData {
         if (obj->clock.freq <= 0) {
             TrackTime(time);
             uint64_t time_threshold = time_quantiles[time_index].get();
-            std::cout << "time: " << time << "\n";
-            std::cout << "time_index: " << time_index << "\n";
-            std::cout << "time_threshold: " << time_threshold << "\n";
+
             if (time >= time_threshold) {
                 if (time_ghost_q.size() >= ghost_q_size / 2) {
                     time_ghost_map.erase(time_ghost_q.back());
@@ -68,18 +66,16 @@ class Q3AutoData {
                 }
                 time_ghost_q.push_front(obj->obj_id);
                 time_ghost_map[obj->obj_id] = time_ghost_q.begin();
-                std::cout << "Not Promoted\n";
+
                 return false;
             }
-            std::cout << "Promoted\n";
+
             return true;
         }
 
         TrackFreq(freq);
         uint64_t freq_threshold = freq_quantiles[freq_index].get();
-        std::cout << "freq: " << freq << "\n";
-        std::cout << "freq_index: " << freq_index << "\n";
-        std::cout << "freq_threshold: " << freq_threshold << "\n";
+
         if (freq <= freq_quantiles[freq_index].get()) {
             if (freq_ghost_q.size() >= ghost_q_size / 2) {
                 freq_ghost_map.erase(freq_ghost_q.back());
@@ -87,10 +83,10 @@ class Q3AutoData {
             }
             freq_ghost_q.push_front(obj->obj_id);
             freq_ghost_map[obj->obj_id] = freq_ghost_q.begin();
-            std::cout << "Not Promoted\n";
+
             return false;
         }
-        std::cout << "Promoted\n";
+
         return true;
     }
     void OnMiss(const request_t* req) {
