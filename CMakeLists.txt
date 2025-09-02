@@ -69,6 +69,7 @@ add_library(my_cache_sim
   src/cache/t4_auto.cpp
   src/cache/t5_auto.cpp
   src/cache/t6_auto.cpp
+  src/cache/t7_auto.cpp
   src/cache/t_auto.cpp
   src/cache/time_auto.cpp
   src/cache/time2_auto.cpp
