@@ -76,6 +76,7 @@ add_library(my_cache_sim
   src/cache/time3_auto.cpp
   src/cache/qor_clock.cpp
   src/cache/qand_clock.cpp
+  src/cache/qand_clock_v2.cpp
   src/cache/qtime_clock.cpp
   src/cache/qtime_excl_clock.cpp
   # src/cache/decayed_clock.cpp
