@@ -4,8 +4,10 @@
 #include <libCacheSim/request.h>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <list>
 #include <string>
 #include <unordered_map>
@@ -24,18 +26,19 @@ struct T5AutoMetadata {
 };
 class T5AutoData {
    public:
-    T5AutoData(uint64_t ghost_q_size, uint64_t step = 1)
+    T5AutoData(uint64_t ghost_q_size, float time_step, float freq_step)
         : ghost_q_size(std::max((uint64_t)1, ghost_q_size)),
-          time_step(step * 45),
-          freq_step(step) {}
+          time_step(time_step),
+          freq_step(freq_step) {}
     bool IsPromoted(cache_obj_t* obj, const request_t* req) {
         auto& metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq <= 0) {
             if (metadata.freq_promoted) {
-                freq_threshold += freq_step * (freq_threshold <= UINT64_MAX - freq_step);
+                freq_threshold = freq_threshold * freq_step;
             }
             if (metadata.time_promoted) {
-                time_threshold -= time_step * (time_threshold >= time_step);
+                time_threshold = time_threshold / time_step;
+                time_threshold = std::max(1.0, time_threshold);
             }
             return false;
         }
@@ -44,10 +47,14 @@ class T5AutoData {
         auto time = req->clock_time - obj_last_access;
         auto freq = metadatas.at(obj->obj_id).freq;
 
+        // std::cout << "time: " << time << "\n";
+        // std::cout << "time_threshold: " << time_threshold << "\n";
+        // std::cout << "freq: " << freq << "\n";
+        // std::cout << "freq_threshold: " << freq_threshold << "\n";
+
         metadata.time_promoted = time < time_threshold;
         metadata.freq_promoted = freq > freq_threshold;
         bool promoted = metadata.time_promoted || metadata.freq_promoted;
-
         if (!promoted) {
             if (ghost_q.size() >= ghost_q_size) {
                 ghost_map.erase(ghost_q.back());
@@ -61,10 +68,9 @@ class T5AutoData {
     void OnMiss(const request_t* req) {
         auto it = ghost_map.find(req->obj_id);
         if (it != ghost_map.end()) {
-            ghost_q.erase(it->second);
-            ghost_map.erase(it);
-            freq_threshold -= freq_step * (freq_threshold >= freq_step);
-            time_threshold += time_step * (time_threshold <= UINT64_MAX - time_step);
+            freq_threshold = freq_threshold / freq_step;
+            time_threshold = time_threshold * time_step;
+            freq_threshold = std::max(1.0, freq_threshold);
         }
     }
     void OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
@@ -72,17 +78,15 @@ class T5AutoData {
     }
     std::unordered_map<obj_id_t, T5AutoMetadata> metadatas;
     std::list<obj_id_t> ghost_q;
-    std::list<obj_id_t> time_ghost_q;
     std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
-    std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> time_ghost_map;
 
    private:
-    uint64_t freq_threshold = 0;
-    uint64_t time_threshold = 60 * 5;
     uint64_t ghost_q_size;
 
-    int64_t time_step = 60;
-    int64_t freq_step = 4;
+    double freq_threshold = 1;
+    double time_threshold = 60;
+    double time_step;
+    double freq_step;
 };
 void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
     auto* cache_data = std::any_cast<T5AutoData>(&data.CacheSpecificData);
@@ -113,15 +117,12 @@ void SetParams(
 ) {
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
-    uint64_t step = 1;
-    if (params.contains("step")) {
-        step = std::stof(params.at("step"));
-    }
-    float ghost_q_size = 0.1;
-    if (params.contains("ghost_size")) {
-        ghost_q_size = std::stof(params.at("ghost_size"));
-    }
-    data.CacheSpecificData.emplace<T5Auto::T5AutoData>(ghost_q_size * cache_size, step);
+    float time_step = params.contains("time_step") ? std::stof(params.at("time_step")) : 1.2;
+    float freq_step = params.contains("freq_step") ? std::stof(params.at("freq_step")) : 1.2;
+    float ghost_q_size = params.contains("ghost_size") ? std::stof(params.at("ghost_size")) : 0.1f;
+    data.CacheSpecificData.emplace<T5Auto::T5AutoData>(
+        ghost_q_size * cache_size, time_step, freq_step
+    );
 }
 
 void T5AutoEvict(cache_t* cache, const request_t* req) {
