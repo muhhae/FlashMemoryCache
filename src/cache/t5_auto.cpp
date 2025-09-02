@@ -117,8 +117,8 @@ void SetParams(
 ) {
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
-    float time_step = params.contains("time_step") ? std::stof(params.at("time_step")) : 1.2;
-    float freq_step = params.contains("freq_step") ? std::stof(params.at("freq_step")) : 1.2;
+    float time_step = params.contains("time_step") ? std::stof(params.at("time_step")) : 1.5;
+    float freq_step = params.contains("freq_step") ? std::stof(params.at("freq_step")) : 1.5;
     float ghost_q_size = params.contains("ghost_size") ? std::stof(params.at("ghost_size")) : 0.1f;
     data.CacheSpecificData.emplace<T5Auto::T5AutoData>(
         ghost_q_size * cache_size, time_step, freq_step
