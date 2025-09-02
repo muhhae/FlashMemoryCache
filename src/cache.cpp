@@ -37,6 +37,7 @@
 #include "cache/t3_auto.hpp"
 #include "cache/t4_auto.hpp"
 #include "cache/t5_auto.hpp"
+#include "cache/t6_auto.hpp"
 #include "cache/t_auto.hpp"
 #include "cache/time2_auto.hpp"
 #include "cache/time3_auto.hpp"
@@ -68,6 +69,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"t3auto", algorithm::T3AutoInit},
         {"t4auto", algorithm::T4AutoInit},
         {"t5auto", algorithm::T5AutoInit},
+        {"t6auto", algorithm::T6AutoInit},
         {"time-auto", algorithm::TimeAutoInit},
         {"time2-auto", algorithm::Time2AutoInit},
         {"time3-auto", algorithm::Time3AutoInit},

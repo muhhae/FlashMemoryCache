@@ -15,17 +15,17 @@
 #include "math.hpp"
 
 namespace algorithm {
-namespace T5Auto {
+namespace T6Auto {
 
-struct T5AutoMetadata {
+struct T6AutoMetadata {
     uint64_t last_access_time = 0;
     uint64_t freq = 0;
     bool freq_promoted = 0;
     bool time_promoted = 0;
 };
-class T5AutoData {
+class T6AutoData {
    public:
-    T5AutoData(uint64_t ghost_q_size, float time_step, float freq_step)
+    T6AutoData(uint64_t ghost_q_size, float time_step, float freq_step)
         : ghost_q_size(std::max((uint64_t)1, ghost_q_size)),
           time_step(time_step),
           freq_step(freq_step) {}
@@ -62,7 +62,6 @@ class T5AutoData {
             ghost_q.push_front(obj->obj_id);
             ghost_map[obj->obj_id] = ghost_q.begin();
         }
-        metadata.freq /= 2;
         return promoted;
     }
     void OnMiss(const request_t* req) {
@@ -76,7 +75,7 @@ class T5AutoData {
     void OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
         metadatas.erase(obj_evicted->obj_id);
     }
-    std::unordered_map<obj_id_t, T5AutoMetadata> metadatas;
+    std::unordered_map<obj_id_t, T6AutoMetadata> metadatas;
     std::list<obj_id_t> ghost_q;
     std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
 
@@ -89,18 +88,18 @@ class T5AutoData {
     double freq_step;
 };
 void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
-    auto* cache_data = std::any_cast<T5AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<T6AutoData>(&data.CacheSpecificData);
     assert(cache_data);
-    cache_data->metadatas.emplace(req->obj_id, T5AutoMetadata());
+    cache_data->metadatas.emplace(req->obj_id, T6AutoMetadata());
     cache_data->OnMiss(req);
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
-    auto* cache_data = std::any_cast<T5AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<T6AutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->OnEviction(obj, req);
 }
 void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
-    auto* cache_data = std::any_cast<T5AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<T6AutoData>(&data.CacheSpecificData);
     assert(cache_data);
     if (cache_data->metadatas.contains(req->obj_id)) {
         cache_data->metadatas.at(req->obj_id).last_access_time = req->clock_time;
@@ -108,7 +107,7 @@ void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
     }
 }
 void OnIterationEnd(data::AdditionalCacheData& data) {
-    auto* cache_data = std::any_cast<T5AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<T6AutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.clear();
 }
@@ -120,17 +119,17 @@ void SetParams(
     float time_step = params.contains("time_step") ? std::stof(params.at("time_step")) : 1.2;
     float freq_step = params.contains("freq_step") ? std::stof(params.at("freq_step")) : 1.2;
     float ghost_q_size = params.contains("ghost_size") ? std::stof(params.at("ghost_size")) : 0.1f;
-    data.CacheSpecificData.emplace<T5Auto::T5AutoData>(
+    data.CacheSpecificData.emplace<T6Auto::T6AutoData>(
         ghost_q_size * cache_size, time_step, freq_step
     );
 }
 
-void T5AutoEvict(cache_t* cache, const request_t* req) {
+void T6AutoEvict(cache_t* cache, const request_t* req) {
     auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
                                       .GetAdditionalCacheData(cache);
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
-    auto* cache_data = std::any_cast<T5AutoData>(&additional_cache_data.CacheSpecificData);
+    auto* cache_data = std::any_cast<T6AutoData>(&additional_cache_data.CacheSpecificData);
 
     while (cache_data->IsPromoted(obj_to_evict, req)) {
         additional_cache_data.OnPromotion(obj_to_evict, req);
@@ -144,20 +143,20 @@ void T5AutoEvict(cache_t* cache, const request_t* req) {
     remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);
 }
-}  // namespace T5Auto
+}  // namespace T6Auto
 
-cache_t* T5AutoInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
+cache_t* T6AutoInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
-    cache->cache_init = T5AutoInit;
-    cache->evict = T5Auto::T5AutoEvict;
+    cache->cache_init = T6AutoInit;
+    cache->evict = T6Auto::T6AutoEvict;
 
     auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
 
-    data.OnAccessCallback = T5Auto::OnAccess;
-    data.OnEvictionCallback = T5Auto::OnEviction;
-    data.OnInsertCallback = T5Auto::OnInsert;
-    data.OnIterationEndCallback = T5Auto::OnIterationEnd;
-    data.SetParamsCallback = T5Auto::SetParams;
+    data.OnAccessCallback = T6Auto::OnAccess;
+    data.OnEvictionCallback = T6Auto::OnEviction;
+    data.OnInsertCallback = T6Auto::OnInsert;
+    data.OnIterationEndCallback = T6Auto::OnIterationEnd;
+    data.SetParamsCallback = T6Auto::SetParams;
 
     return cache;
 }
