@@ -189,19 +189,11 @@ void Simulate(
         Flash.self
     );
 
-    if (DRAM_data.SetParamsCallback) {
-        o.cache_params["cache_size"] = std::to_string(DRAM.self->cache_size);
-        DRAM_data.SetParamsCallback(DRAM_data, o.cache_params);
-    }
-    if (Flash_data.SetParamsCallback) {
-        o.cache_params["cache_size"] = std::to_string(Flash.self->cache_size);
-        Flash_data.SetParamsCallback(Flash_data, o.cache_params);
-    }
     uint64_t req_counter = 0;
     uint64_t req_limit = o.req_limit * approximate_request_count;
 
     for (size_t i = 0; i < o.max_iteration; ++i) {
-        Cache->SetupIteration(i == o.max_iteration - 1 && o.generate_datasets);
+        Cache->SetupIteration(i == o.max_iteration - 1 && o.generate_datasets, o.cache_params);
         while (read_one_req(reader, req) == 0) {
             if (o.req_limit != 1 && req_counter >= req_limit)
                 break;

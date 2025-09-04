@@ -19,7 +19,8 @@ struct QClockMetadata {
 };
 class QClockData {
    public:
-    QClockData(float p = 0.1) : quantile(p) {}
+    QClockData(float p = 0.1) : quantile(p) {
+    }
     uint64_t GetQuantile(uint64_t new_freq) {
         quantile.add(new_freq);
         return quantile.get();
@@ -50,9 +51,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     assert(cache_data);
     cache_data->metadatas.clear();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     float p = 0.1;
     if (params.contains("p")) {
         p = std::stof(params.at("p"));

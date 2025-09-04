@@ -125,8 +125,7 @@ class AdditionalCacheData {
     );
 
    public:
-    std::function<
-        void(AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params)>
+    std::function<void(cache_t* cache, std::unordered_map<std::string, std::string>& params)>
         SetParamsCallback;
     std::function<void(AdditionalCacheData& data)> OnIterationStartCallback;
     std::function<void(AdditionalCacheData& data)> OnIterationEndCallback;
@@ -172,8 +171,12 @@ class AdditionalCacheData {
 };
 class AdditionalCacheDataStorage {
    public:
-    AdditionalCacheData& operator[](cache_t* cache) { return storage[cache]; }
-    AdditionalCacheData& GetAdditionalCacheData(cache_t* cache) { return storage[cache]; }
+    AdditionalCacheData& operator[](cache_t* cache) {
+        return storage[cache];
+    }
+    AdditionalCacheData& GetAdditionalCacheData(cache_t* cache) {
+        return storage[cache];
+    }
 
     void TransferOwnership(cache_t* source, cache_t* destination) {
         if (source == destination)

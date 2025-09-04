@@ -1,5 +1,6 @@
 #include <config.h>
 #include <libCacheSim/cache.h>
+#include <libCacheSim/cacheObj.h>
 #include <libCacheSim/evictionAlgo.h>
 #include <libCacheSim/request.h>
 #include <sys/types.h>
@@ -21,7 +22,8 @@ struct QORClockMetadata {
 };
 class QORClockData {
    public:
-    QORClockData(float p = 0.1) : time_quantile(1 - p), freq_quantile(p) {}
+    QORClockData(float p = 0.1) : time_quantile(1 - p), freq_quantile(p) {
+    }
     void Track(uint64_t new_time, uint64_t new_freq) {
         time_quantile.add(new_time);
         freq_quantile.add(new_freq);
@@ -58,9 +60,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     assert(cache_data);
     cache_data->metadatas.clear();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     float p = 0.1;
     if (params.contains("p")) {
         p = std::stof(params.at("p"));

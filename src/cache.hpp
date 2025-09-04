@@ -44,7 +44,7 @@ class ChainedCache {
     );
     bool Get(const request_t* req);
     bool Find(const request_t* req);
-    void SetupIteration(bool generate_datasets);
+    void SetupIteration(bool generate_datasets, std::unordered_map<std::string, std::string>);
     void EndIteration();
     void Admit(const cache_obj_t* obj, const uint64_t freq);
     void Admit(const request_t* req, const uint64_t freq);

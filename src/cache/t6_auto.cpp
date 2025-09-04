@@ -28,7 +28,8 @@ class T6AutoData {
     T6AutoData(uint64_t ghost_q_size, float time_step, float freq_step)
         : ghost_q_size(std::max((uint64_t)1, ghost_q_size)),
           time_step(time_step),
-          freq_step(freq_step) {}
+          freq_step(freq_step) {
+    }
     bool IsPromoted(cache_obj_t* obj, const request_t* req) {
         auto& metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq <= 0) {
@@ -111,9 +112,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     assert(cache_data);
     cache_data->metadatas.clear();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
     float time_step = params.contains("time_step") ? std::stof(params.at("time_step")) : 1.5;

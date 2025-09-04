@@ -79,6 +79,7 @@ add_library(my_cache_sim
   src/cache/qand_clock_v2.cpp
   src/cache/qtime_clock.cpp
   src/cache/qtime_excl_clock.cpp
+  src/cache/sxfifo.cpp
   # src/cache/decayed_clock.cpp
   # src/cache/dist_clock.cpp
 )

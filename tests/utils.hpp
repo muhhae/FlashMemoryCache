@@ -60,7 +60,7 @@ static nlohmann::json LayeredCacheSimulation(
         Caches[i].next = &Caches[i + 1];
     }
     for (size_t i = 0; i < 2; ++i) {
-        Caches[0].SetupIteration(false);
+        Caches[0].SetupIteration(false, {});
         while (read_one_req(reader, req) == 0) {
             Caches[0].Get(req);
         }

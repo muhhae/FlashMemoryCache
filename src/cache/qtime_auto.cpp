@@ -4,98 +4,95 @@
 #include <libCacheSim/request.h>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
+#include <ctime>
 #include <list>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "additional_data.hpp"
 #include "math.hpp"
 
 namespace algorithm {
-namespace T3Auto {
+namespace QTimeAuto {
 
-struct T3AutoMetadata {
+struct QTimeAutoMetadata {
     uint64_t last_access_time = 0;
     uint64_t freq = 0;
-    bool freq_promoted = 0;
-    bool time_promoted = 0;
 };
-class T3AutoData {
+class QTimeAutoData {
    public:
-    T3AutoData(uint64_t ghost_q_size, uint64_t step = 1)
+    QTimeAutoData(uint64_t ghost_q_size, float precision = 16)
         : ghost_q_size(std::max((uint64_t)1, ghost_q_size)) {
-    }
-    bool IsPromoted(cache_obj_t* obj, const request_t* req) {
-        auto& metadata = metadatas.at(obj->obj_id);
-        if (obj->clock.freq <= 0) {
-            if (metadata.freq_promoted) {
-                freq_step = freq_step > 0 ? freq_step + 1 : 1;
-                freq_threshold += freq_step * (freq_threshold <= UINT16_MAX - freq_step);
-            }
-            if (metadata.time_promoted) {
-                time_step = time_step < 0 ? time_step - 1 : -1;
-                time_threshold += time_step * (time_threshold >= abs(time_step));
-            }
-            return false;
+        time_quantiles.reserve(precision + 1);
+        freq_quantiles.reserve(precision + 1);
+        float p = 1 / precision;
+        for (size_t i = 0; i <= precision; i++) {
+            time_quantiles.emplace_back(1 - p * i);
+            freq_quantiles.emplace_back(p * i);
         }
-
-        auto obj_last_access = metadata.last_access_time;
+        index = precision / 2;
+    }
+    void Track(uint64_t new_time, uint64_t new_freq) {
+        for (size_t i = 0; i < time_quantiles.size(); i++) {
+            time_quantiles[i].add(new_time);
+            freq_quantiles[i].add(new_freq);
+        }
+    }
+    bool IsPromoted(obj_id_t obj_id, const request_t* req) {
+        auto obj_last_access = metadatas.at(obj_id).last_access_time;
         auto time = req->clock_time - obj_last_access;
-        auto freq = metadatas.at(obj->obj_id).freq;
+        auto freq = metadatas.at(obj_id).freq;
 
-        metadata.time_promoted = time < time_threshold;
-        metadata.freq_promoted = freq > freq_threshold;
-        bool promoted = metadata.time_promoted || metadata.freq_promoted;
+        Track(time, freq);
+        bool promoted = time < time_quantiles[index].get() || freq > freq_quantiles[index].get();
+
         if (!promoted) {
             if (ghost_q.size() >= ghost_q_size) {
                 ghost_map.erase(ghost_q.back());
                 ghost_q.pop_back();
+                index += (index < time_quantiles.size() - 1);
             }
-            ghost_q.push_front(obj->obj_id);
-            ghost_map[obj->obj_id] = ghost_q.begin();
+            ghost_q.push_front(obj_id);
+            ghost_map[obj_id] = ghost_q.begin();
         }
-        return promoted;
         return promoted;
     }
     void OnMiss(const request_t* req) {
         auto it = ghost_map.find(req->obj_id);
         if (it != ghost_map.end()) {
-            freq_step = freq_step < 0 ? freq_step - 1 : -1;
-            freq_threshold += freq_step * (freq_threshold >= abs(freq_step));
-            time_step = time_step > 0 ? time_step + 1 : 1;
-            time_threshold += time_step * (time_threshold <= UINT64_MAX - time_step);
+            ghost_q.erase(it->second);
+            ghost_map.erase(it);
+            index -= index > 0;
         }
     }
-    void OnEviction(const cache_obj_t* obj_evicted, const request_t* req) {
-        metadatas.erase(obj_evicted->obj_id);
-    }
-    std::unordered_map<obj_id_t, T3AutoMetadata> metadatas;
+    std::unordered_map<obj_id_t, QTimeAutoMetadata> metadatas;
     std::list<obj_id_t> ghost_q;
     std::unordered_map<obj_id_t, std::list<obj_id_t>::iterator> ghost_map;
+    uint64_t index;
 
    private:
-    uint64_t freq_threshold = 0;
-    uint64_t time_threshold = 60 * 5;
+    std::vector<P2Quantile> time_quantiles;
+    std::vector<P2Quantile> freq_quantiles;
     uint64_t ghost_q_size;
-
-    int64_t time_step = 0;
-    int64_t freq_step = 0;
 };
 void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
-    auto* cache_data = std::any_cast<T3AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<QTimeAutoData>(&data.CacheSpecificData);
     assert(cache_data);
-    cache_data->metadatas.emplace(req->obj_id, T3AutoMetadata());
+    cache_data->metadatas.emplace(req->obj_id, QTimeAutoMetadata());
     cache_data->OnMiss(req);
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
-    auto* cache_data = std::any_cast<T3AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<QTimeAutoData>(&data.CacheSpecificData);
     assert(cache_data);
-    cache_data->OnEviction(obj, req);
+    cache_data->metadatas.erase(req->obj_id);
 }
 void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
-    auto* cache_data = std::any_cast<T3AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<QTimeAutoData>(&data.CacheSpecificData);
     assert(cache_data);
     if (cache_data->metadatas.contains(req->obj_id)) {
         cache_data->metadatas.at(req->obj_id).last_access_time = req->clock_time;
@@ -103,7 +100,7 @@ void OnAccess(data::AdditionalCacheData& data, const request_t* req) {
     }
 }
 void OnIterationEnd(data::AdditionalCacheData& data) {
-    auto* cache_data = std::any_cast<T3AutoData>(&data.CacheSpecificData);
+    auto* cache_data = std::any_cast<QTimeAutoData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.clear();
 }
@@ -111,25 +108,28 @@ void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& par
     auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
-    uint64_t step = 1;
-    if (params.contains("step")) {
-        step = std::stof(params.at("step"));
+    uint64_t precision = 16;
+    if (params.contains("precision")) {
+        precision = std::stof(params.at("precision"));
     }
     float ghost_q_size = 0.1;
     if (params.contains("ghost_size")) {
         ghost_q_size = std::stof(params.at("ghost_size"));
     }
-    data.CacheSpecificData.emplace<T3Auto::T3AutoData>(ghost_q_size * cache_size, step);
+    data.CacheSpecificData.emplace<QTimeAuto::QTimeAutoData>(ghost_q_size * cache_size, precision);
 }
 
-void T3AutoEvict(cache_t* cache, const request_t* req) {
+void QTimeAutoEvict(cache_t* cache, const request_t* req) {
     auto& additional_cache_data = data::AdditionalCacheDataStorage::GetStorage()
                                       .GetAdditionalCacheData(cache);
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
-    auto* cache_data = std::any_cast<T3AutoData>(&additional_cache_data.CacheSpecificData);
+    auto* cache_data = std::any_cast<QTimeAutoData>(&additional_cache_data.CacheSpecificData);
 
-    while (cache_data->IsPromoted(obj_to_evict, req)) {
+    while (obj_to_evict->clock.freq >= 1) {
+        if (!cache_data->IsPromoted(obj_to_evict->obj_id, req)) {
+            break;
+        }
         additional_cache_data.OnPromotion(obj_to_evict, req);
         obj_to_evict->clock.freq -= 1;
         params->n_obj_rewritten += 1;
@@ -141,20 +141,22 @@ void T3AutoEvict(cache_t* cache, const request_t* req) {
     remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);
 }
-}  // namespace T3Auto
+}  // namespace QTimeAuto
 
-cache_t* T3AutoInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
+cache_t* QTimeAutoInit(
+    const common_cache_params_t ccache_params, const char* cache_specific_params
+) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
-    cache->cache_init = T3AutoInit;
-    cache->evict = T3Auto::T3AutoEvict;
+    cache->cache_init = QTimeAutoInit;
+    cache->evict = QTimeAuto::QTimeAutoEvict;
 
     auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
 
-    data.OnAccessCallback = T3Auto::OnAccess;
-    data.OnEvictionCallback = T3Auto::OnEviction;
-    data.OnInsertCallback = T3Auto::OnInsert;
-    data.OnIterationEndCallback = T3Auto::OnIterationEnd;
-    data.SetParamsCallback = T3Auto::SetParams;
+    data.OnAccessCallback = QTimeAuto::OnAccess;
+    data.OnEvictionCallback = QTimeAuto::OnEviction;
+    data.OnInsertCallback = QTimeAuto::OnInsert;
+    data.OnIterationEndCallback = QTimeAuto::OnIterationEnd;
+    data.SetParamsCallback = QTimeAuto::SetParams;
 
     return cache;
 }

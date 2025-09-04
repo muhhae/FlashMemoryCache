@@ -104,9 +104,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     assert(cache_data);
     cache_data->metadatas.clear();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
     uint64_t precision = 16;

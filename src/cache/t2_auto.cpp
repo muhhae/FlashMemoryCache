@@ -26,7 +26,8 @@ struct T2AutoMetadata {
 class T2AutoData {
    public:
     T2AutoData(uint64_t ghost_q_size, uint64_t step = 1)
-        : ghost_q_size(std::max((uint64_t)1, ghost_q_size)) {}
+        : ghost_q_size(std::max((uint64_t)1, ghost_q_size)) {
+    }
     bool IsPromoted(obj_id_t obj_id, const request_t* req) {
         auto obj_last_access = metadatas.at(obj_id).last_access_time;
 
@@ -120,9 +121,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     assert(cache_data);
     cache_data->metadatas.clear();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
     uint64_t step = 1;

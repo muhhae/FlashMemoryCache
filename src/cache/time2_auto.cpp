@@ -25,7 +25,8 @@ class Time2AutoData {
     Time2AutoData(uint64_t ghost_q_size, uint64_t initial_minutes = 5, uint64_t step = 1)
         : ghost_size(std::max((uint64_t)1, ghost_q_size)),
           step(step),
-          time_threshold(initial_minutes * 60) {}
+          time_threshold(initial_minutes * 60) {
+    }
     bool IsPromoted(const cache_obj_t* obj, const request_t* req) {
         auto metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq == 0) {
@@ -95,9 +96,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     assert(cache_data);
     cache_data->metadatas.clear();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
     uint64_t step = 1;

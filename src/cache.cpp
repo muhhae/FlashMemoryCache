@@ -34,6 +34,7 @@
 #include "cache/qor_clock.hpp"
 #include "cache/qtime_clock.hpp"
 #include "cache/qtime_excl_clock.hpp"
+#include "cache/sxfifo.hpp"
 #include "cache/t2_auto.hpp"
 #include "cache/t3_auto.hpp"
 #include "cache/t4_auto.hpp"
@@ -83,6 +84,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"offline-clock-v2", algorithm::OfflineClockV2Init},
         {"lru", algorithm::LRUInit},
         {"clock", algorithm::ClockInit},
+        {"sxfifo", algorithm::SxFIFOInit},
         {"slru", SLRU_init},
         {"gdsf", GDSF_init},
     };
@@ -139,7 +141,9 @@ ChainedCache::ChainedCache(
         }
     }
 }
-void ChainedCache::SetupIteration(bool generate_datasets) {
+void ChainedCache::SetupIteration(
+    bool generate_datasets, std::unordered_map<std::string, std::string> params
+) {
     tmp = clone_cache(self);
 
     auto& additional_cache_data_storage = data::AdditionalCacheDataStorage::GetStorage();
@@ -164,12 +168,15 @@ void ChainedCache::SetupIteration(bool generate_datasets) {
     tmp_additional_cache_data.metric.req = 0;
     tmp_additional_cache_data.metric.reinserted = 0;
     tmp_additional_cache_data.metric.inserted = 0;
-
     tmp_additional_cache_data.generate_datasets = generate_datasets;
 
+    if (tmp_additional_cache_data.SetParamsCallback) {
+        params["cache_size"] = std::to_string(self->cache_size);
+        tmp_additional_cache_data.SetParamsCallback(tmp, params);
+    }
     if (next) {
         tmp_additional_cache_data.next = next;
-        next->SetupIteration(generate_datasets);
+        next->SetupIteration(generate_datasets, params);
     }
 }
 void ChainedCache::EndIteration() {

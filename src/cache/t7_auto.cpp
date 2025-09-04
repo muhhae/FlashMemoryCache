@@ -25,7 +25,8 @@ struct T7AutoMetadata {
 class T7AutoData {
    public:
     T7AutoData(uint64_t ghost_q_size, uint64_t step = 1)
-        : ghost_q_size(std::max((uint64_t)1, ghost_q_size)) {}
+        : ghost_q_size(std::max((uint64_t)1, ghost_q_size)) {
+    }
     bool IsPromoted(cache_obj_t* obj, const request_t* req) {
         auto& metadata = metadatas.at(obj->obj_id);
         if (obj->clock.freq <= 0) {
@@ -106,9 +107,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     assert(cache_data);
     cache_data->metadatas.clear();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     assert(params.contains("cache_size"));
     uint64_t cache_size = std::stof(params.at("cache_size"));
     uint64_t step = 1;

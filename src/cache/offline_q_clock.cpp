@@ -33,8 +33,12 @@ class OfflineQClockData {
         std::nth_element(freqs.begin(), it, freqs.end());
         threshold = *it;
     }
-    uint64_t GetQuantile() { return threshold; }
-    bool isSettled() { return settled; }
+    uint64_t GetQuantile() {
+        return threshold;
+    }
+    bool isSettled() {
+        return settled;
+    }
     float p = 0.1;
     std::unordered_map<obj_id_t, OfflineQClockMetadata> metadatas;
 
@@ -65,9 +69,8 @@ void OnIterationEnd(data::AdditionalCacheData& data) {
     cache_data->metadatas.clear();
     cache_data->settle();
 }
-void SetParams(
-    data::AdditionalCacheData& data, std::unordered_map<std::string, std::string>& params
-) {
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
     auto* cache_data = std::any_cast<OfflineQClockData>(&data.CacheSpecificData);
     assert(cache_data);
     if (params.contains("p")) {
