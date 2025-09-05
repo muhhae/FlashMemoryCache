@@ -16,11 +16,11 @@
 #include "math.hpp"
 
 namespace algorithm {
-namespace S3FClockV2 {
+namespace S3FClockSequential {
 
-class S3FClockV2 {
+class S3FClockSequential {
    public:
-    S3FClockV2() = default;
+    S3FClockSequential() = default;
     void Initialize(cache_t* cache, const std::unordered_map<std::string, std::string> params) {
         hand_position = params.contains("h_position") ? std::stof(params.at("h_position")) : 0.1;
         assert(hand_position > 0 && hand_position < 1);
@@ -87,13 +87,15 @@ class S3FClockV2 {
 // ****                                                               ****
 // ***********************************************************************
 
-static void S3FClockV2_free(cache_t* cache);
-static bool S3FClockV2_get(cache_t* cache, const request_t* req);
-static cache_obj_t* S3FClockV2_find(cache_t* cache, const request_t* req, const bool update_cache);
-static cache_obj_t* S3FClockV2_insert(cache_t* cache, const request_t* req);
-static cache_obj_t* S3FClockV2_to_evict(cache_t* cache, const request_t* req);
-static void S3FClockV2_evict(cache_t* cache, const request_t* req);
-static bool S3FClockV2_remove(cache_t* cache, const obj_id_t obj_id);
+static void S3FClockSequential_free(cache_t* cache);
+static bool S3FClockSequential_get(cache_t* cache, const request_t* req);
+static cache_obj_t* S3FClockSequential_find(
+    cache_t* cache, const request_t* req, const bool update_cache
+);
+static cache_obj_t* S3FClockSequential_insert(cache_t* cache, const request_t* req);
+static cache_obj_t* S3FClockSequential_to_evict(cache_t* cache, const request_t* req);
+static void S3FClockSequential_evict(cache_t* cache, const request_t* req);
+static bool S3FClockSequential_remove(cache_t* cache, const obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -102,19 +104,19 @@ static bool S3FClockV2_remove(cache_t* cache, const obj_id_t obj_id);
 // ****                       init, free, get                         ****
 // ***********************************************************************
 
-cache_t* S3FClockV2_init(
+cache_t* S3FClockSequential_init(
     const common_cache_params_t ccache_params, const char* cache_specific_params
 ) {
-    cache_t* cache = cache_struct_init("S3FClockV2", ccache_params, cache_specific_params);
-    cache->eviction_params = new S3FClockV2();
-    cache->cache_init = S3FClockV2_init;
-    cache->cache_free = S3FClockV2_free;
+    cache_t* cache = cache_struct_init("S3FClockSequential", ccache_params, cache_specific_params);
+    cache->eviction_params = new S3FClockSequential();
+    cache->cache_init = S3FClockSequential_init;
+    cache->cache_free = S3FClockSequential_free;
 
-    cache->get = S3FClockV2_get;
-    cache->find = S3FClockV2_find;
-    cache->insert = S3FClockV2_insert;
-    cache->evict = S3FClockV2_evict;
-    cache->remove = S3FClockV2_remove;
+    cache->get = S3FClockSequential_get;
+    cache->find = S3FClockSequential_find;
+    cache->insert = S3FClockSequential_insert;
+    cache->evict = S3FClockSequential_evict;
+    cache->remove = S3FClockSequential_remove;
 
     if (ccache_params.consider_obj_metadata) {
         cache->obj_md_size = 8;
@@ -125,46 +127,48 @@ cache_t* S3FClockV2_init(
     return cache;
 }
 
-static void S3FClockV2_free(cache_t* cache) {
-    auto* data = static_cast<S3FClockV2*>(cache->eviction_params);
+static void S3FClockSequential_free(cache_t* cache) {
+    auto* data = static_cast<S3FClockSequential*>(cache->eviction_params);
     delete data;
     cache_struct_free(cache);
 }
 
-static bool S3FClockV2_get(cache_t* cache, const request_t* req) {
-    return static_cast<S3FClockV2*>(cache->eviction_params)->get(cache, req);
+static bool S3FClockSequential_get(cache_t* cache, const request_t* req) {
+    return static_cast<S3FClockSequential*>(cache->eviction_params)->get(cache, req);
 }
-static cache_obj_t* S3FClockV2_find(cache_t* cache, const request_t* req, const bool update_cache) {
-    return static_cast<S3FClockV2*>(cache->eviction_params)->find(cache, req, update_cache);
+static cache_obj_t* S3FClockSequential_find(
+    cache_t* cache, const request_t* req, const bool update_cache
+) {
+    return static_cast<S3FClockSequential*>(cache->eviction_params)->find(cache, req, update_cache);
 }
-static cache_obj_t* S3FClockV2_insert(cache_t* cache, const request_t* req) {
-    return static_cast<S3FClockV2*>(cache->eviction_params)->insert(cache, req);
+static cache_obj_t* S3FClockSequential_insert(cache_t* cache, const request_t* req) {
+    return static_cast<S3FClockSequential*>(cache->eviction_params)->insert(cache, req);
 }
-static cache_obj_t* S3FClockV2_to_evict(cache_t* cache, const request_t* req) {
-    return static_cast<S3FClockV2*>(cache->eviction_params)->to_evict(cache, req);
+static cache_obj_t* S3FClockSequential_to_evict(cache_t* cache, const request_t* req) {
+    return static_cast<S3FClockSequential*>(cache->eviction_params)->to_evict(cache, req);
 }
-static void S3FClockV2_evict(cache_t* cache, const request_t* req) {
-    return static_cast<S3FClockV2*>(cache->eviction_params)->evict(cache, req);
+static void S3FClockSequential_evict(cache_t* cache, const request_t* req) {
+    return static_cast<S3FClockSequential*>(cache->eviction_params)->evict(cache, req);
 }
-static bool S3FClockV2_remove(cache_t* cache, const obj_id_t obj_id) {
-    return static_cast<S3FClockV2*>(cache->eviction_params)->remove(cache, obj_id);
+static bool S3FClockSequential_remove(cache_t* cache, const obj_id_t obj_id) {
+    return static_cast<S3FClockSequential*>(cache->eviction_params)->remove(cache, obj_id);
 }
 
 void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
     assert(params.contains("cache_size"));
-    auto* data = static_cast<S3FClockV2*>(cache->eviction_params);
+    auto* data = static_cast<S3FClockSequential*>(cache->eviction_params);
     data->Initialize(cache, params);
 }
 
-}  // namespace S3FClockV2
+}  // namespace S3FClockSequential
 
-cache_t* S3FClockV2Init(
+cache_t* S3FClockSequentialInit(
     const common_cache_params_t ccache_params, const char* cache_specific_params
 ) {
-    auto cache = S3FClockV2::S3FClockV2_init(ccache_params, cache_specific_params);
-    cache->cache_init = S3FClockV2Init;
+    auto cache = S3FClockSequential::S3FClockSequential_init(ccache_params, cache_specific_params);
+    cache->cache_init = S3FClockSequentialInit;
     auto& data = data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache);
-    data.SetParamsCallback = S3FClockV2::SetParams;
+    data.SetParamsCallback = S3FClockSequential::SetParams;
     return cache;
 }
 }  // namespace algorithm

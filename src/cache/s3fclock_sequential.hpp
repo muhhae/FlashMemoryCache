@@ -5,7 +5,7 @@
 #include <libCacheSim/evictionAlgo.h>
 
 namespace algorithm {
-cache_t* S3FClockV2Init(
+cache_t* S3FClockSequentialInit(
     const common_cache_params_t ccache_params, const char* cache_specific_params
 );
 }  // namespace algorithm

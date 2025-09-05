@@ -35,7 +35,7 @@
 #include "cache/qtime_clock.hpp"
 #include "cache/qtime_excl_clock.hpp"
 #include "cache/s3fclock.hpp"
-#include "cache/s3fclock_v2.hpp"
+#include "cache/s3fclock_sequential.hpp"
 #include "cache/sxfifo.hpp"
 #include "cache/t2_auto.hpp"
 #include "cache/t3_auto.hpp"
@@ -87,7 +87,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"lru", algorithm::LRUInit},
         {"clock", algorithm::ClockInit},
         {"s3fclock", algorithm::S3FClockInit},
-        {"s3fclock-v2", algorithm::S3FClockV2Init},
+        {"s3fclock-sequential", algorithm::S3FClockSequentialInit},
         {"sxfifo", algorithm::SxFIFOInit},
         {"slru", SLRU_init},
         {"gdsf", GDSF_init},

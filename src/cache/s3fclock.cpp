@@ -6,7 +6,6 @@
 #include <sys/types.h>
 
 #include <cassert>
-#include <iostream>
 #include <list>
 #include <stdexcept>
 #include <string>
