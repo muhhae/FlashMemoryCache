@@ -6,6 +6,7 @@
 #include <sys/types.h>
 
 #include <cassert>
+#include <iostream>
 #include <list>
 #include <stdexcept>
 #include <string>
@@ -46,26 +47,26 @@ class S3FClock {
             hand = queue.begin();
             std::advance(hand, queue.size() * hand_position);
         }
-        while (1) {
-            if ((*hand)->clock.freq == 0) {
-                cache_evict_base(cache, *hand, true);
-                queue.erase(hand--);
-                break;
-            }
-            if (queue.back()->clock.freq == 0) {
-                cache_evict_base(cache, queue.back(), true);
-                queue.pop_back();
-                break;
-            }
-            data::AdditionalCacheDataStorage::GetStorage()
-                .GetAdditionalCacheData(cache)
-                .OnPromotion(queue.back(), req);
-
-            queue.back()->clock.freq = 0;
-            queue.push_front(queue.back());
+        if ((*hand)->clock.freq == 0) {
+            cache_evict_base(cache, *hand, true);
+            queue.erase(hand);
+            hand--;
+            return;
+        }
+        (*hand)->clock.freq = 0;
+        if (queue.back()->clock.freq == 0) {
+            cache_evict_base(cache, queue.back(), true);
             queue.pop_back();
             hand--;
+            return;
         }
+        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
+            queue.back(), req
+        );
+        queue.back()->clock.freq = 0;
+        queue.push_front(queue.back());
+        queue.pop_back();
+        hand--;
     }
     cache_obj_t* to_evict(cache_t* cache, const request_t* req) {
         throw std::runtime_error("to_evict is not yet supported");
