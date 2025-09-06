@@ -1,0 +1,43 @@
+# QD
+Eviction:
+    if hand.hit:
+        evict hand
+    else:
+        hand.hit = false
+        if not tail.hit:
+            evict tail
+        else:
+            tail.hit = false
+            promote tail
+    hand--
+
+# SEQUENTIAL (LP)
+Eviction:
+    hand.hit = false
+    if not tail.hit:
+        evict tail
+    else:
+        tail.hit = false
+        promote tail
+    hand--
+
+Eviction:
+    hand = queue[cache_size * hand_position]
+    hand.hit = false
+    if not tail.hit:
+        evict tail
+    else:
+        tail.hit = false
+        promote tail
+
+
+OR
+
+Eviction:
+    hand = queue[cache_size * hand_position]
+    hand.hit = false
+    if not tail.hit:
+        evict tail
+    else:
+        tail.hit = false
+        promote tail

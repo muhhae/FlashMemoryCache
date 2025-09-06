@@ -6,6 +6,7 @@
 #include <sys/types.h>
 
 #include <cassert>
+#include <iostream>
 #include <list>
 #include <stdexcept>
 #include <string>
@@ -46,6 +47,8 @@ class S3FClock {
             hand = queue.begin();
             std::advance(hand, queue.size() * hand_position);
         }
+        // size_t index = std::distance(queue.begin(), hand);
+        // std::cout << "Index: " << index << "\n";  // prints 2
         if ((*hand)->clock.freq == 0) {
             cache_evict_base(cache, *hand, true);
             queue.erase(hand);

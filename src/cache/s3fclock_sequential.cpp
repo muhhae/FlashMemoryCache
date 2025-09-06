@@ -23,7 +23,7 @@ class S3FClockSequential {
     S3FClockSequential() = default;
     void Initialize(cache_t* cache, const std::unordered_map<std::string, std::string> params) {
         hand_position = params.contains("h_position") ? std::stof(params.at("h_position")) : 0.1;
-        assert(hand_position > 0 && hand_position < 1);
+        assert(hand_position >= 0 && hand_position < 1);
     }
 
     bool get(cache_t* cache, const request_t* req) {
@@ -47,12 +47,8 @@ class S3FClockSequential {
             hand = queue.begin();
             std::advance(hand, queue.size() * hand_position);
         }
-        // if ((*hand)->clock.freq == 0) {
-        //     cache_evict_base(cache, *hand, true);
-        //     queue.erase(hand);
-        //     hand--;
-        //     return;
-        // }
+        // size_t index = std::distance(queue.begin(), hand);
+        // std::cout << "Index: " << index << "\n";  // prints 2
         (*hand)->clock.freq = 0;
         if (queue.back()->clock.freq == 0) {
             cache_evict_base(cache, queue.back(), true);
