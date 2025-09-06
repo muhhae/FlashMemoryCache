@@ -23,7 +23,7 @@ class S3FClock {
     S3FClock() = default;
     void Initialize(cache_t* cache, const std::unordered_map<std::string, std::string> params) {
         hand_position = params.contains("h_position") ? std::stof(params.at("h_position")) : 0.1;
-        assert(hand_position > 0 && hand_position < 1);
+        assert(hand_position >= 0 && hand_position < 1);
     }
 
     bool get(cache_t* cache, const request_t* req) {
