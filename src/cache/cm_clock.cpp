@@ -20,11 +20,11 @@ struct CMClockMetadata {
 };
 class CMClockData {
    public:
-    CMClockData(uint64_t cache_size, float threshold_ratio)
-        : cm_treshold(cache_size * (1 - threshold_ratio)) {
+    CMClockData(uint64_t cache_size, float threshold_ratio) {
+        cm_threshold = cache_size * (1 - threshold_ratio);
     }
     std::unordered_map<obj_id_t, CMClockMetadata> metadatas;
-    uint64_t cm_treshold = 0;
+    uint64_t cm_threshold = 0;
     uint64_t current_cm = 0;
     bool full = false;
 };
@@ -32,8 +32,7 @@ void OnInsert(data::AdditionalCacheData& data, const request_t* req) {
     auto* cache_data = std::any_cast<CMClockData>(&data.CacheSpecificData);
     assert(cache_data);
     cache_data->metadatas.emplace(req->obj_id, CMClockMetadata());
-    if (!cache_data->full)
-        cache_data->current_cm++;
+    cache_data->current_cm++;
 }
 void OnEviction(data::AdditionalCacheData& data, const request_t* req, const cache_obj_t* obj) {
     auto* cache_data = std::any_cast<CMClockData>(&data.CacheSpecificData);
@@ -64,9 +63,7 @@ bool NotPromoted(data::AdditionalCacheData& data, obj_id_t id) {
     assert(cache_data);
     uint64_t last_access_cm = cache_data->current_cm - cache_data->metadatas.at(id).last_access_cm;
     // return false;
-    // std::cout << "last_access_cm: " << last_access_cm << "\n";
-    // std::cout << "threshold: " << cache_data->cm_treshold << "\n";
-    return last_access_cm >= cache_data->cm_treshold;
+    return last_access_cm >= cache_data->cm_threshold;
 }
 
 void CMClockEvict(cache_t* cache, const request_t* req) {
@@ -89,7 +86,6 @@ void CMClockEvict(cache_t* cache, const request_t* req) {
         obj_to_evict = params->q_tail;
         cache_data->current_cm++;
     }
-    cache_data->current_cm++;
     additional_cache_data.OnEviction(obj_to_evict, req);
     remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
     cache_evict_base(cache, obj_to_evict, true);

@@ -6,6 +6,7 @@
 #include <sys/types.h>
 
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 #include <list>
 #include <stdexcept>
@@ -24,6 +25,8 @@ class S3FClockSequential {
     void Initialize(cache_t* cache, const std::unordered_map<std::string, std::string> params) {
         hand_position = params.contains("h_position") ? std::stof(params.at("h_position")) : 0.1;
         assert(hand_position >= 0 && hand_position < 1);
+        assert(params.contains("cache_size"));
+        cache_size = std::stoull(params.at("cache_size"));
     }
 
     bool get(cache_t* cache, const request_t* req) {
@@ -37,32 +40,39 @@ class S3FClockSequential {
         return obj;
     }
     cache_obj_t* insert(cache_t* cache, const request_t* req) {
+        if (queue.size() == uint64_t(cache_size * hand_position) + 1) {
+            --hand;
+        }
+        if (hand != queue.end()) {
+            (*hand)->clock.freq = 0;
+            hand--;
+        }
+
         cache_obj_t* obj = cache_insert_base(cache, req);
         queue.push_front(obj);
         obj->clock.freq = 0;
+
         return obj;
     }
     void evict(cache_t* cache, const request_t* req) {
-        if (hand == queue.end()) {
-            hand = queue.begin();
-            std::advance(hand, queue.size() * hand_position);
-        }
         // size_t index = std::distance(queue.begin(), hand);
         // std::cout << "Index: " << index << "\n";  // prints 2
-        (*hand)->clock.freq = 0;
+        // (*hand)->clock.freq = 0;
         if (queue.back()->clock.freq == 0) {
             cache_evict_base(cache, queue.back(), true);
             queue.pop_back();
-            hand--;
             return;
         }
+
+        (*hand)->clock.freq = 0;
+        hand--;
+
         data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
             queue.back(), req
         );
         queue.back()->clock.freq = 0;
         queue.push_front(queue.back());
         queue.pop_back();
-        hand--;
     }
     cache_obj_t* to_evict(cache_t* cache, const request_t* req) {
         throw std::runtime_error("to_evict is not yet supported");
@@ -73,6 +83,7 @@ class S3FClockSequential {
 
    private:
     float hand_position;
+    uint64_t cache_size;
     std::list<cache_obj_t*> queue;
     std::list<cache_obj_t*>::iterator hand = queue.end();
 };
