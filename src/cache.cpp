@@ -19,6 +19,7 @@
 
 #include "additional_data.hpp"
 #include "cache/clock.hpp"
+#include "cache/cm_clock.hpp"
 #include "cache/fifo.hpp"
 #include "cache/lru.hpp"
 #include "cache/offline_clock.hpp"
@@ -88,6 +89,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"clock", algorithm::ClockInit},
         {"s3fclock", algorithm::S3FClockInit},
         {"s3fclock-sequential", algorithm::S3FClockSequentialInit},
+        {"cm-clock", algorithm::CMClockInit},
         {"sxfifo", algorithm::SxFIFOInit},
         {"slru", SLRU_init},
         {"gdsf", GDSF_init},

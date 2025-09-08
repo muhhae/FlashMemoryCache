@@ -82,6 +82,7 @@ add_library(my_cache_sim
   src/cache/sxfifo.cpp
   src/cache/s3fclock.cpp
   src/cache/s3fclock_sequential.cpp
+  src/cache/cm_clock.cpp
   # src/cache/decayed_clock.cpp
   # src/cache/dist_clock.cpp
 )
