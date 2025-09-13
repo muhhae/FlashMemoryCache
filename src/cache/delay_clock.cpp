@@ -53,7 +53,7 @@ class DelayClock {
         obj_to_reset->clock.freq = metadatas.at(obj_to_reset->obj_id).last_freq;
     }
     cache_obj_t* insert(cache_t* cache, const request_t* req) {
-        if (queue.size() == threshold) [[unlikely]] {
+        if (queue.size() == threshold) {
             hand--;
         }
         cache_obj_t* obj = cache_insert_base(cache, req);
