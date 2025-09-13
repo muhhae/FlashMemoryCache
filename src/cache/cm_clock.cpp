@@ -21,6 +21,7 @@ struct CMClockMetadata {
 class CMClockData {
    public:
     CMClockData(uint64_t cache_size, float threshold_ratio) {
+        std::cout << threshold_ratio * cache_size << "\n";
         cm_threshold = cache_size * (1 - threshold_ratio);
     }
     std::unordered_map<obj_id_t, CMClockMetadata> metadatas;
