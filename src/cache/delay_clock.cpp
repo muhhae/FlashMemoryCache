@@ -32,8 +32,8 @@ class DelayClock {
         }
         delay_ratio = params.contains("delay_ratio") ? std::stof(params.at("delay_ratio")) : 0.1;
         frequency_limit = params.contains("n_bit") ? (1 << std::stoi(params.at("n_bit"))) - 1 : 1;
-        // std::cout << "frequency_limit: " << frequency_limit << "\n";
         assert(delay_ratio >= 0 && delay_ratio <= 1);
+        threshold = uint64_t(cache_size * delay_ratio) + 1;
     }
     bool get(cache_t* cache, const request_t* req) {
         return cache_get_base(cache, req);
@@ -42,37 +42,28 @@ class DelayClock {
         cache_obj_t* obj = cache_find_base(cache, req, update_cache);
         if (obj != nullptr && update_cache && obj->clock.freq < frequency_limit) {
             obj->clock.freq++;
-            // std::cout << "frequency_limit = " << frequency_limit << "\n";
-            // std::cout << "clock.freq = " << obj->clock.freq << "\n";
         }
         return obj;
     }
     void reset_and_move_hand() {
-        if (hand == queue.end())
+        if (hand == queue.end()) {
             return;
-
+        }
         auto* obj_to_reset = *hand--;
         obj_to_reset->clock.freq = metadatas.at(obj_to_reset->obj_id).last_freq;
-
-        // std::cout << "reset\n";
-        // std::cout << "lfu.freq = " << obj_to_reset->lfu.freq << "\n";
-        // std::cout << "clock.freq = " << obj_to_reset->clock.freq << "\n";
     }
     cache_obj_t* insert(cache_t* cache, const request_t* req) {
         if (queue.size() == threshold) [[unlikely]] {
             hand--;
         }
-        reset_and_move_hand();
         cache_obj_t* obj = cache_insert_base(cache, req);
         queue.push_front(obj);
         metadatas[obj->obj_id] = {};
         obj->clock.freq = 0;
+        reset_and_move_hand();
         return obj;
     }
     void evict(cache_t* cache, const request_t* req) {
-        // size_t index = std::distance(queue.begin(), hand);
-        // std::cout << "Index: " << index << "\n";  // prints 2
-        // (*hand)->clock.freq = 0;
         auto obj_to_evict = queue.back();
         if (obj_to_evict->clock.freq == 0) {
             metadatas.erase(obj_to_evict->obj_id);
@@ -80,14 +71,10 @@ class DelayClock {
             queue.pop_back();
             return;
         }
-        reset_and_move_hand();
         metadatas.at(obj_to_evict->obj_id).last_freq = obj_to_evict->clock.freq - 1;
         queue.push_front(obj_to_evict);
+        reset_and_move_hand();
         queue.pop_back();
-
-        // std::cout << "eviction\n";
-        // std::cout << "lfu.freq = " << obj_to_evict->lfu.freq << "\n";
-        // std::cout << "clock.freq = " << obj_to_evict->clock.freq << "\n";
         data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
             obj_to_evict, req
         );
