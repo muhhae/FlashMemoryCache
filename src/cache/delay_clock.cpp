@@ -32,9 +32,8 @@ class DelayClock {
         }
         delay_ratio = params.contains("delay_ratio") ? std::stof(params.at("delay_ratio")) : 0.1;
         frequency_limit = params.contains("n_bit") ? (1 << std::stoi(params.at("n_bit"))) - 1 : 1;
-        std::cout << "frequency_limit: " << frequency_limit << "\n";
+        // std::cout << "frequency_limit: " << frequency_limit << "\n";
         assert(delay_ratio >= 0 && delay_ratio <= 1);
-        threshold = uint64_t(cache_size * delay_ratio) + 1;
     }
     bool get(cache_t* cache, const request_t* req) {
         return cache_get_base(cache, req);
@@ -60,7 +59,7 @@ class DelayClock {
         // std::cout << "clock.freq = " << obj_to_reset->clock.freq << "\n";
     }
     cache_obj_t* insert(cache_t* cache, const request_t* req) {
-        if (queue.size() == threshold) {
+        if (queue.size() == threshold) [[unlikely]] {
             hand--;
         }
         reset_and_move_hand();
