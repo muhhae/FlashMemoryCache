@@ -7,7 +7,7 @@
 
 #include "additional_data.hpp"
 
-namespace algorithm {
+namespace Clock {
 void ClockEvict(cache_t* cache, const request_t* req) {
     Clock_params_t* params = (Clock_params_t*)cache->eviction_params;
     cache_obj_t* obj_to_evict = params->q_tail;
@@ -28,10 +28,21 @@ void ClockEvict(cache_t* cache, const request_t* req) {
     cache_evict_base(cache, obj_to_evict, true);
 }
 
+void SetParams(cache_t* cache, std::unordered_map<std::string, std::string>& params) {
+    auto param = static_cast<Clock_params_t*>(cache->eviction_params);
+    param->max_freq = params.contains("n_bit") ? (1 << std::stoi(params.at("n_bit"))) - 1 : 1;
+}
+}  // namespace Clock
+
+namespace algorithm {
 cache_t* ClockInit(const common_cache_params_t ccache_params, const char* cache_specific_params) {
     auto cache = Clock_init(ccache_params, cache_specific_params);
     cache->cache_init = ClockInit;
-    cache->evict = ClockEvict;
+    cache->evict = Clock::ClockEvict;
+    data::AdditionalCacheDataStorage::GetStorage()
+        .GetAdditionalCacheData(cache)
+        .SetParamsCallback = Clock::SetParams;
+
     return cache;
 }
 }  // namespace algorithm

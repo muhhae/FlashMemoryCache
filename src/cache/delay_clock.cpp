@@ -31,7 +31,8 @@ class DelayClock {
             exit(0);
         }
         delay_ratio = params.contains("delay_ratio") ? std::stof(params.at("delay_ratio")) : 0.1;
-        frequency_limit = params.contains("freq_lim") ? std::stof(params.at("freq_lim")) : 1;
+        frequency_limit = params.contains("n_bit") ? (1 << std::stoi(params.at("n_bit"))) - 1 : 1;
+        std::cout << "frequency_limit: " << frequency_limit << "\n";
         assert(delay_ratio >= 0 && delay_ratio <= 1);
         threshold = uint64_t(cache_size * delay_ratio) + 1;
     }
