@@ -83,6 +83,7 @@ add_library(my_cache_sim
   src/cache/s3fclock.cpp
   src/cache/delay_clock.cpp
   src/cache/gap_clock.cpp
+  src/cache/gap2_clock.cpp
   src/cache/cm_clock.cpp
   # src/cache/decayed_clock.cpp
   # src/cache/dist_clock.cpp
