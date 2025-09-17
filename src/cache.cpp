@@ -22,6 +22,7 @@
 #include "cache/cm_clock.hpp"
 #include "cache/delay_clock.hpp"
 #include "cache/fifo.hpp"
+#include "cache/gap_clock.hpp"
 #include "cache/lru.hpp"
 #include "cache/offline_clock.hpp"
 #include "cache/offline_clock_v2.hpp"
@@ -89,6 +90,7 @@ cache_init_func AlgoSelector(std::string algorithm) {
         {"clock", algorithm::ClockInit},
         {"s3fclock", algorithm::S3FClockInit},
         {"dclock", algorithm::DelayClockInit},
+        {"gclock", algorithm::GapClockInit},
         {"cm-clock", algorithm::CMClockInit},
         {"sxfifo", algorithm::SxFIFOInit},
         {"slru", SLRU_init},
