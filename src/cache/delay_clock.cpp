@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <list>
 #include <stdexcept>
@@ -46,16 +47,26 @@ class DelayClock {
         return obj;
     }
     void reset_and_move_hand() {
-        if (hand == queue.end()) {
-            return;
-        }
+        assert(hand != queue.end());
         auto* obj_to_reset = *hand--;
         obj_to_reset->clock.freq = metadatas.at(obj_to_reset->obj_id).last_freq;
     }
-    cache_obj_t* insert(cache_t* cache, const request_t* req) {
-        if (queue.size() == threshold) {
+    cache_obj_t* insert_before(cache_t* cache, const request_t* req) {
+        assert(queue.size() < threshold);
+        cache_obj_t* obj = cache_insert_base(cache, req);
+        queue.push_front(obj);
+        metadatas[obj->obj_id] = {};
+        obj->clock.freq = 0;
+        if (queue.size() == threshold) [[unlikely]] {
             hand--;
+            insert = [this](cache_t* cache, const request_t* req) {
+                return this->insert_after(cache, req);
+            };
         }
+        return obj;
+    }
+    cache_obj_t* insert_after(cache_t* cache, const request_t* req) {
+        assert(queue.size() >= threshold);
         cache_obj_t* obj = cache_insert_base(cache, req);
         queue.push_front(obj);
         metadatas[obj->obj_id] = {};
@@ -72,9 +83,8 @@ class DelayClock {
             return;
         }
         metadatas.at(obj_to_evict->obj_id).last_freq = obj_to_evict->clock.freq - 1;
-        queue.push_front(obj_to_evict);
         reset_and_move_hand();
-        queue.pop_back();
+        queue.splice(queue.begin(), queue, std::prev(queue.end()));
         data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
             obj_to_evict, req
         );
@@ -86,6 +96,10 @@ class DelayClock {
     bool remove(cache_t* cache, const obj_id_t obj_id) {
         throw std::runtime_error("remove is not yet supported");
     }
+
+   public:
+    std::function<cache_obj_t*(cache_t* cache, const request_t* req)> insert =
+        [this](cache_t* cache, const request_t* req) { return this->insert_before(cache, req); };
 
    private:
     float delay_ratio;

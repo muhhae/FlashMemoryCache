@@ -85,6 +85,7 @@ add_library(my_cache_sim
   src/cache/gap_clock.cpp
   src/cache/gap2_clock.cpp
   src/cache/cm_clock.cpp
+  src/cache/d3_clock.cpp
   # src/cache/decayed_clock.cpp
   # src/cache/dist_clock.cpp
 )
