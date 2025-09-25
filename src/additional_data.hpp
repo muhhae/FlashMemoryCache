@@ -25,33 +25,7 @@
 namespace data {
 
 const static std::vector<std::string> datasets_columns = {
-    "obj_id",
-    "rtime_since",
-    "rtime_since_log",
-    "rtime_since_std",
-    "rtime_since_log_std",
-    "vtime_since",
-    "vtime_since_log",
-    "vtime_since_std",
-    "vtime_since_log_std",
-    "rtime_between",
-    "rtime_between_log",
-    "rtime_between_std",
-    "rtime_between_log_std",
-    "clock_freq",
-    "clock_freq_decayed_rtime",
-    "clock_freq_decayed_vtime",
-    "clock_freq_log",
-    "clock_freq_std",
-    "clock_freq_log_std",
-    "lifetime_freq",
-    "lifetime_freq_decayed_rtime",
-    "lifetime_freq_decayed_vtime",
-    "lifetime_freq_log",
-    "lifetime_freq_std",
-    "lifetime_freq_log_std",
-    "obj_size_relative",
-    "wasted"
+    "obj_id", "ctime_relative", "ctime", "cache_size", "wasted"
 };
 
 class RunningMeanData {
@@ -85,6 +59,8 @@ struct ObjectExtraMetadata {
     uint64_t vtime_insert = 0;
     uint64_t rtime_access = 0;
     uint64_t vtime_access = 0;
+
+    uint64_t ctime_access = 0;
 
     float cache_freq_decayed_vtime = 0;
     float cache_freq_decayed_rtime = 0;

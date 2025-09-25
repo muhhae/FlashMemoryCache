@@ -146,6 +146,12 @@ ChainedCache::ChainedCache(
     }
     additional_cache_data.lifetime_freq_for_threshold = lifetime_freq_for_threshold;
     if (generate_datasets) {
+        additional_cache_data.object_in_cache_metadatas.emplace();
+        additional_cache_data.object_extra_metadatas.emplace();
+        additional_cache_data.object_offline_clock_metadatas.emplace();
+        additional_cache_data.object_lifetime_metadatas.emplace();
+        additional_cache_data.object_extra_lifetime_metadatas.emplace();
+        additional_cache_data.extra_metadata.emplace();
         additional_cache_data.datasets = std::ofstream(datasets);
         for (size_t i = 0; i < data::datasets_columns.size(); i++) {
             additional_cache_data.datasets << data::datasets_columns[i]

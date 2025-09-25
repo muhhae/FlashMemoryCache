@@ -53,7 +53,7 @@ void AdditionalCacheData::OnAccess(const request_t* req) {
     if (object_extra_metadatas) [[unlikely]] {
         if (object_extra_metadatas->contains(req->obj_id)) {
             auto& object_extra_metadata = object_extra_metadatas.value()[req->obj_id];
-
+            object_extra_metadata.ctime_access = metric.reinserted + metric.inserted;
             uint64_t rtime_since_access = req->clock_time - object_extra_metadata.rtime_access;
             uint64_t vtime_since_access = vtime - object_extra_metadata.vtime_access;
 
@@ -201,9 +201,13 @@ std::unordered_map<std::string, float> AdditionalCacheData::ObjectFeatures(
 
     std::unordered_map<std::string, float> features;
 
-    features["obj_id"] = obj_to_evict->obj_id;
-    features["obj_size_relative"] = (float)obj_to_evict->obj_size / cache->cache_size;
+    features["ctime"] = metric.inserted + metric.reinserted - obj_extra_metadata.ctime_access;
 
+    features["obj_id"] = obj_to_evict->obj_id;
+    features["ctime_relative"] = features["ctime"] / cache->cache_size;
+    features["cache_size"] = cache->cache_size;
+
+    /* Not used for now
     features["rtime_since_access"] = rtime_since_access;
     features["rtime_since_access_std"] = extra_metadata->rm_rtime_since_access.Normalize(
         rtime_since_access
@@ -247,6 +251,7 @@ std::unordered_map<std::string, float> AdditionalCacheData::ObjectFeatures(
     features["lifetime_freq_log_std"] = extra_metadata->rm_lifetime_freq_log.Normalize(
         log(obj_lifetime_metadata.lifetime_freq + 1)
     );
+    */
 
     return features;
 }
