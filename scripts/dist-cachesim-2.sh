@@ -5,7 +5,7 @@ traces_dir=/ltdata/data/oracleReuse
 task_out=~/task
 
 > $task_out
-
+rm -rf /mnt/nfs/lazy_promotions/new_results/delay/*
 while IFS= read -r path; do
     if [ -z "$path" ] || [[ "$path" == \#* ]]; then
         continue
@@ -23,7 +23,7 @@ while IFS= read -r path; do
     min_dram=$(( gb/4+1 ))
     priority=$(( 100/gb + 1 ))
     for p in 0.1 0.2 0.3 0.4 0.5; do
-        echo "shell:$priority:$min_dram:1:cd /mnt/nfs/lazy_promotions/new_results/delay && ~/bobCacheSim/build/bin/cachesim $file oracleGeneral delay -e delay-time=$p 0.01 --ignore-obj-size 1" >> $task_out
+        echo "shell:$priority:$min_dram:1:cd /mnt/nfs/lazy_promotions/new_results/delay && ~/bobCacheSim/build/bin/cachesim $file oracleGeneral lru-delay -e delay-time=$p 0.01 --ignore-obj-size 1" >> $task_out
     done
     # echo "shell:$priority:$min_dram:1:cd /mnt/nfs/lazy_promotions/new_results/prob && ~/bob-cachesim/build/bin/cachesim $file oracleGeneral prob -e prob=$p 0.01 --ignore-obj-size 1" >> $task_out
     # echo "shell:$priority:$min_dram:1:cd /mnt/nfs/results/batch && ~/bob-cachesim/build/bin/cachesim $file oracleGeneral batch -e batch-size=0.5 0.01 --ignore-obj-size 1" >> $task_out
