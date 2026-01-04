@@ -201,9 +201,9 @@ std::unordered_map<std::string, float> AdditionalCacheData::ObjectFeatures(
 
     std::unordered_map<std::string, float> features;
 
+    // features["freq"] = obj_in_cache_metadata.cache_freq;
+    // features["lifetime_freq"] = obj_lifetime_metadata.lifetime_freq;
     features["ctime"] = metric.inserted + metric.reinserted - obj_extra_metadata.ctime_access;
-
-    features["obj_id"] = obj_to_evict->obj_id;
     features["ctime_relative"] = features["ctime"] / cache->cache_size;
     features["cache_size"] = cache->cache_size;
 

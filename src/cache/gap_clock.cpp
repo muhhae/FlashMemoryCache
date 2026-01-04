@@ -35,6 +35,7 @@ class GapClock {
         frequency_limit = params.contains("n_bit") ? (1 << std::stoi(params.at("n_bit"))) - 1 : 1;
         assert(delay_ratio >= 0 && delay_ratio <= 1);
         delay_time = uint64_t(cache_size * delay_ratio);
+        std::cout << "delay_time: " << delay_time << "\n";
     }
     bool get(cache_t* cache, const request_t* req) {
         return cache_get_base(cache, req);
@@ -71,9 +72,12 @@ class GapClock {
         obj_to_evict->clock.freq -= 1;
         queue.push_front(obj_to_evict);
         queue.pop_back();
-        data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
-            obj_to_evict, req
-        );
+        data::AdditionalCacheDataStorage::GetStorage()
+            .GetAdditionalCacheData(cache)
+            .metric.reinserted += 1;
+        // data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
+        //     obj_to_evict, req
+        // );
     }
 
     cache_obj_t* to_evict(cache_t* cache, const request_t* req) {

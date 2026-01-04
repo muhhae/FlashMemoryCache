@@ -5,6 +5,8 @@
 #include <regex.h>
 #include <sys/types.h>
 
+#include <iostream>
+
 #include "additional_data.hpp"
 
 namespace Clock {
@@ -19,6 +21,7 @@ void ClockEvict(cache_t* cache, const request_t* req) {
         data::AdditionalCacheDataStorage::GetStorage().GetAdditionalCacheData(cache).OnPromotion(
             obj_to_evict, req
         );
+        std::cout << "n_obj_rewritten: " << params->n_obj_rewritten << "\n";
 
         move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
         obj_to_evict = params->q_tail;
